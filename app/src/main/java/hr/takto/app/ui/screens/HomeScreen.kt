@@ -17,7 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Umbrella
@@ -196,7 +196,7 @@ fun HomeScreen(
                         }
                         if (next.note.isNotBlank()) Text(next.note, color = TaktoMuted, fontSize = 11.sp, maxLines = 1)
                     }
-                    Icon(Icons.Default.ArrowForward, contentDescription = null, tint = TaktoBlue)
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = TaktoBlue)
                 }
             }
         }

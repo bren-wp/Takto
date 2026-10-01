@@ -12,6 +12,7 @@ import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.SavedPattern
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.ScheduleSuggestions
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
 import hr.takto.app.model.WorkTimePreset
@@ -94,23 +95,13 @@ class ScheduleStore(private val context: Context) {
 
     fun allShiftTypes(): List<ShiftType> = shiftTypes() + customShiftTypes()
 
-    fun suggestedShiftTypes(referenceDate: LocalDate = LocalDate.now()): List<ShiftType> {
-        val all = allShiftTypes()
-        if (all.size <= 1) return all
-
-        val windowStart = referenceDate.minusDays(SUGGESTION_LOOKBACK_DAYS)
-        val usage = entries.values
-            .asSequence()
-            .filter { !it.date.isBefore(windowStart) && !it.date.isAfter(referenceDate) }
-            .groupingBy { it.code.uppercase(Locale.ROOT) }
-            .eachCount()
-
-        return all.sortedWith(
-            compareByDescending<ShiftType> { usage[it.code.uppercase(Locale.ROOT)] ?: 0 }
-                .thenBy { if (it.isPreset) 1 else 0 }
-                .thenBy { it.name.lowercase(Locale.forLanguageTag("hr")) }
+    fun suggestedShiftTypes(referenceDate: LocalDate = LocalDate.now()): List<ShiftType> =
+        ScheduleSuggestions.rank(
+            types = allShiftTypes(),
+            entries = entries.values,
+            referenceDate = referenceDate,
+            lookbackDays = SUGGESTION_LOOKBACK_DAYS
         )
-    }
 
     fun saveCustomShiftPreset(code: String, name: String, colorArgb: Long): Boolean {
         val normalizedCode = ScheduleLogic.normalizeReusableCode(code)

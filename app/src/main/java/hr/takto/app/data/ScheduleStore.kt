@@ -84,7 +84,7 @@ class ScheduleStore(private val context: Context) {
         loadWorkTimePresets()
         loadMonthlyTargetOverrides()
         loadSavedPatterns()
-        archiveRevisionCount.value = countArchiveRevisions()
+        archiveRevisionCount.value = loadArchiveRevisionCount()
         loadEntries()
         persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
     }
@@ -1396,17 +1396,45 @@ class ScheduleStore(private val context: Context) {
                 }
             }
             archiveRevisionCount.value += changed.size
+            persistArchiveRevisionMetadata()
         }
     }
 
-    private fun countArchiveRevisions(): Int =
-        runCatching {
-            context.getFileStreamPath(HISTORY_FILE)
-                .takeIf { it.exists() }
-                ?.bufferedReader()
-                ?.useLines { lines -> lines.count().coerceAtMost(Int.MAX_VALUE) }
-                ?: 0
+    private fun loadArchiveRevisionCount(): Int {
+        val file = context.getFileStreamPath(HISTORY_FILE)
+        if (!file.exists()) {
+            prefs.edit()
+                .putInt(KEY_ARCHIVE_REVISION_COUNT, 0)
+                .putLong(KEY_ARCHIVE_FILE_LENGTH, 0L)
+                .apply()
+            return 0
+        }
+
+        val cachedCount = prefs.getInt(KEY_ARCHIVE_REVISION_COUNT, -1)
+        val cachedLength = prefs.getLong(KEY_ARCHIVE_FILE_LENGTH, -1L)
+        if (cachedCount >= 0 && cachedLength == file.length()) {
+            return cachedCount
+        }
+
+        val counted = runCatching {
+            file.bufferedReader(StandardCharsets.UTF_8)
+                .useLines { lines -> lines.count().coerceAtMost(Int.MAX_VALUE) }
         }.getOrDefault(0)
+
+        prefs.edit()
+            .putInt(KEY_ARCHIVE_REVISION_COUNT, counted)
+            .putLong(KEY_ARCHIVE_FILE_LENGTH, file.length())
+            .apply()
+        return counted
+    }
+
+    private fun persistArchiveRevisionMetadata() {
+        val file = context.getFileStreamPath(HISTORY_FILE)
+        prefs.edit()
+            .putInt(KEY_ARCHIVE_REVISION_COUNT, archiveRevisionCount.value)
+            .putLong(KEY_ARCHIVE_FILE_LENGTH, if (file.exists()) file.length() else 0L)
+            .apply()
+    }
 
     private fun loadUserProfile(): UserProfile {
         val raw = prefs.getString(KEY_USER_PROFILE, null) ?: return UserProfile()
@@ -1588,6 +1616,8 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_USER_PROFILE = "user_profile_json"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
+        private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"
+        private const val KEY_ARCHIVE_FILE_LENGTH = "archive_file_length"
 
         private val DATE_FORMATS = listOf(
             DateTimeFormatter.ISO_LOCAL_DATE,

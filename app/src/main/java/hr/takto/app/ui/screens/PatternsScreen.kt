@@ -66,7 +66,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     val builtInPatterns = remember {
         listOf(
-            PatternDef("Radni tjedan", "Pet dnevnih smjena pa dva slobodna dana.", listOf("D", "D", "D", "D", "D", null, null)),
+            PatternDef("Radni tjedan", "Pet radnih dana pa dva slobodna dana.", listOf("D", "D", "D", "D", "D", null, null)),
             PatternDef("2D / 2N / 4 slobodna", "Dvije dnevne, dvije noćne i četiri slobodna dana.", listOf("D", "D", "N", "N", null, null, null, null)),
             PatternDef("D / N / slobodno", "Jednostavna trodnevna rotacija.", listOf("D", "N", null)),
             PatternDef("D / D / GO / slobodno", "Primjer kombiniranog obrasca.", listOf("D", "D", "GO", null))
@@ -92,7 +92,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             Text("Uzorci", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Uzorci smjena", style = MaterialTheme.typography.headlineLarge)
+            Text("Uzorci rasporeda", style = MaterialTheme.typography.headlineLarge)
             Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju slobodni dani.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = { customPatternDialog = true },

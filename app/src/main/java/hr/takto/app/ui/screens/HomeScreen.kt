@@ -349,7 +349,7 @@ fun HomeScreen(
                     }
                     Column(Modifier.weight(1f).padding(start = 12.dp)) {
                         Text(
-                            if (next.date == today) "Danas" else "Sljedeći unos",
+                            "Sljedeći unos",
                             color = colors.onSurfaceVariant,
                             fontSize = 12.sp
                         )

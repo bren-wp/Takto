@@ -37,6 +37,12 @@ class ScheduleSearchTest {
             label = "Edukacija",
             colorArgb = 0xFF8B46F6,
             note = "Interna edukacija"
+        ),
+        ShiftEntry(
+            date = today.plusDays(5),
+            code = "MO",
+            label = "Međuodjel",
+            colorArgb = 0xFF64748B
         )
     )
 
@@ -44,6 +50,12 @@ class ScheduleSearchTest {
     fun search_isAccentInsensitive() {
         val result = ScheduleSearch.search(entries, "godisnji", today = today)
         assertEquals("GO", result.first().code)
+    }
+
+    @Test
+    fun search_normalizesCroatianDStroke() {
+        val result = ScheduleSearch.search(entries, "meduodjel", today = today)
+        assertEquals("MO", result.first().code)
     }
 
     @Test

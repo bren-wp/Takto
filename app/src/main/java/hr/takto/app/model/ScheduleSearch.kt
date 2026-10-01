@@ -123,5 +123,6 @@ object ScheduleSearch {
     private fun normalize(value: String): String =
         Normalizer.normalize(value.trim().lowercase(Locale.ROOT), Normalizer.Form.NFD)
             .replace(Regex("\\p{M}+"), "")
+            .replace('đ', 'd')
             .replace(Regex("\\s+"), " ")
 }

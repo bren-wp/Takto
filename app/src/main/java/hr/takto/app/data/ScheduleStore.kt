@@ -787,7 +787,6 @@ class ScheduleStore(private val context: Context) {
         repeat(array.length()) { index ->
             parseEntry(array.optJSONObject(index))?.let(parsed::add)
         }
-        if (replaceExisting) entries.clear()
         var imported = 0
         var skipped = 0
         parsed.forEach { item ->
@@ -821,7 +820,6 @@ class ScheduleStore(private val context: Context) {
             standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
                 .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
             settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
-                if (replaceExisting) monthlyTargetOverrides.clear()
                 targets.keys().forEach { key ->
                     val month = runCatching { YearMonth.parse(key) }.getOrNull()
                     if (month != null) {
@@ -836,7 +834,6 @@ class ScheduleStore(private val context: Context) {
                 }
             }
             settings.optJSONArray("customShiftPresets")?.let { array ->
-                if (replaceExisting) customShiftPresets.clear()
                 repeat(array.length().coerceAtMost(MAX_CUSTOM_PRESETS)) { index ->
                     parseCustomShiftPreset(array.optJSONObject(index))?.let { preset ->
                         if (
@@ -849,7 +846,6 @@ class ScheduleStore(private val context: Context) {
                 }
             }
             settings.optJSONArray("workTimePresets")?.let { array ->
-                if (replaceExisting) workTimePresets.clear()
                 repeat(array.length().coerceAtMost(MAX_WORK_TIME_PRESETS)) { index ->
                     parseWorkTimePreset(array.optJSONObject(index))?.let { preset ->
                         if (shiftType(preset.code) != null && !ScheduleLogic.isLeaveCode(preset.code)) {
@@ -859,7 +855,6 @@ class ScheduleStore(private val context: Context) {
                 }
             }
             settings.optJSONArray("savedPatterns")?.let { array ->
-                if (replaceExisting) savedPatterns.clear()
                 repeat(array.length().coerceAtMost(MAX_SAVED_PATTERNS)) { index ->
                     parseSavedPattern(array.optJSONObject(index))?.let { pattern ->
                         if (savedPatterns.none { it.id == pattern.id } && savedPatterns.size < MAX_SAVED_PATTERNS) savedPatterns += pattern

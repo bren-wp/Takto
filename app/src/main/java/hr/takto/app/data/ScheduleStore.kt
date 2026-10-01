@@ -693,11 +693,14 @@ class ScheduleStore(private val context: Context) {
         val normalized = content.removePrefix("\uFEFF")
         val firstLine = normalized.lineSequence().firstOrNull { it.isNotBlank() } ?: return ImportResult(0, 0, 0)
         val delimiter = detectDelimiter(firstLine)
-        val rows = parseCsv(normalized, delimiter).filter { row -> row.any { it.isNotBlank() } }
-        if (rows.size > MAX_IMPORT_ROWS) return ImportResult(0, 0, 0, valid = false)
-        if (rows.isEmpty()) return ImportResult(0, 0, 0)
+        fun meaningfulRows(): Sequence<List<String>> =
+            parseCsv(normalized, delimiter).filter { row -> row.any { it.isNotBlank() } }
 
-        rows.forEachIndexed { index, parts ->
+        val rowCount = meaningfulRows().take(MAX_IMPORT_ROWS + 1).count()
+        if (rowCount > MAX_IMPORT_ROWS) return ImportResult(0, 0, 0, valid = false)
+        if (rowCount == 0) return ImportResult(0, 0, 0)
+
+        meaningfulRows().forEachIndexed { index, parts ->
             if (index == 0 && isHeader(parts)) return@forEachIndexed
             if (parts.size < 2) {
                 skipped++
@@ -1303,8 +1306,7 @@ class ScheduleStore(private val context: Context) {
         return null
     }
 
-    private fun parseCsv(content: String, delimiter: Char): List<List<String>> {
-        val rows = mutableListOf<List<String>>()
+    private fun parseCsv(content: String, delimiter: Char): Sequence<List<String>> = sequence {
         val row = mutableListOf<String>()
         val current = StringBuilder()
         var quoted = false
@@ -1313,11 +1315,6 @@ class ScheduleStore(private val context: Context) {
         fun pushField() {
             row += current.toString().trim()
             current.clear()
-        }
-        fun pushRow() {
-            pushField()
-            rows += row.toList()
-            row.clear()
         }
 
         while (i < content.length) {
@@ -1329,14 +1326,21 @@ class ScheduleStore(private val context: Context) {
                 }
                 c == '"' -> quoted = !quoted
                 c == delimiter && !quoted -> pushField()
-                c == '\n' && !quoted -> pushRow()
+                c == '\n' && !quoted -> {
+                    pushField()
+                    yield(row.toList())
+                    row.clear()
+                }
                 c == '\r' && !quoted -> Unit
                 else -> current.append(c)
             }
             i++
         }
-        if (current.isNotEmpty() || row.isNotEmpty()) pushRow()
-        return rows
+
+        if (current.isNotEmpty() || row.isNotEmpty()) {
+            pushField()
+            yield(row.toList())
+        }
     }
 
     private data class UndoState(val label: String, val entries: Map<LocalDate, ShiftEntry?>)

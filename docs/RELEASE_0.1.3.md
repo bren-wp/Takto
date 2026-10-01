@@ -18,6 +18,7 @@ Takto 0.1.3 dodatno skraćuje najčešće dnevne radnje i poboljšava pronalaže
 - točne kratice i nazivi rangiraju se ispred slabijih podudaranja
 - višerječni upiti mogu kombinirati naziv i napomenu
 - dodani unit testovi za pretragu i recency-aware rangiranje preporuka
+- release workflow automatski objavljuje ovu verziju nakon uspješnog mergea u `main`, uz ponovnu provjeru testova, linta, APK-a, AAB-a i SHA-256 datoteke
 
 ## Kompatibilnost
 

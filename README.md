@@ -208,6 +208,8 @@ Nakon uspješnog workflowa dostupni su Actions artefakti:
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
+Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName`, ponovno pokreće testove i lint, gradi APK/AAB, provjerava izlazne datoteke i automatski objavljuje odgovarajući `vX.Y.Z` GitHub Release. Ako izdanje već postoji, workflow ga ne duplicira.
+
 ## Privatnost i sigurnost
 
 - nema INTERNET dopuštenja

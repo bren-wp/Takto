@@ -23,6 +23,7 @@ Pouzdanija dugoročna pohrana, automatski oporavak i zaštita velikih rasporeda.
 - Postavke sada jasno prikazuju zaštitu lokalnih podataka i broj rasporednih unosa
 - uklonjene su preostale formulacije koje nepotrebno pretpostavljaju noćne smjene
 - dodani unit testovi za nedestruktivno rješavanje revizijskih konflikata
+- broj revizija i duljina arhive spremaju se kao metadata cache pa veliki journal ne mora biti ponovno potpuno prebrojan pri svakom pokretanju
 
 ### Verzija
 

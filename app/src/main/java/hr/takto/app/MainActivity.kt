@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -23,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +34,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import hr.takto.app.data.ScheduleStore
+import hr.takto.app.model.AppThemeMode
 import hr.takto.app.reminders.ReminderScheduler
 import hr.takto.app.ui.screens.CalendarScreen
 import hr.takto.app.ui.screens.HomeScreen
@@ -58,6 +63,19 @@ class MainActivity : ComponentActivity() {
         consumeNavigationIntent(intent)
         val store = (application as TaktoApplication).scheduleStore
         setContent {
+            val systemDark = isSystemInDarkTheme()
+            val darkAppearance = when (store.themeMode.value) {
+                AppThemeMode.DARK -> true
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.SYSTEM -> systemDark
+            }
+            val view = LocalView.current
+            SideEffect {
+                val controller = WindowCompat.getInsetsController(window, view)
+                controller.isAppearanceLightStatusBars = !darkAppearance
+                controller.isAppearanceLightNavigationBars = !darkAppearance
+            }
+
             TaktoTheme(mode = store.themeMode.value) {
                 TaktoRoot(
                     store = store,

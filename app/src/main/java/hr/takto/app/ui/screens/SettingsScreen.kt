@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Language
@@ -78,7 +79,6 @@ import java.nio.charset.StandardCharsets
 @Composable
 fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
-    var confirmClear by remember { mutableStateOf(false) }
     var profileDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
@@ -169,6 +169,22 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 Toast.makeText(context, "Sigurnosna kopija je spremljena.", Toast.LENGTH_SHORT).show()
             }.onFailure {
                 Toast.makeText(context, "Sigurnosna kopija nije spremljena.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    val exportArchiveLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/x-ndjson")
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                val stream = context.contentResolver.openOutputStream(uri)
+                    ?: error("Nije moguće otvoriti odredišnu arhivsku datoteku.")
+                stream.use { it.write(store.exportArchiveJsonLines().toByteArray(StandardCharsets.UTF_8)) }
+            }.onSuccess {
+                Toast.makeText(context, "Trajna arhiva rasporeda je izvezena.", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, "Arhivu nije moguće izvesti.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -495,8 +511,15 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Vrati sigurnosnu kopiju",
-            subtitle = "Vrati puni Takto JSON; prije vraćanja biraš spajanje ili potpunu zamjenu",
+            subtitle = "Spoji backup s postojećim podacima; Takto ne briše datume koji nisu u backupu",
             onClick = { importBackupLauncher.launch(arrayOf("application/json", "text/plain")) }
+        )
+
+        SettingsRow(
+            icon = Icons.Default.History,
+            title = "Trajna arhiva rasporeda",
+            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · nema automatskog brisanja starih ni budućih rasporeda",
+            onClick = { exportArchiveLauncher.launch("Takto-trajna-arhiva.jsonl") }
         )
 
         SettingsRow(
@@ -525,11 +548,9 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
 
         SettingsRow(
-            icon = Icons.Default.RestartAlt,
-            title = "Očisti sve unose",
-            subtitle = "Briše raspored s ovog uređaja",
-            onClick = { confirmClear = true },
-            destructive = true
+            icon = Icons.Default.History,
+            title = "Čuvanje rasporeda",
+            subtitle = "Takto ne ograničava kalendar na jednu godinu: povijesni i budući rasporedi ostaju spremljeni dok ih korisnik pojedinačno ne promijeni."
         )
     }
 
@@ -585,9 +606,9 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     pendingBackupContent?.let { content ->
         ImportModeDialog(
             title = "Kako vratiti sigurnosnu kopiju?",
-            description = "Spajanje čuva postojeće datume. Potpuna zamjena prvo briše trenutni raspored i zatim vraća backup.",
+            description = "Spajanje čuva postojeće datume. Ažuriranje prepisuje samo datume koji postoje u backupu; ostali stari i budući rasporedi ostaju netaknuti.",
             safeLabel = "Spoji bez prepisivanja",
-            replaceLabel = "Potpuno zamijeni",
+            replaceLabel = "Spoji i ažuriraj datume",
             onDismiss = { pendingBackupContent = null },
             onSafe = {
                 val result = store.importBackupJson(content, replaceExisting = false)
@@ -727,19 +748,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         }
     }
 
-    if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            title = { Text("Očistiti raspored?") },
-            text = { Text("Ova radnja briše sve spremljene unose. Prazan dan ostaje slobodan dan.") },
-            confirmButton = {
-                TextButton(onClick = { store.clearAll(); confirmClear = false }) {
-                    Text("Obriši sve", color = Color(0xFFFF6570))
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Odustani") } }
-        )
-    }
 }
 
 @Composable

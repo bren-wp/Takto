@@ -1,71 +1,223 @@
 # Takto
 
-Takto je Android aplikacija za planiranje smjenskog rada, razvijena u Kotlinu i Jetpack Composeu prema dostavljenom Takto vizualnom identitetu: tamna premium podloga, plavo–cijan–ljubičasti akcenti, velike kalendarske ćelije i brzo označavanje smjena.
+> **Dodirni. Označi. Radi.**  
+> Moderan Android planer smjena koji pretvara cijeli mjesec rada u jasan, brz i vizualan raspored.
 
-**Početna verzija:** `0.1.0`  
-**Android versionCode:** `1`  
-**Minimalni Android:** 8.0 / API 26  
-**Target/compile SDK:** 35
+![Version](https://img.shields.io/badge/verzija-0.1.0-2488FF)
+![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
+![Target](https://img.shields.io/badge/target-Android%2016-8B46F6)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
+![Compose](https://img.shields.io/badge/Jetpack%20Compose-2026.09.00-1DE1E8)
+![License](https://img.shields.io/badge/license-MIT-0F172A)
 
-## Funkcionalnosti
+Takto je aplikacija za ljude koji rade u smjenama i žele raspored koji se razumije **na prvi pogled**. Velike kalendarske ćelije, jasne oznake, vlastite boje, radni sati, podsjetnici, uzorci i statistika spojeni su u jedno tamno, premium sučelje inspirirano dostavljenim Takto vizualima.
 
-- Početna, Kalendar, Statistika, Uzorci i Postavke
-- D / N / GO / BO / PD i vlastite oznake
-- veliki mjesečni kalendar s brzim unosom jednim dodirom
-- bilješke, radno vrijeme, pauze, fond sati i prekovremeni rad
-- višestruki odabir i bulk uređivanje
-- kopiranje/lijepljenje tjedna i ponavljajući uzorci
-- vlastite brze oznake, nazivi i boje
-- mjesečne i godišnje statistike
-- dnevni podsjetnik i podsjetnik prije smjene
-- CSV uvoz/izvoz, JSON sigurnosna kopija i iCalendar (.ics) izvoz
-- lokalno spremanje podataka; aplikacija ne deklarira INTERNET dopuštenje
-- TalkBack opisi za ključne kalendarske interakcije
+## Zašto Takto
 
-## Oznake
+**Planiraj bez tablica i papira.** Dodirni datum i odaberi oznaku. Dnevna smjena, noćna, godišnji, bolovanje, plaćeni dopust ili potpuno vlastiti unos spremaju se u nekoliko sekundi.
 
-| Oznaka | Značenje |
+**Vidi cijeli mjesec odjednom.** Kalendar koristi velike obojene ćelije i dosljedan sustav boja: plava, ljubičasta, zelena, jantarna i crvena. Prazna ćelija znači slobodan dan.
+
+**Prati stvarno radno vrijeme.** Za svaku radnu smjenu moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, prekovremene sate, noćni rad, vikend i nedjelju.
+
+**Prilagodi aplikaciju svom poslu.** Oznake, boje, vlastite brze oznake, predlošci radnog vremena i ponavljajući uzorci mogu se prilagoditi korisniku.
+
+**Podaci ostaju lokalni.** Takto ne deklarira INTERNET dopuštenje. Raspored se sprema na uređaju, a izvoz se pokreće samo kada korisnik to zatraži.
+
+---
+
+## Ključne mogućnosti
+
+### Kalendar koji radi jednim dodirom
+
+- veliki mjesečni pregled 6 × 7
+- D — Dan
+- N — Noć
+- GO — Godišnji odmor
+- BO — Bolovanje
+- PD — Plaćeni dopust
+- vlastiti tekst, naziv i boja
+- napomena za svaki datum
+- današnji datum i aktivni datum jasno istaknuti
+- TalkBack opis datuma, smjene, napomene i radnog vremena
+
+### Brzo uređivanje rasporeda
+
+- višestruki odabir više datuma
+- prečaci **Cijeli mjesec** i **Pon–pet**
+- bulk dodjela smjena
+- bulk postavljanje radnog vremena
+- kopiranje i lijepljenje cijelog tjedna
+- Undo / Vrati zadnju promjenu
+- pretraga po oznaci, nazivu, napomeni i datumu
+
+### Radni sati i fond
+
+- početak i kraj smjene
+- pauza u minutama
+- smjene preko ponoći
+- standardni dnevni fond
+- automatski mjesečni fond pon–pet
+- ručni fond po mjesecu
+- prekovremeni sati
+- noćni rad 22:00–06:00
+- vikend i nedjelja
+- prosječno trajanje evidentirane smjene
+
+### Uzorci
+
+Takto može spremiti ponavljajuće cikluse, primjerice:
+
+```text
+D, D, N, N, -, -, -, -
+```
+
+`-` znači slobodan dan. Uzorci podržavaju ugrađene i vlastite oznake te se mogu primijeniti na veći raspon dana uz izbor hoće li postojeći unosi biti sačuvani ili prepisani.
+
+### Podsjetnici
+
+- dnevni podsjetnik rasporeda
+- poseban podsjetnik prije početka smjene
+- podesivi odmak prije smjene
+- ponovno zakazivanje nakon restarta uređaja, promjene vremena ili vremenske zone
+- dodir obavijesti vodi izravno na konkretan datum
+
+### Statistika
+
+- ukupne, dnevne i noćne smjene
+- GO / BO / PD odvojeno
+- radni sati
+- fond i razlika
+- prekovremeni sati
+- noćni, vikend i nedjeljni sati
+- mjesečni i godišnji pregled
+- raspodjela po vlastitim oznakama
+
+### Uvoz, izvoz i sigurnosna kopija
+
+- CSV izvoz
+- CSV uvoz sa zarezom ili točka-zarezom
+- hrvatski i ISO datumi
+- JSON sigurnosna kopija i povrat
+- iCalendar `.ics` izvoz
+- dijeljenje rasporeda kroz Android Share
+- očuvanje boja, napomena i radnog vremena
+
+---
+
+## Vizualni identitet
+
+Takto koristi tamni premium sustav s jakim akcentnim bojama:
+
+| Element | Boja |
 | --- | --- |
-| D | Dan |
-| N | Noć |
-| GO | Godišnji odmor |
-| BO | Bolovanje |
-| PD | Plaćeni dopust |
-| prazno | Slobodan dan |
+| Pozadina | `#06101F` |
+| Površina | `#0F172A` |
+| D / primarna plava | `#2488FF` |
+| N / ljubičasta | `#8B46F6` |
+| GO / zelena | `#13D7A0` |
+| BO / jantarna | `#FFB21D` |
+| PD / crvena | `#FF4B55` |
+| Cijan akcent | `#1DE1E8` |
+
+Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implementirani su stvarnim Jetpack Compose komponentama: onboarding, početni pregled, veliki kalendar, brzi unos, statistika, uzorci, personalizacija i donja navigacija.
+
+---
 
 ## Tehnologija
 
-- Kotlin 2.1.10
-- Jetpack Compose + Material 3
-- Android Gradle Plugin 8.9.1
-- Gradle 8.11.1
-- Java 17
+Takto 0.1.0 koristi stabilni Android toolchain:
 
-## Build i provjera
+- **Kotlin 2.4.20**
+- **Android Gradle Plugin 9.4.1**
+- **Gradle 9.8.0**
+- **Jetpack Compose BOM 2026.09.00**
+- **Material 3**
+- **AndroidX Core 1.19.1**
+- **Activity Compose 1.13.0**
+- **Lifecycle 2.11.0**
+- **compileSdk / targetSdk 36 — Android 16**
+- **minSdk 26 — Android 8.0**
+- **Java 17**
 
-GitHub Actions na svakom PR-u prema `main` pokreće:
+Aplikacija je pisana u Kotlinu i Jetpack Composeu bez WebView sloja i bez INTERNET dopuštenja.
+
+---
+
+## Build, APK i AAB
+
+GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 1. `testDebugUnitTest`
 2. `lintDebug`
-3. `assembleDebug`
-4. `assembleRelease` s R8/minify provjerom
+3. `lintRelease`
+4. `assembleDebug`
+5. `assembleRelease`
+6. `bundleRelease`
+7. provjeru da APK i AAB datoteke stvarno postoje i nisu prazne
+8. SHA-256 izračun za sve build artefakte
 
-Workflow ne zahtijeva vlastite GitHub Secrets. Debug APK i nepotpisani release APK spremaju se kao Actions artefakti.
+Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-Za lokalni build u Android Studiju instaliraj Android SDK 35 i koristi Java 17. Ako imaš Gradle 8.11.1 u PATH-u:
+- **Takto-0.1.0-debug-apk** — instalabilni debug APK
+- **Takto-0.1.0-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.0-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.0-SHA256** — checksum datoteka
+
+> Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
+
+### Lokalna provjera
+
+Potrebni su Java 17, Android SDK 36 i Gradle 9.8.0.
 
 ```bash
-gradle testDebugUnitTest lintDebug assembleDebug assembleRelease
+gradle --no-daemon testDebugUnitTest lintDebug lintRelease assembleDebug assembleRelease bundleRelease
 ```
 
-## Dizajn
+---
 
-UI nije statični prikaz referentnih slika. Ekrani su implementirani stvarnim Compose komponentama prema dostavljenom dizajnu: Takto gradient logo, tamne staklaste površine, velike obojene oznake smjena, zaobljene kartice i bottom navigation.
+## Privatnost i sigurnost
 
-## Privatnost
+- nema INTERNET dopuštenja
+- raspored se pohranjuje lokalno
+- notification permission traži se samo na Androidu 13+
+- datoteke se izvoze kroz Androidov sustav za datoteke/dijeljenje
+- uvoz ima ograničenja veličine i broja redaka
+- JSON backup koristi verzioniranu shemu
+- neispravni zapisi ne smiju srušiti aplikaciju
+- produkcijski ključ za potpisivanje nikad ne smije biti u Git repozitoriju
 
-Podaci o rasporedu ostaju lokalno u aplikaciji. Ručni CSV/JSON/iCalendar izvoz pokreće korisnik preko Android sustava za datoteke/dijeljenje.
+---
 
-## Verzije
+## Struktura projekta
 
-Razvoj ovog repozitorija počinje s verzijom **0.1.0**. Sljedeće verzije moraju sadržavati stvarne funkcionalne promjene i proći CI prije spajanja u `main`.
+```text
+app/
+  src/main/java/hr/takto/app/
+    data/         lokalna pohrana, uvoz/izvoz i backup
+    model/        smjene, izračuni i iCalendar
+    reminders/    dnevni i smjenski podsjetnici
+    ui/
+      components/ zajedničke Compose komponente
+      screens/    Početna, Kalendar, Statistika, Uzorci, Postavke
+      theme/      Takto boje i tipografija
+docs/
+  UI_SPEC.md
+  QA_CHECKLIST.md
+  VALIDATION.md
+samples/
+  raspored-primjer.csv
+  raspored-primjer-hr.csv
+```
+
+---
+
+## Verzija 0.1.0
+
+Ovaj repozitorij namjerno započinje s verzijom **0.1.0**. To je prva javna razvojna baza Takto aplikacije u `bren-wp/Takto`.
+
+Svaka sljedeća verzija treba sadržavati stvarne funkcionalne promjene, proći testove, lint i Android build te zadržati Takto vizualni identitet i kompatibilnost s postojećim lokalnim podacima.
+
+## Licenca
+
+MIT — vidi `LICENSE`.

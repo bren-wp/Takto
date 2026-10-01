@@ -62,7 +62,7 @@ fun HomeScreen(
     val weekEnd = weekStart.plusDays(6)
     val weekEntries = store.entriesBetween(weekStart, weekEnd)
     val weekWorkMinutes = store.totalWorkMinutes(weekEntries)
-    val weekAbsenceCount = weekEntries.count { ScheduleLogic.isLeaveCode(it.code) }
+    val weekEmptyDays = (7 - weekEntries.map { it.date }.distinct().size).coerceAtLeast(0)
 
     val currentMonth = YearMonth.now()
     val monthEntries = store.entriesForMonth(currentMonth)
@@ -127,8 +127,8 @@ fun HomeScreen(
             )
             SummaryCard(
                 modifier = Modifier.weight(1f),
-                value = weekAbsenceCount.toString(),
-                label = "Odsutnosti",
+                value = weekEmptyDays.toString(),
+                label = "Bez unosa",
                 color = TaktoGreen,
                 icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
             )

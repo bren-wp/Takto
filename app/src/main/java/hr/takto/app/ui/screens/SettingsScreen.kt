@@ -193,7 +193,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             runCatching {
                 val stream = context.contentResolver.openOutputStream(uri)
                     ?: error("Nije moguće otvoriti odredišnu arhivsku datoteku.")
-                stream.use { it.write(store.exportArchiveJsonLines().toByteArray(StandardCharsets.UTF_8)) }
+                stream.use { store.writeArchiveTo(it) }
             }.onSuccess {
                 Toast.makeText(context, "Trajna arhiva rasporeda je izvezena.", Toast.LENGTH_SHORT).show()
             }.onFailure {

@@ -1,0 +1,8 @@
+datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min
+2026-10-01,D,Dan,,#FF2488FF,07:00,15:00,30
+2026-10-02,N,Noć,,#FF8B46F6,19:00,07:00,30
+2026-10-03,GO,Godišnji odmor,,#FF13D7A0,,,
+2026-10-04,,Slobodan dan,,,,
+2026-10-05,BO,Bolovanje,,#FFFFB21D,,,
+2026-10-06,PD,Plaćeni dopust,,#FFFF4B55,,,
+2026-10-07,LJEČNIK,Liječnik,Kontrola u 15:30,#FF22B8CF,14:00,16:00,0

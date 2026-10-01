@@ -17,7 +17,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** Obavijest prije početka konkretne smjene. */
 class ShiftReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         if (intent?.action != ACTION_SHIFT_REMINDER) return
@@ -33,14 +32,7 @@ class ShiftReminderReceiver : BroadcastReceiver() {
         val expectedStart = intent.getIntExtra(EXTRA_EXPECTED_START_MINUTE, -1)
         val entry = date?.let(store::entryFor)
 
-        // Ako je korisnik u međuvremenu promijenio ili obrisao smjenu, stari alarm
-        // ne prikazuje netočnu obavijest.
-        if (
-            date != null &&
-            entry?.hasWorkTime == true &&
-            entry.startMinute == expectedStart &&
-            notificationsAllowed(context)
-        ) {
+        if (date != null && entry?.hasWorkTime == true && entry.startMinute == expectedStart && notificationsAllowed(context)) {
             val openApp = PendingIntent.getActivity(
                 context,
                 7202,
@@ -74,7 +66,6 @@ class ShiftReminderReceiver : BroadcastReceiver() {
             manager.notify(NOTIFICATION_ID, notification)
         }
 
-        // Bez obzira je li trenutna obavijest prikazana, nastavi lanac na sljedeću smjenu.
         ReminderScheduler.scheduleNextShift(context, store)
     }
 

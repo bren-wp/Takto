@@ -13,12 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.shadow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -99,44 +97,24 @@ private fun CalendarDayCell(
     onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(if (compact) 8.dp else 11.dp)
-    val backgroundColors = when {
-        !enabled -> listOf(
-            TaktoSurface2.copy(alpha = 0.28f),
-            TaktoSurface2.copy(alpha = 0.18f)
-        )
-        entry != null -> listOf(
-            entry.color,
-            entry.color.copy(alpha = 0.78f)
-        )
-        else -> listOf(
-            TaktoSurface2.copy(alpha = 0.98f),
-            TaktoSurface2.copy(alpha = 0.74f)
-        )
+    val bg = when {
+        !enabled -> TaktoSurface2.copy(alpha = 0.28f)
+        entry != null -> entry.color
+        else -> TaktoSurface2
     }
     val borderColor = when {
-        isSelected -> TaktoCyan
-        today && enabled -> TaktoBlue.copy(alpha = 0.90f)
-        enabled -> TaktoOutline.copy(alpha = 0.54f)
+        isSelected -> TaktoBlue
+        today && enabled -> TaktoCyan.copy(alpha = 0.82f)
+        enabled -> TaktoOutline.copy(alpha = 0.45f)
         else -> TaktoOutline.copy(alpha = 0.14f)
     }
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val selectedGlow = if (isSelected) {
-        Modifier.shadow(
-            elevation = if (compact) 3.dp else 5.dp,
-            shape = shape,
-            ambientColor = TaktoCyan.copy(alpha = 0.55f),
-            spotColor = TaktoBlue.copy(alpha = 0.45f)
-        )
-    } else {
-        Modifier
-    }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(if (compact) 0.93f else 0.79f)
-            .then(selectedGlow)
-            .background(Brush.verticalGradient(backgroundColors), shape)
+            .background(bg, shape)
             .border(borderWidth, borderColor, shape)
             .semantics {
                 selected = isSelected

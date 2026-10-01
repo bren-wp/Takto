@@ -556,10 +556,6 @@ class ScheduleStore(context: Context) {
         if (fullyCaptured) commitUndo(before) else clearUndoState()
     }
 
-    /**
-     * Primjenjuje uzorak na točan broj kalendarskih dana.
-     * null u uzorku znači slobodan dan.
-     */
     fun applyPattern(
         startDate: LocalDate,
         codes: List<String?>,
@@ -614,7 +610,6 @@ class ScheduleStore(context: Context) {
         return PatternApplyResult(changed, skipped, freeDays)
     }
 
-    /** Izvoz cijelog spremljenog rasporeda u standardni iCalendar (.ics) bez mreže. */
     fun exportICalendar(): String = ICalendarExporter.export(entries.values)
 
     fun exportCsv(): String {
@@ -632,16 +627,6 @@ class ScheduleStore(context: Context) {
         return sb.toString()
     }
 
-    /**
-     * Podržava zarez i točka-zarez kao separator te ISO i hrvatski oblik datuma.
-     *
-     * Primjeri:
-     * datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min
-     * 2026-10-01,D,Dan,,#FF2488FF,07:00,15:00,30
-     * 01.10.2026.;N;Noć;;#FF8B46F6;19:00;07:00;30
-     *
-     * Prazna šifra namjerno znači slobodan dan.
-     */
     fun importCsv(content: String, overwriteExisting: Boolean = true): ImportResult {
         if (content.length > MAX_IMPORT_CHARS || content.count { it == '"' } % 2 != 0) {
             return ImportResult(0, 0, 0, valid = false)
@@ -721,7 +706,6 @@ class ScheduleStore(context: Context) {
         return ImportResult(imported, skipped, freeDays)
     }
 
-    /** Verzijski JSON s rasporedom i Takto postavkama. */
     fun exportBackupJson(): String = JSONObject().apply {
         put("schema", DATA_SCHEMA_VERSION)
         put("exportedAt", java.time.Instant.now().toString())
@@ -1049,8 +1033,6 @@ class ScheduleStore(context: Context) {
                 parseEntry(array.optJSONObject(i))?.let { entries[it.date] = it }
             }
         }.onFailure {
-            // Oštećen zapis ne smije srušiti aplikaciju. Čuvamo ostatak postavki,
-            // a raspored kreće prazan dok korisnik ne napravi novi unos/uvoz.
             entries.clear()
         }
     }
@@ -1099,7 +1081,6 @@ class ScheduleStore(context: Context) {
         }
     }
 
-
     private fun captureUndo(dates: Collection<LocalDate>, label: String): UndoState {
         val unique = dates.distinct().take(MAX_UNDO_DAYS)
         return UndoState(label, unique.associateWith { entries[it]?.copy() })
@@ -1121,7 +1102,7 @@ class ScheduleStore(context: Context) {
     private fun sanitizeCustomText(value: String): String =
         value.trim().replace(Regex("\\s+"), " ").take(MAX_CUSTOM_LENGTH)
 
-    private fun csv(value: String): String = "\"${value.replace("\"", "\"\"")}\""
+    private fun csv(value: String): String = "\"" + value.replace("\"", "\"\"") + "\""
 
     private fun formatColorArgb(value: Long): String = "#%08X".format(Locale.ROOT, value and 0xFFFFFFFFL)
 
@@ -1153,7 +1134,6 @@ class ScheduleStore(context: Context) {
             try {
                 return LocalDate.parse(clean, formatter)
             } catch (_: DateTimeParseException) {
-                // pokušaj sljedeći format
             }
         }
         return null

@@ -16,9 +16,7 @@ data class ShiftEntry(
     val label: String,
     val colorArgb: Long,
     val note: String = "",
-    /** Minute od 00:00. null znači da radno vrijeme nije zadano. */
     val startMinute: Int? = null,
-    /** Minute od 00:00. Vrijednost <= početku znači završetak sljedeći dan. */
     val endMinute: Int? = null,
     val breakMinutes: Int = 0
 ) {
@@ -33,7 +31,6 @@ object DefaultShiftTypes {
     val annual = ShiftType("GO", "Godišnji odmor", Color(0xFF13D7A0))
     val sick = ShiftType("BO", "Bolovanje", Color(0xFFFFB21D))
     val paid = ShiftType("PD", "Plaćeni dopust", Color(0xFFFF4B55))
-
     val presets = listOf(day, night, annual, sick, paid)
 }
 
@@ -49,7 +46,6 @@ data class SavedPattern(
     val codes: List<String?>
 )
 
-
 data class WorkTimePreset(
     val code: String,
     val startMinute: Int,
@@ -59,4 +55,3 @@ data class WorkTimePreset(
     val durationMinutes: Int?
         get() = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
 }
-

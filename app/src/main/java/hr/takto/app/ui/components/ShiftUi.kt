@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,14 +19,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.model.ShiftType
-import hr.takto.app.ui.theme.TaktoText
 
 @Composable
-fun ShiftChoice(
-    type: ShiftType,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
+fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
             .height(84.dp)
@@ -36,10 +30,7 @@ fun ShiftChoice(
             .padding(horizontal = 8.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(
                 text = type.code,
                 color = Color.White,

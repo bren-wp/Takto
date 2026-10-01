@@ -21,10 +21,6 @@ fun monthTitle(month: YearMonth): String = "${months[month.monthValue - 1]} ${mo
 fun croatianDate(date: LocalDate): String =
     "${date.dayOfMonth}. ${monthsGenitive[date.monthValue - 1]} ${date.year}."
 
-/**
- * Uvijek vraća 42 stvarna datuma (6 × 7), uključujući rubne datume
- * prethodnog i sljedećeg mjeseca kako bi kalendar vizualno bio stabilan.
- */
 fun daysForMonthGrid(month: YearMonth): List<LocalDate> {
     val first = month.atDay(1)
     val leading = first.dayOfWeek.value - DayOfWeek.MONDAY.value

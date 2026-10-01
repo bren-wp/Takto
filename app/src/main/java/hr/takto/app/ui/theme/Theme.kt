@@ -22,9 +22,5 @@ private val TaktoScheme = darkColorScheme(
 
 @Composable
 fun TaktoTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = TaktoScheme,
-        typography = TaktoTypography,
-        content = content
-    )
+    MaterialTheme(colorScheme = TaktoScheme, typography = TaktoTypography, content = content)
 }

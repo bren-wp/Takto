@@ -91,7 +91,6 @@ object ICalendarExporter {
         .replace("\n", "\\n")
         .replace("\r", "\\n")
 
-    /** RFC 5545 preporučuje najviše 75 okteta po retku; nastavak počinje razmakom. */
     private fun foldLine(line: String): String {
         if (line.toByteArray(Charsets.UTF_8).size <= 75) return line
         val chunks = mutableListOf<String>()
@@ -102,7 +101,7 @@ object ICalendarExporter {
             val codePoint = line.codePointAt(index)
             val text = String(Character.toChars(codePoint))
             val charBytes = text.toByteArray(Charsets.UTF_8).size
-            val limit = if (chunks.isEmpty()) 75 else 74 // vodeći razmak nastavka je 1 oktet
+            val limit = if (chunks.isEmpty()) 75 else 74
             if (bytes + charBytes > limit && current.isNotEmpty()) {
                 chunks += current.toString()
                 current.clear()

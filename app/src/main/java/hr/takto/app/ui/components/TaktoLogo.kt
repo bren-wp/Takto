@@ -13,8 +13,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -74,7 +72,6 @@ private fun DrawScope.drawTaktoMark() {
         size = Size(size.width * 0.33f, size.height * 0.63f),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(r, r)
     )
-    // Small inner shadow-like cut for the recognizable bent T silhouette.
     drawRoundRect(
         color = Color(0xFF0F172A).copy(alpha = 0.30f),
         topLeft = Offset(size.width * 0.62f, size.height * 0.28f),

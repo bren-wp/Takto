@@ -17,9 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Insights
-import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Nightlight
 import androidx.compose.material.icons.filled.Umbrella
 import androidx.compose.material3.Button
@@ -31,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,10 +55,7 @@ import java.time.temporal.TemporalAdjusters
 fun HomeScreen(
     store: ScheduleStore,
     contentPadding: PaddingValues,
-    onOpenCalendar: (LocalDate?) -> Unit,
-    onOpenStats: () -> Unit,
-    onOpenPatterns: () -> Unit,
-    onOpenLeave: () -> Unit
+    onOpenCalendar: (LocalDate?) -> Unit
 ) {
     val today = LocalDate.now()
     val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -96,12 +91,9 @@ fun HomeScreen(
             Spacer(Modifier.weight(1f))
             Text("Hrvatski", color = TaktoMuted, style = MaterialTheme.typography.labelMedium)
         }
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("$greeting ☀️", style = MaterialTheme.typography.headlineLarge)
-            Text(
-                if (workCount == 1) "Imaš 1 radnu smjenu ovaj tjedan." else "Imaš $workCount radnih smjena ovaj tjedan.",
-                color = TaktoMuted
-            )
+        Column {
+            Text("$greeting 👋", style = MaterialTheme.typography.headlineLarge)
+            Text("Tvoj raspored je spreman za ovaj tjedan.", color = TaktoMuted)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -204,7 +196,7 @@ fun HomeScreen(
                         }
                         if (next.note.isNotBlank()) Text(next.note, color = TaktoMuted, fontSize = 11.sp, maxLines = 1)
                     }
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = TaktoBlue)
+                    Icon(Icons.Default.ArrowForward, contentDescription = null, tint = TaktoBlue)
                 }
             }
         }
@@ -239,40 +231,13 @@ fun HomeScreen(
 
         Button(
             onClick = { onOpenCalendar(today) },
-            modifier = Modifier.fillMaxWidth().height(60.dp),
+            modifier = Modifier.fillMaxWidth().height(58.dp),
             colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue),
             shape = RoundedCornerShape(18.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            Icon(Icons.Default.CalendarMonth, null)
             Spacer(Modifier.size(8.dp))
-            Text("Dodaj smjenu", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                title = "Uzorci smjena",
-                icon = Icons.Default.Link,
-                color = TaktoPurple,
-                onClick = onOpenPatterns
-            )
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                title = "Statistika",
-                icon = Icons.Default.Insights,
-                color = TaktoBlue,
-                onClick = onOpenStats
-            )
-            QuickActionCard(
-                modifier = Modifier.weight(1f),
-                title = "Odsustva",
-                icon = Icons.Default.Umbrella,
-                color = TaktoGreen,
-                onClick = onOpenLeave
-            )
+            Text("Otvori kalendar", fontWeight = FontWeight.Bold)
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -291,42 +256,6 @@ fun HomeScreen(
             }
         }
         Spacer(Modifier.height(6.dp))
-    }
-}
-
-@Composable
-private fun QuickActionCard(
-    modifier: Modifier,
-    title: String,
-    icon: ImageVector,
-    color: Color,
-    onClick: () -> Unit
-) {
-    GlassCard(
-        modifier = modifier.clickable(onClick = onClick),
-        padding = PaddingValues(horizontal = 10.dp, vertical = 13.dp),
-        corner = 18.dp
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .background(color.copy(alpha = 0.14f), RoundedCornerShape(11.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(22.dp))
-            }
-            Text(
-                text = title,
-                color = TaktoText,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                maxLines = 2
-            )
-        }
     }
 }
 

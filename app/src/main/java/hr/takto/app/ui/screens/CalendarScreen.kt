@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -134,7 +134,7 @@ fun CalendarScreen(
                 enabled = store.canUndo.value
             ) {
                 Icon(
-                    Icons.AutoMirrored.Filled.Undo,
+                    Icons.Default.Undo,
                     contentDescription = if (store.canUndo.value) "Vrati: ${store.undoLabel.value}" else "Nema promjene za vratiti",
                     tint = if (store.canUndo.value) TaktoBlue else TaktoMuted.copy(alpha = 0.35f)
                 )

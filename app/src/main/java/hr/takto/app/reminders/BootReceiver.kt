@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import hr.takto.app.data.ScheduleStore
 
-/** Ponovno sinkronizira dnevni i smjenski alarm nakon događaja koji mogu promijeniti vrijeme okidanja. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val action = intent?.action ?: return

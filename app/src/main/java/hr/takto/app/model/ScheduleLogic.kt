@@ -34,10 +34,6 @@ object ScheduleLogic {
     fun normalizePatternName(value: String): String =
         normalizeWhitespace(value).take(MAX_PATTERN_NAME_LENGTH)
 
-    /**
-     * Pretvara npr. "D,D,N,N,-,-" ili "D; D; N; N; slobodno" u korake uzorka.
-     * null predstavlja slobodan dan.
-     */
     fun parsePatternSequence(value: String): List<String?> {
         if (value.isBlank()) return emptyList()
         val rawTokens = value
@@ -57,28 +53,20 @@ object ScheduleLogic {
     fun patternSequenceText(codes: List<String?>): String =
         codes.take(MAX_PATTERN_STEPS).joinToString(", ") { it ?: "-" }
 
-    /** Ponedjeljak tjedna kojem datum pripada. */
     fun startOfWeek(date: LocalDate): LocalDate =
         date.minusDays((date.dayOfWeek.value - 1).toLong())
 
-    /** Sedam uzastopnih datuma od ponedjeljka do nedjelje. */
     fun weekDates(date: LocalDate): List<LocalDate> {
         val start = startOfWeek(date)
         return List(7) { index -> start.plusDays(index.toLong()) }
     }
 
-    /** Svi stvarni dani mjeseca, bez rubnih dana prethodnog/sljedećeg mjeseca. */
     fun monthDates(month: YearMonth): List<LocalDate> =
         (1..month.lengthOfMonth()).map(month::atDay)
 
-    /** Radni dani ponedjeljak-petak unutar mjeseca. */
     fun monthWeekdays(month: YearMonth): List<LocalDate> =
         monthDates(month).filter { it.dayOfWeek.value in 1..5 }
 
-    /**
-     * Siguran raspon datuma uključivo. Ako je kraj prije početka vraća prazan popis.
-     * Raspon je ograničen kako UI slučajno ne bi kreirao ogroman odabir.
-     */
     fun datesInclusive(start: LocalDate, endInclusive: LocalDate): List<LocalDate> {
         if (endInclusive.isBefore(start)) return emptyList()
         val days = java.time.temporal.ChronoUnit.DAYS.between(start, endInclusive) + 1
@@ -87,11 +75,6 @@ object ScheduleLogic {
         }
     }
 
-
-    /**
-     * Parsira uobičajeni unos sata (7, 07:30, 7.30) u minute od ponoći.
-     * Nevaljane vrijednosti vraćaju null umjesto bacanja iznimke.
-     */
     fun parseClock(value: String): Int? {
         val clean = value.trim().replace('.', ':')
         if (clean.isBlank()) return null
@@ -108,10 +91,6 @@ object ScheduleLogic {
         return "%02d:%02d".format(Locale.ROOT, minutes / 60, minutes % 60)
     }
 
-    /**
-     * Trajanje smjene u minutama. Ako je kraj prije početka, smjena prelazi ponoć.
-     * Jednaki početak i kraj tretiraju se kao 0 min kako slučajni unos ne bi postao 24 h.
-     */
     fun workDurationMinutes(startMinute: Int?, endMinute: Int?, breakMinutes: Int = 0): Int? {
         val start = startMinute?.takeIf { it in 0 until MINUTES_PER_DAY } ?: return null
         val end = endMinute?.takeIf { it in 0 until MINUTES_PER_DAY } ?: return null
@@ -138,14 +117,9 @@ object ScheduleLogic {
     fun overtimeMinutes(workMinutes: Int, standardDailyMinutes: Int): Int =
         (workMinutes - standardDailyMinutes.coerceAtLeast(0)).coerceAtLeast(0)
 
-    /** Automatski mjesečni fond: svi dani ponedjeljak-petak × standardni radni dan. */
     fun automaticMonthlyTargetMinutes(month: YearMonth, standardDailyMinutes: Int): Int =
         monthWeekdays(month).size * standardDailyMinutes.coerceAtLeast(0)
 
-    /**
-     * Procjena neto noćnog rada unutar standardnog prozora 22:00-06:00.
-     * Pauza se proporcionalno raspoređuje na bruto trajanje jer nemamo točno vrijeme pauze.
-     */
     fun nightWorkMinutes(
         startMinute: Int?,
         endMinute: Int?,
@@ -164,7 +138,6 @@ object ScheduleLogic {
         return proportionalNetMinutes(overlap, gross, breakMinutes)
     }
 
-    /** Neto minute koje padaju na subotu ili nedjelju, uključujući smjene preko ponoći. */
     fun weekendWorkMinutes(
         date: LocalDate,
         startMinute: Int?,
@@ -174,7 +147,6 @@ object ScheduleLogic {
         day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY
     }
 
-    /** Neto minute koje padaju baš na nedjelju. */
     fun sundayWorkMinutes(
         date: LocalDate,
         startMinute: Int?,

@@ -1,33 +1,24 @@
 # Changelog
 
-Sve značajne promjene projekta Takto bilježe se u ovoj datoteci.
+## 0.1.0
 
-## [0.1.0] - 2026-10-01
+Početno izdanje Takto aplikacije u repozitoriju `bren-wp/Takto`.
 
-Početna razvojna verzija projekta na GitHub repozitoriju `bren-wp/Takto`.
+### Uključeno
 
-### Dodano
+- premium tamni Android UI prema Takto referentnim vizualima
+- onboarding, Početna, Kalendar, Statistika, Uzorci i Postavke
+- D / N / GO / BO / PD i vlastiti unosi
+- personalizacija oznaka i boja
+- višestruki odabir, bulk uređivanje i kopiranje tjedna
+- napomene, radno vrijeme, pauze, fond sati i prekovremeni rad
+- statistike i vlastiti uzorci
+- dnevni i smjenski podsjetnici
+- CSV, JSON backup i iCalendar izvoz
+- lokalno spremanje bez INTERNET dopuštenja
+- unit testovi i GitHub Actions provjera bez vlastitih Secrets varijabli
 
-- Kotlin + Jetpack Compose Android projekt i Takto vizualni sustav.
-- Vizualni fidelity prolaz prema dostavljenim Takto referencama: aurora pozadina, premium obrubi kartica, naglašena selekcija kalendara i dotjerana donja navigacija.
-- Početni ekran s jasnim CTA gumbom **Dodaj smjenu** i funkcionalnim brzim prečacima za Uzorke, Statistiku i Odsustva.
-- Mjesečni kalendar s velikim poljima za D, N, GO, BO i PD.
-- Prazno polje kao slobodan dan i proizvoljan vlastiti unos.
-- Vlastite brze oznake, vlastite boje i vlastiti uzorci smjena.
-- Višestruki odabir dana, bulk uređivanje i kopiranje/lijepljenje tjedna.
-- Napomene te evidencija početka, kraja i pauze smjene.
-- Obračun radnih, prekovremenih, noćnih, vikend i nedjeljnih sati.
-- Automatski i ručni mjesečni fond sati.
-- Zadana vremena smjene po oznaci.
-- Početni pregled i statistika rada.
-- Dnevni podsjetnik i podsjetnik prije sljedeće smjene.
-- CSV uvoz/izvoz, JSON backup/restore i iCalendar (`.ics`) izvoz.
-- TalkBack opisi kalendarskih polja.
-- Unit testovi za logiku rasporeda, datume i iCalendar izvoz.
-- GitHub Actions CI za testove, Android lint i debug APK build.
-- Dependabot konfiguracija za Gradle i GitHub Actions.
+### Verzija
 
-### Važno
-
-- Aplikacijska verzija je resetirana na **0.1.0 / versionCode 1** kao početna javna razvojna linija ovog repozitorija.
-- Interna JSON backup schema verzija nije vezana uz verziju aplikacije i ostaje kompatibilna s već implementiranim formatima.
+- `versionName`: `0.1.0`
+- `versionCode`: `1`

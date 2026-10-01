@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-ci-${{ github.ref ${{
+  group: android-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -62,7 +62,9 @@ jobs:
           test -s app/build/outputs/apk/debug/app-debug.apk
           test -s app/build/outputs/apk/release/app-release-unsigned.apk
           test -s app/build/outputs/bundle/release/app-release.aab
-          sha256sum             app/build/outputs/apk/debug/app-debug.apk             app/build/outputs/apk/release/app-release-unsigned.apk             app/build/outputs/bundle/release/app-release.aab | tee SHA256SUMS.txt
+          sha256sum app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/bundle/release/app-release.aab | tee SHA256SUMS.txt
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4

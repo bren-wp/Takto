@@ -1,18 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Takto app icon">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1B3151"/>
+      <stop offset=".5" stop-color="#12233A"/>
+      <stop offset="1" stop-color="#0B1422"/>
+    </linearGradient>
+    <linearGradient id="mark" x1=".1" y1=".1" x2=".85" y2=".9">
       <stop offset="0" stop-color="#13D7A0"/>
-      <stop offset=".33" stop-color="#1DE1E8"/>
-      <stop offset=".68" stop-color="#2488FF"/>
+      <stop offset=".3" stop-color="#1DE1E8"/>
+      <stop offset=".64" stop-color="#2488FF"/>
       <stop offset="1" stop-color="#8B46F6"/>
     </linearGradient>
-    <radialGradient id="bg" cx=".5" cy=".15" r=".95">
-      <stop offset="0" stop-color="#142B52"/>
-      <stop offset="1" stop-color="#06101F"/>
-    </radialGradient>
   </defs>
-  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bg)" stroke="#31446B" stroke-width="8"/>
-  <rect x="96" y="116" width="320" height="104" rx="48" fill="url(#g)"/>
-  <rect x="218" y="180" width="116" height="224" rx="52" fill="url(#g)"/>
-  <rect x="284" y="184" width="42" height="84" rx="20" fill="#06101F" opacity=".22"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bg)" stroke="#405B7C" stroke-width="6"/>
+  <circle cx="390" cy="102" r="128" fill="#2488FF" opacity=".08"/>
+  <circle cx="118" cy="392" r="126" fill="#8B46F6" opacity=".07"/>
+  <path d="M142 130c-20 0-36 16-36 36v14c0 20 16 36 36 36h80v156c0 27 22 49 49 49s49-22 49-49V216h62c20 0 36-16 36-36v-14c0-20-16-36-36-36H142z" fill="url(#mark)"/>
+  <path d="M150 144h210c11 0 20 9 20 20v4c0 5-4 9-9 9H150c-11 0-20-9-20-20v-1c0-7 6-12 20-12z" fill="#fff" opacity=".18"/>
+  <path d="M280 216h40v102c0 10-8 18-18 18h-22V216z" fill="#06101F" opacity=".20"/>
 </svg>

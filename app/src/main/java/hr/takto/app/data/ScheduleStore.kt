@@ -732,3 +732,253 @@ class ScheduleStore(context: Context) {
     fun importBackupJson(content: String, replaceExisting: Boolean = false): ImportResult {
         if (content.length > MAX_IMPORT_CHARS) return ImportResult(0, 0, 0, valid = false)
         val root = runCatching { JSONObject(content) }.getOrElse { return ImportResult(0, 0, 0, valid = false) }
+        val schema = root.optInt("schema", 1)
+        if (schema !in 1..DATA_SCHEMA_VERSION) return ImportResult(0, 0, 0, valid = false)
+        val array = root.optJSONArray("entries") ?: return ImportResult(0, 0, 0, valid = false)
+        if (array.length() > MAX_IMPORT_ROWS) return ImportResult(0, 0, 0, valid = false)
+        val parsed = mutableListOf<ShiftEntry>()
+        repeat(array.length()) { index ->
+            parseEntry(array.optJSONObject(index))?.let(parsed::add)
+        }
+        if (replaceExisting) entries.clear()
+        var imported = 0
+        var skipped = 0
+        parsed.forEach { item ->
+            if (!replaceExisting && entries.containsKey(item.date)) {
+                skipped++
+            } else {
+                entries[item.date] = item
+                imported++
+            }
+        }
+        root.optJSONObject("settings")?.let { settings ->
+            remindersEnabled.value = settings.optBoolean("remindersEnabled", remindersEnabled.value)
+            reminderHour.value = settings.optInt("reminderHour", reminderHour.value).coerceIn(0, 23)
+            reminderMinute.value = settings.optInt("reminderMinute", reminderMinute.value).coerceIn(0, 59)
+            shiftRemindersEnabled.value = settings.optBoolean("shiftRemindersEnabled", shiftRemindersEnabled.value)
+            shiftReminderLeadMinutes.value = settings.optInt("shiftReminderLeadMinutes", shiftReminderLeadMinutes.value)
+                .coerceIn(0, MAX_SHIFT_REMINDER_LEAD_MINUTES)
+            standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
+                .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
+            settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
+                if (replaceExisting) monthlyTargetOverrides.clear()
+                targets.keys().forEach { key ->
+                    val month = runCatching { YearMonth.parse(key) }.getOrNull()
+                    if (month != null) {
+                        monthlyTargetOverrides[month.toString()] = targets.optInt(key, 0)
+                            .coerceIn(0, ScheduleLogic.MAX_MONTHLY_TARGET_MINUTES)
+                    }
+                }
+            }
+            settings.optJSONObject("shiftColors")?.let { colors ->
+                DefaultShiftTypes.presets.forEach { type ->
+                    if (colors.has(type.code)) shiftColors[type.code] = colors.optLong(type.code, shiftColors.getValue(type.code))
+                }
+            }
+            settings.optJSONArray("customShiftPresets")?.let { array ->
+                if (replaceExisting) customShiftPresets.clear()
+                repeat(array.length().coerceAtMost(MAX_CUSTOM_PRESETS)) { index ->
+                    parseCustomShiftPreset(array.optJSONObject(index))?.let { preset ->
+                        if (
+                            DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) } &&
+                            (customShiftPresets.containsKey(preset.code) || customShiftPresets.size < MAX_CUSTOM_PRESETS)
+                        ) {
+                            customShiftPresets[preset.code] = preset
+                        }
+                    }
+                }
+            }
+            settings.optJSONArray("workTimePresets")?.let { array ->
+                if (replaceExisting) workTimePresets.clear()
+                repeat(array.length().coerceAtMost(MAX_WORK_TIME_PRESETS)) { index ->
+                    parseWorkTimePreset(array.optJSONObject(index))?.let { preset ->
+                        if (shiftType(preset.code) != null && !ScheduleLogic.isLeaveCode(preset.code)) {
+                            workTimePresets[preset.code] = preset
+                        }
+                    }
+                }
+            }
+            settings.optJSONArray("savedPatterns")?.let { array ->
+                if (replaceExisting) savedPatterns.clear()
+                repeat(array.length().coerceAtMost(MAX_SAVED_PATTERNS)) { index ->
+                    parseSavedPattern(array.optJSONObject(index))?.let { pattern ->
+                        if (savedPatterns.none { it.id == pattern.id } && savedPatterns.size < MAX_SAVED_PATTERNS) savedPatterns += pattern
+                    }
+                }
+            }
+            prefs.edit()
+                .putBoolean(KEY_REMINDERS, remindersEnabled.value)
+                .putInt(KEY_REMINDER_HOUR, reminderHour.value)
+                .putInt(KEY_REMINDER_MINUTE, reminderMinute.value)
+                .putBoolean(KEY_SHIFT_REMINDERS, shiftRemindersEnabled.value)
+                .putInt(KEY_SHIFT_REMINDER_LEAD_MINUTES, shiftReminderLeadMinutes.value)
+                .putInt(KEY_STANDARD_DAILY_MINUTES, standardDailyMinutes.value)
+                .apply()
+            persistShiftColors()
+            persistCustomShiftPresets()
+            persistWorkTimePresets()
+            persistMonthlyTargetOverrides()
+            persistSavedPatterns()
+        }
+        // Spremljene preset oznake uvijek koriste aktualni naziv i boju.
+        // Time stari ili ručno izmijenjeni backup ne može ostaviti D/N/GO/BO/PD
+        // s pogrešnim nazivom ili zastarjelom bojom.
+        entries.entries.toList().forEach { (date, entry) ->
+            shiftType(entry.code)?.let { type ->
+                entries[date] = entry.copy(
+                    code = type.code,
+                    label = type.name,
+                    colorArgb = type.color.toArgb().toLong() and 0xFFFFFFFFL
+                )
+            }
+        }
+        persistEntries()
+        clearUndoState()
+        return ImportResult(imported, skipped, 0)
+    }
+
+    private fun entryFromType(
+        date: LocalDate,
+        type: ShiftType,
+        note: String,
+        preserveExistingTime: Boolean
+    ): ShiftEntry {
+        val current = entries[date]
+        val isLeave = ScheduleLogic.isLeaveCode(type.code)
+        val keepCurrentTime = preserveExistingTime && current?.hasWorkTime == true && !isLeave
+        val defaultTime = if (!isLeave) workTimePreset(type.code) else null
+        return ShiftEntry(
+            date = date,
+            code = type.code,
+            label = type.name,
+            colorArgb = type.color.toArgb().toLong() and 0xFFFFFFFFL,
+            note = note.trim().take(MAX_NOTE_LENGTH),
+            startMinute = when {
+                isLeave -> null
+                keepCurrentTime -> current?.startMinute
+                else -> defaultTime?.startMinute
+            },
+            endMinute = when {
+                isLeave -> null
+                keepCurrentTime -> current?.endMinute
+                else -> defaultTime?.endMinute
+            },
+            breakMinutes = when {
+                isLeave -> 0
+                keepCurrentTime -> current?.breakMinutes ?: 0
+                else -> defaultTime?.breakMinutes ?: 0
+            }
+        )
+    }
+
+    private fun loadShiftColors() {
+        DefaultShiftTypes.presets.forEach { type ->
+            shiftColors[type.code] = type.color.toArgb().toLong() and 0xFFFFFFFFL
+        }
+        val raw = prefs.getString(KEY_SHIFT_COLORS, null) ?: return
+        runCatching {
+            val obj = JSONObject(raw)
+            DefaultShiftTypes.presets.forEach { type ->
+                if (obj.has(type.code)) shiftColors[type.code] = obj.optLong(type.code, shiftColors.getValue(type.code))
+            }
+        }
+    }
+
+    private fun persistShiftColors() {
+        val obj = JSONObject()
+        shiftColors.forEach { (code, argb) -> obj.put(code, argb) }
+        prefs.edit().putString(KEY_SHIFT_COLORS, obj.toString()).apply()
+    }
+
+    private fun loadCustomShiftPresets() {
+        val raw = prefs.getString(KEY_CUSTOM_SHIFT_PRESETS, null) ?: return
+        runCatching {
+            val array = JSONArray(raw)
+            repeat(array.length().coerceAtMost(MAX_CUSTOM_PRESETS)) { index ->
+                parseCustomShiftPreset(array.optJSONObject(index))?.let { preset ->
+                    if (DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) }) {
+                        customShiftPresets[preset.code] = preset
+                    }
+                }
+            }
+        }.onFailure { customShiftPresets.clear() }
+    }
+
+    private fun persistCustomShiftPresets() {
+        prefs.edit().putString(KEY_CUSTOM_SHIFT_PRESETS, customShiftPresetsToJson().toString()).apply()
+    }
+
+    private fun customShiftPresetsToJson(): JSONArray = JSONArray().apply {
+        customShiftPresets.values.sortedBy { it.code }.forEach { preset ->
+            put(JSONObject().apply {
+                put("code", preset.code)
+                put("name", preset.name)
+                put("color", preset.colorArgb)
+            })
+        }
+    }
+
+    private fun parseCustomShiftPreset(obj: JSONObject?): CustomShiftPreset? {
+        if (obj == null) return null
+        val code = ScheduleLogic.normalizeReusableCode(obj.optString("code", ""))
+        if (code.isBlank()) return null
+        val name = ScheduleLogic.normalizeDisplayName(obj.optString("name", code)).ifBlank { code }
+        val color = obj.optLong("color", DEFAULT_CUSTOM_COLOR) and 0xFFFFFFFFL
+        return CustomShiftPreset(code, name, color)
+    }
+
+    private fun loadWorkTimePresets() {
+        val raw = prefs.getString(KEY_WORK_TIME_PRESETS, null) ?: return
+        runCatching {
+            val array = JSONArray(raw)
+            repeat(array.length().coerceAtMost(MAX_WORK_TIME_PRESETS)) { index ->
+                parseWorkTimePreset(array.optJSONObject(index))?.let { preset ->
+                    if (shiftType(preset.code) != null && !ScheduleLogic.isLeaveCode(preset.code)) {
+                        workTimePresets[preset.code] = preset
+                    }
+                }
+            }
+        }.onFailure { workTimePresets.clear() }
+    }
+
+    private fun persistWorkTimePresets() {
+        prefs.edit().putString(KEY_WORK_TIME_PRESETS, workTimePresetsToJson().toString()).apply()
+    }
+
+    private fun workTimePresetsToJson(): JSONArray = JSONArray().apply {
+        workTimePresets.values.sortedBy { it.code }.forEach { preset ->
+            put(JSONObject().apply {
+                put("code", preset.code)
+                put("startMinute", preset.startMinute)
+                put("endMinute", preset.endMinute)
+                put("breakMinutes", preset.breakMinutes)
+            })
+        }
+    }
+
+    private fun parseWorkTimePreset(obj: JSONObject?): WorkTimePreset? {
+        if (obj == null) return null
+        val code = ScheduleLogic.normalizeReusableCode(obj.optString("code", ""))
+        if (code.isBlank()) return null
+        val start = obj.optInt("startMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY } ?: return null
+        val end = obj.optInt("endMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY } ?: return null
+        val breakMinutes = obj.optInt("breakMinutes", 0).coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        val duration = ScheduleLogic.workDurationMinutes(start, end, breakMinutes) ?: return null
+        if (duration <= 0) return null
+        return WorkTimePreset(code, start, end, breakMinutes)
+    }
+
+    private fun loadMonthlyTargetOverrides() {
+        val raw = prefs.getString(KEY_MONTHLY_TARGET_OVERRIDES, null) ?: return
+        runCatching {
+            val obj = JSONObject(raw)
+            obj.keys().forEach { key ->
+                val month = runCatching { YearMonth.parse(key) }.getOrNull() ?: return@forEach
+                monthlyTargetOverrides[month.toString()] = obj.optInt(key, 0)
+                    .coerceIn(0, ScheduleLogic.MAX_MONTHLY_TARGET_MINUTES)
+            }
+        }.onFailure { monthlyTargetOverrides.clear() }
+    }
+
+    private fun persistMonthlyTargetOverrides() {
+        val obj = JSONObject()

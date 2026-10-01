@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.1-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.2-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -28,7 +28,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 **Planiraj bez tablica i papira.** Dodirni datum i odaberi oznaku ili upiši vlastitu. Radni dan, obveza, odsutnost, edukacija, teren ili bilo koji drugi unos sprema se u nekoliko sekundi.
 
-**Vidi cijeli mjesec odjednom.** Kalendar koristi velike obojene ćelije i dosljedan sustav boja: plava, ljubičasta, zelena, jantarna i crvena. Prazna ćelija znači slobodan dan.
+**Vidi cijeli mjesec odjednom.** Kalendar koristi velike obojene ćelije i dosljedan sustav boja: plava, ljubičasta, zelena, jantarna i crvena. Prazna ćelija znači da za taj dan nema spremljenog unosa.
 
 **Prati stvarno radno vrijeme.** Za svaki radni unos moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, redovne i prekovremene sate, noćni rad, vikend i nedjelju.
 
@@ -43,17 +43,15 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 ### Kalendar koji radi jednim dodirom
 
 - veliki mjesečni pregled 6 × 7
-- D — Dan
-- N — Noć
-- GO — Godišnji odmor
-- BO — Bolovanje
-- PD — Plaćeni dopust
+- prilagodljivi brzi odabir koji prioritizira nedavno korištene oznake
+- ugrađene oznake D, N, GO, BO i PD ostaju dostupne
 - vlastiti tekst, naziv i boja
+- vlastite oznake automatski ulaze u brzi odabir
 - dodatne kratice poput **J** i **SD** iz stvarnog referentnog rasporeda
 - sve nepoznate kratice iz CSV uvoza automatski se čuvaju kao vlastite brze oznake
 - napomena za svaki datum
 - današnji datum i aktivni datum jasno istaknuti
-- TalkBack opis datuma, smjene, napomene i radnog vremena
+- TalkBack opis datuma, oznake, napomene i radnog vremena
 
 ### Brzo uređivanje rasporeda
 
@@ -62,7 +60,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - append-only lokalna arhiva svake promjene rasporeda
 - višestruki odabir više datuma
 - prečaci **Cijeli mjesec** i **Pon–pet**
-- bulk dodjela smjena
+- bulk dodjela oznaka
 - bulk postavljanje radnog vremena
 - kopiranje i lijepljenje cijelog tjedna
 - Undo / Vrati zadnju promjenu
@@ -74,16 +72,16 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - redovni odrađeni sati
 - prekovremeni sati prema mjesečnom fondu
 - dodatni dnevni obračun prekovremenog rada
-- početak i kraj smjene
+- početak i kraj radnog unosa
 - pauza u minutama
-- smjene preko ponoći
+- radni unosi preko ponoći
 - standardni dnevni fond
 - automatski mjesečni fond pon–pet
 - ručni fond po mjesecu
 - prekovremeni sati
 - noćni rad 22:00–06:00
 - vikend i nedjelja
-- prosječno trajanje evidentirane smjene
+- prosječno trajanje evidentiranog radnog unosa
 
 ### Uzorci
 
@@ -93,7 +91,7 @@ Takto može spremiti ponavljajuće cikluse, primjerice:
 D, D, N, N, -, -, -, -
 ```
 
-`-` znači slobodan dan. Uzorci podržavaju ugrađene i vlastite oznake te se mogu primijeniti na veći raspon dana uz izbor hoće li postojeći unosi biti sačuvani ili prepisani.
+`-` znači da taj dan ostaje bez unosa. Uzorci podržavaju ugrađene i vlastite oznake te se mogu primijeniti na veći raspon dana uz izbor hoće li postojeći unosi biti sačuvani ili prepisani.
 
 ### Radni profil
 
@@ -113,15 +111,16 @@ Početna stranica koristi ime iz profila za osobni pozdrav, dok backup čuva i p
 ### Podsjetnici
 
 - dnevni podsjetnik rasporeda
-- poseban podsjetnik prije početka smjene
-- podesivi odmak prije smjene
+- poseban podsjetnik prije početka rada
+- podesivi odmak prije rada
 - ponovno zakazivanje nakon restarta uređaja, promjene vremena ili vremenske zone
 - dodir obavijesti vodi izravno na konkretan datum
 
 ### Statistika
 
-- ukupne, dnevne i noćne smjene
-- GO / BO / PD odvojeno
+- ukupni broj unosa i dana bez unosa
+- dinamička raspodjela svih ugrađenih i vlastitih oznaka
+- adaptivni grafovi koji prate stvarni način korištenja
 - radni sati
 - fond i razlika
 - prekovremeni sati
@@ -162,7 +161,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.1 koristi aktualni stabilni Android toolchain:
+Takto 0.1.2 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -196,10 +195,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.1-debug-apk** — instalabilni debug APK
-- **Takto-0.1.1-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.1-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.1-SHA256** — checksum datoteka
+- **Takto-0.1.2-debug-apk** — instalabilni debug APK
+- **Takto-0.1.2-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.2-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.2-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
@@ -218,9 +217,9 @@ Nakon uspješnog workflowa dostupni su Actions artefakti:
 
 ---
 
-## Verzija 0.1.1
+## Verzija 0.1.2
 
-Verzija **0.1.1** donosi svijetli način rada, poboljšanu tamnu temu, jasniji onboarding za sve tipove korisnika, dorađenu početnu stranicu i statistiku, reorganizirane postavke, novi launcher icon te Brendigo podatke i podršku unutar aplikacije.
+Verzija **0.1.2** dodatno prilagođava Takto stvarnom načinu korištenja: tamni način ostaje primarni, brzi odabir oznaka uči iz posljednjih 90 dana, statistika se dinamički gradi iz svih korisničkih oznaka, kalendar i podsjetnici koriste neutralniji jezik, a poboljšane su i TalkBack semantike te prikaz dugih vlastitih oznaka.
 
 ## Licenca
 

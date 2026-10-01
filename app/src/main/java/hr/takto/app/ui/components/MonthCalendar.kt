@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,9 +31,6 @@ import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.ui.theme.TaktoBlue
 import hr.takto.app.ui.theme.TaktoCyan
-import hr.takto.app.ui.theme.TaktoMuted
-import hr.takto.app.ui.theme.TaktoOutline
-import hr.takto.app.ui.theme.TaktoSurface2
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -54,7 +52,7 @@ fun MonthCalendar(
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
-                    color = TaktoMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = if (compact) 9.sp else 11.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
@@ -97,16 +95,17 @@ private fun CalendarDayCell(
     onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(if (compact) 8.dp else 11.dp)
+    val colors = MaterialTheme.colorScheme
     val bg = when {
-        !enabled -> TaktoSurface2.copy(alpha = 0.28f)
+        !enabled -> colors.surfaceVariant.copy(alpha = 0.36f)
         entry != null -> entry.color
-        else -> TaktoSurface2
+        else -> colors.surfaceVariant
     }
     val borderColor = when {
         isSelected -> TaktoBlue
         today && enabled -> TaktoCyan.copy(alpha = 0.82f)
-        enabled -> TaktoOutline.copy(alpha = 0.45f)
-        else -> TaktoOutline.copy(alpha = 0.14f)
+        enabled -> colors.outline.copy(alpha = 0.58f)
+        else -> colors.outlineVariant.copy(alpha = 0.28f)
     }
     val borderWidth = if (isSelected) 2.dp else 1.dp
 
@@ -141,9 +140,9 @@ private fun CalendarDayCell(
         Text(
             text = date.dayOfMonth.toString(),
             color = when {
-                !enabled -> TaktoMuted.copy(alpha = 0.35f)
-                entry != null -> Color.White.copy(alpha = 0.9f)
-                else -> TaktoMuted
+                !enabled -> colors.onSurfaceVariant.copy(alpha = 0.38f)
+                entry != null -> Color.White.copy(alpha = 0.94f)
+                else -> colors.onSurfaceVariant
             },
             fontSize = if (compact) 8.sp else 10.sp,
             fontWeight = FontWeight.Medium,

@@ -1222,11 +1222,18 @@ class ScheduleStore(private val context: Context) {
             if (schema !in 1..CURRENT_SNAPSHOT_SCHEMA_VERSION) return@runCatching null
 
             val array = root.optJSONArray("entries") ?: return@runCatching null
+            val declaredCount = root.optInt("entryCount", -1)
+            if (declaredCount !in 0..MAX_IMPORT_ROWS || declaredCount != array.length()) {
+                return@runCatching null
+            }
+
             val loadedEntries = buildMap {
-                repeat(array.length().coerceAtMost(MAX_IMPORT_ROWS)) { index ->
+                repeat(array.length()) { index ->
                     parseEntry(array.optJSONObject(index))?.let { put(it.date, it) }
                 }
             }
+            if (loadedEntries.size != declaredCount) return@runCatching null
+
             StoredScheduleSnapshot(
                 entries = loadedEntries,
                 archiveRevisionCount = root.optInt("archiveRevisionCount", 0).coerceAtLeast(0)
@@ -1236,7 +1243,8 @@ class ScheduleStore(private val context: Context) {
 
     private fun writeSnapshotFile(
         fileName: String,
-        source: Collection<ShiftEntry>
+        source: Collection<ShiftEntry>,
+        checkpointRevisionCount: Int = archiveRevisionCount.value
     ): Boolean {
         val file = context.getFileStreamPath(fileName)
         val atomic = AtomicFile(file)
@@ -1244,7 +1252,7 @@ class ScheduleStore(private val context: Context) {
             put("schema", CURRENT_SNAPSHOT_SCHEMA_VERSION)
             put("savedAt", java.time.Instant.now().toString())
             put("entryCount", source.size)
-            put("archiveRevisionCount", archiveRevisionCount.value)
+            put("archiveRevisionCount", checkpointRevisionCount.coerceAtLeast(0))
             put("entries", JSONArray().apply {
                 source.sortedBy { it.date }.forEach { put(entryToJsonObject(it)) }
             })
@@ -1269,7 +1277,11 @@ class ScheduleStore(private val context: Context) {
         if (!current.exists()) return
 
         val snapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE) ?: return
-        writeSnapshotFile(RECOVERY_SCHEDULE_FILE, snapshot.entries.values)
+        writeSnapshotFile(
+            fileName = RECOVERY_SCHEDULE_FILE,
+            source = snapshot.entries.values,
+            checkpointRevisionCount = snapshot.archiveRevisionCount
+        )
     }
 
     private fun applyArchiveRevisions(

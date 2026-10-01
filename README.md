@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.2-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.3-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -42,6 +42,8 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 ### Kalendar koji radi jednim dodirom
 
+- početna kartica **Danas** omogućuje dodavanje najrelevantnije oznake jednim dodirom
+- preporuke oznaka uzimaju u obzir i učestalost i svježinu stvarnog korištenja
 - veliki mjesečni pregled 6 × 7
 - prilagodljivi brzi odabir koji prioritizira nedavno korištene oznake
 - ugrađene oznake D, N, GO, BO i PD ostaju dostupne
@@ -64,7 +66,10 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - bulk postavljanje radnog vremena
 - kopiranje i lijepljenje cijelog tjedna
 - Undo / Vrati zadnju promjenu
-- pretraga po oznaci, nazivu, napomeni i datumu
+- pametna pretraga po oznaci, nazivu, napomeni i datumu
+- pretraga ignorira dijakritičke znakove te podržava izraze **danas**, **sutra** i **jučer**
+- filtri pretrage: **Danas**, **Buduće**, **S vremenom** i **S napomenom**
+- hrvatski datumi poput `02.10.2026.` mogu se izravno pretraživati
 - sistemska tipka Back iz sekundarnih odjeljaka prvo vraća na Početnu
 
 ### Radni sati i fond
@@ -162,7 +167,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.2 koristi aktualni stabilni Android toolchain:
+Takto 0.1.3 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -196,10 +201,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.2-debug-apk** — instalabilni debug APK
-- **Takto-0.1.2-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.2-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.2-SHA256** — checksum datoteka
+- **Takto-0.1.3-debug-apk** — instalabilni debug APK
+- **Takto-0.1.3-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.3-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.3-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
@@ -220,9 +225,9 @@ Nakon uspješnog workflowa dostupni su Actions artefakti:
 
 ---
 
-## Verzija 0.1.2
+## Verzija 0.1.3
 
-Verzija **0.1.2** dodatno prilagođava Takto stvarnom načinu korištenja: tamni način ostaje primarni, brzi odabir oznaka uči iz posljednjih 90 dana, statistika se dinamički gradi iz svih korisničkih oznaka, kalendar i podsjetnici koriste neutralniji jezik, a poboljšane su i TalkBack semantike te prikaz dugih vlastitih oznaka.
+Verzija **0.1.3** ubrzava svakodnevni rad: današnji unos može se dodati jednim dodirom s Početne, preporuke oznaka sada vrednuju i učestalost i svježinu korištenja, a kalendarska pretraga dobiva rangiranje, filtre, pretragu bez dijakritike, relativne dane i hrvatske formate datuma.
 
 ## Licenca
 

@@ -91,6 +91,8 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     var notificationPermissionTarget by remember { mutableStateOf<String?>(null) }
     var standardDayDialog by remember { mutableStateOf(false) }
     var workTimePresetCode by remember { mutableStateOf<String?>(null) }
+    var workTimeListDialog by remember { mutableStateOf(false) }
+    var showAllCustomPresets by remember { mutableStateOf(false) }
     var colorDialogCode by remember { mutableStateOf<String?>(null) }
     var customPresetDialogCode by remember { mutableStateOf<String?>(null) }
     var showNewCustomPresetDialog by remember { mutableStateOf(false) }
@@ -322,7 +324,9 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 if (store.customShiftTypes().isEmpty()) {
                     Text("Još nema spremljenih vlastitih oznaka. Možeš ih dodati i kasnije birati jednim dodirom u kalendaru.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 } else {
-                    store.customShiftTypes().forEach { type ->
+                    store.customShiftTypes()
+                        .take(if (showAllCustomPresets) Int.MAX_VALUE else 4)
+                        .forEach { type ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -345,6 +349,14 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                                 Icon(Icons.Default.Delete, contentDescription = "Ukloni vlastitu oznaku", tint = MaterialTheme.colorScheme.error)
                             }
                         }
+                    }
+                }
+                if (store.customShiftTypes().size > 4) {
+                    TextButton(onClick = { showAllCustomPresets = !showAllCustomPresets }) {
+                        Text(
+                            if (showAllCustomPresets) "Prikaži manje" else "Prikaži sve (${store.customShiftTypes().size})",
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
                 Button(
@@ -370,41 +382,25 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         }
                     }
                 }
-                Text("Zadano radno vrijeme", fontWeight = FontWeight.SemiBold)
+                Text("Radno vrijeme po oznakama", fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Za radne oznake možeš spremiti početak, kraj i pauzu. Kad oznaku dodaš novom danu, Takto automatski popunjava to vrijeme.",
+                    "Početak, kraj i pauzu uređuješ u zasebnom pregledu kako postavke ne bi bile prenatrpane.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
-                store.allShiftTypes()
-                    .filterNot { ScheduleLogic.isLeaveCode(it.code) }
-                    .forEach { type ->
-                        val preset = store.workTimePreset(type.code)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
-                                .clickable { workTimePresetCode = type.code }
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                Modifier.size(44.dp).background(type.color, RoundedCornerShape(11.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(type.code, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = if (type.code.length <= 3) 15.sp else 10.sp, maxLines = 1)
-                            }
-                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                Text(type.name, fontWeight = FontWeight.SemiBold)
-                                Text(
-                                    if (preset == null) "Nije postavljeno"
-                                    else "${ScheduleLogic.formatClock(preset.startMinute)} – ${ScheduleLogic.formatClock(preset.endMinute)} · pauza ${preset.breakMinutes} min",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp
-                                )
-                            }
-                            Text("Uredi", color = TaktoBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
+                Button(
+                    onClick = { workTimeListDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.AccessTime, null, tint = MaterialTheme.colorScheme.primary)
+                    Text(
+                        " Uredi radno vrijeme po oznakama",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                     }
             }
         }
@@ -796,6 +792,17 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
     }
 
+    if (workTimeListDialog) {
+        WorkTimeListDialog(
+            store = store,
+            onDismiss = { workTimeListDialog = false },
+            onSelect = { code ->
+                workTimeListDialog = false
+                workTimePresetCode = code
+            }
+        )
+    }
+
     workTimePresetCode?.let { code ->
         val type = store.shiftType(code)
         if (type != null && !ScheduleLogic.isLeaveCode(type.code)) {
@@ -819,6 +826,78 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         }
     }
 
+}
+
+@Composable
+private fun WorkTimeListDialog(
+    store: ScheduleStore,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    val types = store.allShiftTypes().filterNot { ScheduleLogic.isLeaveCode(it.code) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Radno vrijeme po oznakama") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(430.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Odaberi oznaku kojoj želiš postaviti zadano radno vrijeme. Postavka se primjenjuje na nove unose te oznake.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+                types.forEach { type ->
+                    val preset = store.workTimePreset(type.code)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
+                            .clickable { onSelect(type.code) }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            Modifier
+                                .size(44.dp)
+                                .background(type.color, RoundedCornerShape(11.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                type.code,
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = if (type.code.length <= 3) 15.sp else 10.sp,
+                                maxLines = 1
+                            )
+                        }
+                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                            Text(type.name, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                if (preset == null) "Nije postavljeno"
+                                else "${ScheduleLogic.formatClock(preset.startMinute)} – ${ScheduleLogic.formatClock(preset.endMinute)} · pauza ${preset.breakMinutes} min",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp
+                            )
+                        }
+                        Text(
+                            "Uredi",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Zatvori") } }
+    )
 }
 
 @Composable

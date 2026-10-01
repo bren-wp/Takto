@@ -20,6 +20,7 @@ Brži dnevni unos, pametnija pretraga i preciznije adaptivne preporuke.
 - rezultati pretrage rangiraju točne kratice i nazive ispred slabijih podudaranja
 - višerječne pretrage mogu kombinirati naziv i napomenu, npr. `teren rijeka`
 - dodani unit testovi za pametnu pretragu i recency-aware rangiranje oznaka
+- release workflow sada na novoj verziji u `main` automatski gradi, provjerava i objavljuje odgovarajući `vX.Y.Z` GitHub Release bez dupliciranja postojećih izdanja
 
 ### Toolchain
 

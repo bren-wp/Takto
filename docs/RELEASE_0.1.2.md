@@ -18,6 +18,13 @@ Takto 0.1.2 nastavlja UI/UX i stabilizacijski razvoj s fokusom na to da aplikaci
 - poboljšana TalkBack semantika brzih oznaka
 - duge vlastite kratice bolje se skaliraju u statistici
 - dodani unit testovi za zadani i spremljeni način prikaza
+- vizualni graditelj uzoraka koristi stvarne korisničke oznake i omogućuje brzo dodavanje koraka
+- predloženi uzorci dinamički se grade iz najčešćih oznaka umjesto fiksnih D/N rotacija
+- CSV parser radi sekvencijalno i smanjuje vršnu potrošnju memorije pri većim uvozima
+- CSV i backup uvoz prekidaju se prije prevelike alokacije kada datoteka premaši sigurnosno ograničenje
+- trajna arhiva izvozi se streaming načinom izravno u odabranu datoteku
+- sistemska tipka Back iz sekundarnih odjeljaka vraća korisnika na Početnu
+- notification ikona koristi čistu Takto T siluetu za bolju čitljivost u statusnoj traci
 
 ## Kompatibilnost
 

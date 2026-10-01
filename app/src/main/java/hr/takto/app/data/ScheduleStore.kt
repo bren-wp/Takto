@@ -248,3 +248,253 @@ class ScheduleStore(context: Context) {
         val next = current.copy(
             startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
             endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
+            breakMinutes = safeBreak
+        )
+        if (next == current) return true
+        val before = captureUndo(listOf(date), "Radno vrijeme ${date}")
+        entries[date] = next
+        persistEntries()
+        commitUndo(before)
+        return true
+    }
+
+    fun clearWorkTime(date: LocalDate): Boolean {
+        val current = entries[date] ?: return false
+        if (!current.hasWorkTime && current.breakMinutes == 0) return false
+        val before = captureUndo(listOf(date), "Uklanjanje radnog vremena ${date}")
+        entries[date] = current.copy(startMinute = null, endMinute = null, breakMinutes = 0)
+        persistEntries()
+        commitUndo(before)
+        return true
+    }
+
+    fun updateWorkTime(
+        dates: Collection<LocalDate>,
+        startMinute: Int,
+        endMinute: Int,
+        breakMinutes: Int
+    ): BulkEditResult {
+        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
+            ?: return BulkEditResult(0, 0, 0)
+        if (duration <= 0) return BulkEditResult(0, 0, 0)
+        val unique = dates.distinct().sorted().take(MAX_BULK_DAYS)
+        val before = captureUndo(unique, "Radno vrijeme za ${unique.size} dana")
+        val safeBreak = breakMinutes.coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        var changed = 0
+        var skipped = 0
+        unique.forEach { date ->
+            val current = entries[date]
+            if (current == null || ScheduleLogic.isLeaveCode(current.code)) {
+                skipped++
+                return@forEach
+            }
+            val next = current.copy(
+                startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
+                endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
+                breakMinutes = safeBreak
+            )
+            if (next != current) {
+                entries[date] = next
+                changed++
+            }
+        }
+        if (changed > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return BulkEditResult(changed, skipped, 0)
+    }
+
+    fun removeEntry(date: LocalDate) {
+        if (!entries.containsKey(date)) return
+        val before = captureUndo(listOf(date), "Slobodan dan ${date}")
+        entries.remove(date)
+        persistEntries()
+        commitUndo(before)
+    }
+
+    /**
+     * Dodjeljuje istu vrstu smjene većem broju datuma i stanje sprema samo jednom.
+     * Kad je overwriteExisting=false, već popunjeni dani ostaju netaknuti.
+     */
+    fun setEntries(
+        dates: Collection<LocalDate>,
+        type: ShiftType,
+        note: String = "",
+        overwriteExisting: Boolean = true
+    ): BulkEditResult {
+        var changed = 0
+        var skipped = 0
+        val uniqueDates = dates.distinct().sorted().take(MAX_BULK_DAYS)
+        val before = captureUndo(uniqueDates, "Uređivanje ${uniqueDates.size} dana")
+        uniqueDates.forEach { date ->
+            if (!overwriteExisting && entries.containsKey(date)) {
+                skipped++
+                return@forEach
+            }
+            val next = entryFromType(date, type, note, preserveExistingTime = true)
+            if (entries[date] != next) {
+                entries[date] = next
+                changed++
+            }
+        }
+        if (changed > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return BulkEditResult(changed = changed, skipped = skipped, freeDays = 0)
+    }
+
+    /** Bulk varijanta vlastitog unosa za višestruki odabir datuma. */
+    fun setCustomEntries(
+        dates: Collection<LocalDate>,
+        text: String,
+        note: String = "",
+        colorArgb: Long = DEFAULT_CUSTOM_COLOR,
+        overwriteExisting: Boolean = true
+    ): BulkEditResult {
+        val clean = sanitizeCustomText(text)
+        if (clean.isBlank()) return BulkEditResult(0, 0, 0)
+        shiftType(clean)?.let { preset ->
+            return setEntries(dates, preset, note, overwriteExisting)
+        }
+
+        var changed = 0
+        var skipped = 0
+        val normalizedColor = colorArgb and 0xFFFFFFFFL
+        val normalizedNote = note.trim().take(MAX_NOTE_LENGTH)
+        val uniqueDates = dates.distinct().sorted().take(MAX_BULK_DAYS)
+        val before = captureUndo(uniqueDates, "Vlastiti unos za ${uniqueDates.size} dana")
+        uniqueDates.forEach { date ->
+            if (!overwriteExisting && entries.containsKey(date)) {
+                skipped++
+                return@forEach
+            }
+            val current = entries[date]
+            val next = ShiftEntry(
+                date = date,
+                code = clean,
+                label = clean,
+                colorArgb = normalizedColor,
+                note = normalizedNote,
+                startMinute = current?.startMinute,
+                endMinute = current?.endMinute,
+                breakMinutes = current?.breakMinutes ?: 0
+            )
+            if (entries[date] != next) {
+                entries[date] = next
+                changed++
+            }
+        }
+        if (changed > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return BulkEditResult(changed = changed, skipped = skipped, freeDays = 0)
+    }
+
+    /** Postavlja odabrane datume kao slobodne dane. */
+    fun removeEntries(dates: Collection<LocalDate>): BulkEditResult {
+        var changed = 0
+        val unique = dates.distinct().sorted().take(MAX_BULK_DAYS)
+        val before = captureUndo(unique, "Slobodni dani (${unique.size})")
+        unique.forEach { date ->
+            if (entries.remove(date) != null) changed++
+        }
+        if (changed > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return BulkEditResult(changed = changed, skipped = 0, freeDays = unique.size)
+    }
+
+    /**
+     * Snima ponedjeljak-nedjelja tjedna kao predložak. null znači slobodan dan.
+     * Snapshot je memorijski i ne mijenja spremljeni raspored.
+     */
+    fun copyWeek(dateInWeek: LocalDate): List<ShiftEntry?> =
+        ScheduleLogic.weekDates(dateInWeek).map { entries[it]?.copy() }
+
+    /**
+     * Lijepi sedmodnevni snapshot na tjedan ciljnog datuma.
+     * Ako overwriteExisting=true, slobodni dan iz izvornog tjedna briše ciljni unos.
+     */
+    fun pasteWeek(
+        targetDateInWeek: LocalDate,
+        snapshot: List<ShiftEntry?>,
+        overwriteExisting: Boolean
+    ): BulkEditResult {
+        if (snapshot.size != 7) return BulkEditResult(0, 0, 0)
+        val targetDates = ScheduleLogic.weekDates(targetDateInWeek)
+        val before = captureUndo(targetDates, "Lijepljenje tjedna")
+        var changed = 0
+        var skipped = 0
+        var freeDays = 0
+
+        targetDates.forEachIndexed { index, targetDate ->
+            val source = snapshot[index]
+            val existing = entries[targetDate]
+            if (!overwriteExisting && existing != null) {
+                skipped++
+                return@forEachIndexed
+            }
+
+            if (source == null) {
+                freeDays++
+                if (overwriteExisting && entries.remove(targetDate) != null) changed++
+            } else {
+                val next = source.copy(date = targetDate)
+                if (existing != next) {
+                    entries[targetDate] = next
+                    changed++
+                }
+            }
+        }
+        if (changed > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return BulkEditResult(changed, skipped, freeDays)
+    }
+
+    fun finishOnboarding() {
+        onboardingDone.value = true
+        prefs.edit().putBoolean(KEY_ONBOARDING, true).apply()
+    }
+
+    fun resetOnboarding() {
+        onboardingDone.value = false
+        prefs.edit().putBoolean(KEY_ONBOARDING, false).apply()
+    }
+
+    fun setReminders(enabled: Boolean) {
+        remindersEnabled.value = enabled
+        prefs.edit().putBoolean(KEY_REMINDERS, enabled).apply()
+    }
+
+    fun setReminderTime(hour: Int, minute: Int) {
+        val safeHour = hour.coerceIn(0, 23)
+        val safeMinute = minute.coerceIn(0, 59)
+        reminderHour.value = safeHour
+        reminderMinute.value = safeMinute
+        prefs.edit()
+            .putInt(KEY_REMINDER_HOUR, safeHour)
+            .putInt(KEY_REMINDER_MINUTE, safeMinute)
+            .apply()
+    }
+
+    fun setShiftReminders(enabled: Boolean) {
+        shiftRemindersEnabled.value = enabled
+        prefs.edit().putBoolean(KEY_SHIFT_REMINDERS, enabled).apply()
+    }
+
+    fun setShiftReminderLeadMinutes(minutes: Int) {
+        val safe = minutes.coerceIn(0, MAX_SHIFT_REMINDER_LEAD_MINUTES)
+        shiftReminderLeadMinutes.value = safe
+        prefs.edit().putInt(KEY_SHIFT_REMINDER_LEAD_MINUTES, safe).apply()
+    }
+
+    fun setStandardDailyMinutes(minutes: Int) {
+        val safe = minutes.coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
+        standardDailyMinutes.value = safe
+        prefs.edit().putInt(KEY_STANDARD_DAILY_MINUTES, safe).apply()

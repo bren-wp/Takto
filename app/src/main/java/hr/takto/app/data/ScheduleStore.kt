@@ -54,6 +54,11 @@ class ScheduleStore(private val context: Context) {
     val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
+    private data class StoredScheduleSnapshot(
+        val entries: Map<LocalDate, ShiftEntry>,
+        val archiveRevisionCount: Int
+    )
+
     val onboardingDone = mutableStateOf(prefs.getBoolean(KEY_ONBOARDING, false))
     val remindersEnabled = mutableStateOf(prefs.getBoolean(KEY_REMINDERS, false))
     val reminderHour = mutableStateOf(prefs.getInt(KEY_REMINDER_HOUR, 7).coerceIn(0, 23))
@@ -78,9 +83,9 @@ class ScheduleStore(private val context: Context) {
         loadWorkTimePresets()
         loadMonthlyTargetOverrides()
         loadSavedPatterns()
+        archiveRevisionCount.value = countArchiveRevisions()
         loadEntries()
         persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
-        archiveRevisionCount.value = countArchiveRevisions()
     }
 
     fun shiftType(code: String): ShiftType? {
@@ -1161,17 +1166,22 @@ class ScheduleStore(private val context: Context) {
             null
         }
 
-        val recovered = when {
-            currentSnapshot != null -> currentSnapshot.toMutableMap()
-            recoverySnapshot != null -> recoverySnapshot.toMutableMap()
-            legacySnapshot != null -> legacySnapshot.toMutableMap()
-            else -> mutableMapOf()
+        val base = when {
+            currentSnapshot != null -> currentSnapshot
+            recoverySnapshot != null -> recoverySnapshot
+            legacySnapshot != null -> StoredScheduleSnapshot(legacySnapshot, 0)
+            else -> StoredScheduleSnapshot(emptyMap(), 0)
         }
+        val recovered = base.entries.toMutableMap()
 
-        // Arhiva se primjenjuje i na valjanu glavnu snimku. Ako je proces bio
+        // Primjenjuju se samo revizije novije od snimke. Ako je proces bio
         // prekinut nakon zapisa revizije, ali prije završetka atomske snimke,
-        // zadnja promjena se na ovaj način automatski vrati pri sljedećem startu.
-        applyArchiveRevisions(recovered)
+        // zadnja promjena se automatski vrati bez ponovnog čitanja cijele
+        // višegodišnje arhive pri svakom pokretanju.
+        applyArchiveRevisions(
+            target = recovered,
+            skipRevisions = base.archiveRevisionCount.coerceIn(0, archiveRevisionCount.value)
+        )
 
         entries.clear()
         entries.putAll(recovered.toSortedMap())
@@ -1198,7 +1208,7 @@ class ScheduleStore(private val context: Context) {
         }.getOrNull()
     }
 
-    private fun readSnapshotFile(fileName: String): Map<LocalDate, ShiftEntry>? {
+    private fun readSnapshotFile(fileName: String): StoredScheduleSnapshot? {
         val file = context.getFileStreamPath(fileName)
         if (!file.exists() || file.length() > MAX_SNAPSHOT_BYTES) return null
 
@@ -1212,11 +1222,15 @@ class ScheduleStore(private val context: Context) {
             if (schema !in 1..CURRENT_SNAPSHOT_SCHEMA_VERSION) return@runCatching null
 
             val array = root.optJSONArray("entries") ?: return@runCatching null
-            buildMap {
+            val loadedEntries = buildMap {
                 repeat(array.length().coerceAtMost(MAX_IMPORT_ROWS)) { index ->
                     parseEntry(array.optJSONObject(index))?.let { put(it.date, it) }
                 }
             }
+            StoredScheduleSnapshot(
+                entries = loadedEntries,
+                archiveRevisionCount = root.optInt("archiveRevisionCount", 0).coerceAtLeast(0)
+            )
         }.getOrNull()
     }
 
@@ -1230,6 +1244,7 @@ class ScheduleStore(private val context: Context) {
             put("schema", CURRENT_SNAPSHOT_SCHEMA_VERSION)
             put("savedAt", java.time.Instant.now().toString())
             put("entryCount", source.size)
+            put("archiveRevisionCount", archiveRevisionCount.value)
             put("entries", JSONArray().apply {
                 source.sortedBy { it.date }.forEach { put(entryToJsonObject(it)) }
             })
@@ -1254,16 +1269,19 @@ class ScheduleStore(private val context: Context) {
         if (!current.exists()) return
 
         val snapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE) ?: return
-        writeSnapshotFile(RECOVERY_SCHEDULE_FILE, snapshot.values)
+        writeSnapshotFile(RECOVERY_SCHEDULE_FILE, snapshot.entries.values)
     }
 
-    private fun applyArchiveRevisions(target: MutableMap<LocalDate, ShiftEntry>) {
+    private fun applyArchiveRevisions(
+        target: MutableMap<LocalDate, ShiftEntry>,
+        skipRevisions: Int
+    ) {
         val history = context.getFileStreamPath(HISTORY_FILE)
         if (!history.exists()) return
 
         runCatching {
             history.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
-                lines.forEach { line ->
+                lines.drop(skipRevisions).forEach { line ->
                     if (line.isBlank()) return@forEach
                     val revision = runCatching { JSONObject(line) }.getOrNull() ?: return@forEach
                     val date = runCatching {

@@ -1307,9 +1307,9 @@ private fun AppearanceDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 listOf(
-                    Triple(AppThemeMode.SYSTEM, "Prema uređaju", "Takto prati svijetli ili tamni način uređaja"),
-                    Triple(AppThemeMode.DARK, "Tamni način", "Podignuta tamna paleta s boljim kontrastom"),
-                    Triple(AppThemeMode.LIGHT, "Svijetli način", "Svijetle površine i tamni tekst za dnevni rad")
+                    Triple(AppThemeMode.DARK, "Tamni način", "Primarni Takto izgled s podignutom tamnom paletom i jasnim kontrastom"),
+                    Triple(AppThemeMode.LIGHT, "Svijetli način", "Svijetle površine i tamni tekst za dnevni rad"),
+                    Triple(AppThemeMode.SYSTEM, "Prema uređaju", "Takto automatski prati svijetli ili tamni način uređaja")
                 ).forEach { (mode, title, subtitle) ->
                     Row(
                         modifier = Modifier

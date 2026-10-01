@@ -60,7 +60,7 @@ private val TaktoLightScheme = lightColorScheme(
 
 @Composable
 fun TaktoTheme(
-    mode: AppThemeMode = AppThemeMode.SYSTEM,
+    mode: AppThemeMode = AppThemeMode.DARK,
     content: @Composable () -> Unit
 ) {
     val useDark = when (mode) {

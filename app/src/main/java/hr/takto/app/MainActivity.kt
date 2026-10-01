@@ -6,8 +6,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -31,17 +32,18 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.reminders.ReminderScheduler
+import hr.takto.app.ui.components.TaktoAmbientBackground
 import hr.takto.app.ui.screens.CalendarScreen
 import hr.takto.app.ui.screens.HomeScreen
 import hr.takto.app.ui.screens.OnboardingScreen
 import hr.takto.app.ui.screens.PatternsScreen
 import hr.takto.app.ui.screens.SettingsScreen
 import hr.takto.app.ui.screens.StatsScreen
-import hr.takto.app.ui.theme.TaktoBackground
 import hr.takto.app.ui.theme.TaktoBlue
-import hr.takto.app.ui.theme.TaktoGreen
+import hr.takto.app.ui.theme.TaktoCyan
 import hr.takto.app.ui.theme.TaktoPurple
 import hr.takto.app.ui.theme.TaktoSurface
 import hr.takto.app.ui.theme.TaktoTheme
@@ -103,6 +105,7 @@ private fun TaktoRoot(
     var current by remember { mutableStateOf(MainSection.HOME) }
     var calendarDate by remember { mutableStateOf<LocalDate?>(null) }
     val context = LocalContext.current
+
     // Čitanje snapshot mape ovdje osigurava da se alarm sljedeće smjene ponovno
     // izračuna nakon dodavanja, brisanja ili promjene vremena bez ručnog poziva iz svakog ekrana.
     val reminderScheduleSignature = store.entries.values
@@ -128,24 +131,13 @@ private fun TaktoRoot(
             current = MainSection.CALENDAR
         }
     }
+
     if (!store.onboardingDone.value) {
         OnboardingScreen(onFinish = store::finishOnboarding)
         return
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        TaktoPurple.copy(alpha = 0.16f),
-                        TaktoGreen.copy(alpha = 0.06f),
-                        TaktoBackground
-                    )
-                )
-            )
-    ) {
+    TaktoAmbientBackground {
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
@@ -164,9 +156,21 @@ private fun TaktoRoot(
                     onOpenCalendar = { date ->
                         calendarDate = date
                         current = MainSection.CALENDAR
+                    },
+                    onOpenStats = { current = MainSection.STATS },
+                    onOpenPatterns = { current = MainSection.PATTERNS },
+                    onOpenLeave = {
+                        calendarDate = LocalDate.now()
+                        current = MainSection.CALENDAR
                     }
                 )
-                MainSection.CALENDAR -> CalendarScreen(store = store, contentPadding = padding, initialDate = calendarDate)
+
+                MainSection.CALENDAR -> CalendarScreen(
+                    store = store,
+                    contentPadding = padding,
+                    initialDate = calendarDate
+                )
+
                 MainSection.STATS -> StatsScreen(store = store, contentPadding = padding)
                 MainSection.PATTERNS -> PatternsScreen(store = store, contentPadding = padding)
                 MainSection.MORE -> SettingsScreen(store = store, contentPadding = padding)
@@ -177,21 +181,39 @@ private fun TaktoRoot(
 
 @Composable
 private fun TaktoBottomBar(current: MainSection, onSelect: (MainSection) -> Unit) {
-    NavigationBar(containerColor = TaktoSurface.copy(alpha = 0.98f)) {
-        MainSection.entries.forEach { section ->
-            NavigationBarItem(
-                selected = current == section,
-                onClick = { onSelect(section) },
-                icon = { Icon(section.icon, contentDescription = section.label) },
-                label = { Text(section.label) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = TaktoBlue,
-                    selectedTextColor = TaktoBlue,
-                    indicatorColor = TaktoBlue.copy(alpha = 0.12f),
-                    unselectedIconColor = Color(0xFF9EB0C9),
-                    unselectedTextColor = Color(0xFF9EB0C9)
+    Column {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            TaktoCyan.copy(alpha = 0.62f),
+                            TaktoBlue.copy(alpha = 0.72f),
+                            TaktoPurple.copy(alpha = 0.56f),
+                            Color.Transparent
+                        )
+                    )
                 )
-            )
+        )
+        NavigationBar(containerColor = TaktoSurface.copy(alpha = 0.985f)) {
+            MainSection.entries.forEach { section ->
+                NavigationBarItem(
+                    selected = current == section,
+                    onClick = { onSelect(section) },
+                    icon = { Icon(section.icon, contentDescription = section.label) },
+                    label = { Text(section.label) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = TaktoCyan,
+                        selectedTextColor = TaktoCyan,
+                        indicatorColor = TaktoBlue.copy(alpha = 0.10f),
+                        unselectedIconColor = Color(0xFF95A7C2),
+                        unselectedTextColor = Color(0xFF95A7C2)
+                    )
+                )
+            }
         }
     }
 }

@@ -9,6 +9,8 @@ Početna razvojna verzija projekta na GitHub repozitoriju `bren-wp/Takto`.
 ### Dodano
 
 - Kotlin + Jetpack Compose Android projekt i Takto vizualni sustav.
+- Vizualni fidelity prolaz prema dostavljenim Takto referencama: aurora pozadina, premium obrubi kartica, naglašena selekcija kalendara i dotjerana donja navigacija.
+- Početni ekran s jasnim CTA gumbom **Dodaj smjenu** i funkcionalnim brzim prečacima za Uzorke, Statistiku i Odsustva.
 - Mjesečni kalendar s velikim poljima za D, N, GO, BO i PD.
 - Prazno polje kao slobodan dan i proizvoljan vlastiti unos.
 - Vlastite brze oznake, vlastite boje i vlastiti uzorci smjena.

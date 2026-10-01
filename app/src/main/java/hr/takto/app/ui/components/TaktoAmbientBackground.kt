@@ -10,7 +10,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.foundation.Canvas
 import hr.takto.app.ui.theme.TaktoBackground
 import hr.takto.app.ui.theme.TaktoBlue

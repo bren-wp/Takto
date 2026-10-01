@@ -117,9 +117,9 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(workShifts.toString(), fontSize = 46.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Radnih smjena (D + N)", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("Ukupno oznaka: $total", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(total.toString(), fontSize = 46.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("Unosa u rasporedu", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("D + N oznake: $workShifts", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     if (timedEntries.isNotEmpty()) {
                         Text("Evidentirano: ${ScheduleLogic.formatDuration(totalWorkMinutes)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
@@ -141,7 +141,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     }
                 }
                 Text(
-                    "Obračun koristi samo dane kojima si upisao početak i kraj smjene. Standardni radni dan: ${ScheduleLogic.formatDuration(standardDaily)}.",
+                    "Obračun koristi dane kojima si upisao početak i kraj radnog vremena. Standardni radni dan: ${ScheduleLogic.formatDuration(standardDaily)}.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
@@ -156,9 +156,9 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TimeMetric(Modifier.weight(1f), "Prekovremeno po danu", overtimeMinutes, Color(0xFFFFB21D))
-                    TimeMetric(Modifier.weight(1f), "Prosjek smjene", averageShiftMinutes, Color(0xFF22B8CF))
+                    TimeMetric(Modifier.weight(1f), "Prosjek radnog unosa", averageShiftMinutes, Color(0xFF22B8CF))
                 }
-                Text("Smjena s vremenom: ${timedEntries.size}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                Text("Unosi s vremenom: ${timedEntries.size}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 if (!targetIsManual) {
                     Text(
                         "Automatski fond = svi dani ponedjeljak–petak × standardni radni dan. Blagdani se ne oduzimaju automatski; za to postavi ručni fond za ovaj mjesec.",
@@ -214,8 +214,8 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         modifier = Modifier.size(170.dp)
                     )
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Legend("Dnevne smjene", counts.getValue("D"), dayColor)
-                        Legend("Noćne smjene", counts.getValue("N"), nightColor)
+                        Legend("Oznaka D", counts.getValue("D"), dayColor)
+                        Legend("Oznaka N", counts.getValue("N"), nightColor)
                         Legend("Godišnji odmor", counts.getValue("GO"), annualColor)
                         Legend("Bolovanje", counts.getValue("BO"), sickColor)
                         Legend("Plaćeni dopust", counts.getValue("PD"), paidColor)
@@ -252,7 +252,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Trendovi smjena ${month.year}.", style = MaterialTheme.typography.titleLarge)
+                Text("Trendovi oznaka ${month.year}.", style = MaterialTheme.typography.titleLarge)
                 MonthlyBars(store, month.year)
             }
         }

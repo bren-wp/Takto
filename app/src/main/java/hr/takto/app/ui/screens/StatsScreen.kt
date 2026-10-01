@@ -126,7 +126,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(freeDays.toString(), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TaktoBlue)
-                    Text("Slobodnih dana", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Dana bez unosa", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -173,7 +173,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Posebni radni sati", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Noćni rad koristi prozor 22:00–06:00. Vikend i nedjelja računaju se prema stvarnom datumu, uključujući smjene koje prelaze ponoć. Pauza se proporcionalno raspoređuje.",
+                    "Noćni rad koristi prozor 22:00–06:00. Vikend i nedjelja računaju se prema stvarnom datumu, uključujući radne unose koji prelaze ponoć. Pauza se proporcionalno raspoređuje.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )

@@ -401,7 +401,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         fontWeight = FontWeight.Bold
                     )
                 }
-                    }
             }
         }
 

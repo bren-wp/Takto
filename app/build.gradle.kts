@@ -5,7 +5,8 @@ plugins {
 
 android {
     namespace = "hr.takto.app"
-    compileSdk = 37\n    compileSdkMinor = 1
+    compileSdk = 37
+    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "hr.takto.app"
@@ -37,7 +38,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
 
     buildFeatures {
         compose = true

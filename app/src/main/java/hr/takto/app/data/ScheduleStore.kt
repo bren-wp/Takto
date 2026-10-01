@@ -771,6 +771,7 @@ class ScheduleStore(private val context: Context) {
             put("shiftRemindersEnabled", shiftRemindersEnabled.value)
             put("shiftReminderLeadMinutes", shiftReminderLeadMinutes.value)
             put("standardDailyMinutes", standardDailyMinutes.value)
+            put("themeMode", themeMode.value.persistedValue)
             put("monthlyTargetOverrides", JSONObject().apply {
                 monthlyTargetOverrides.forEach { (month, minutes) -> put(month, minutes) }
             })
@@ -826,6 +827,9 @@ class ScheduleStore(private val context: Context) {
                 .coerceIn(0, MAX_SHIFT_REMINDER_LEAD_MINUTES)
             standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
                 .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
+            themeMode.value = AppThemeMode.fromPersisted(
+                settings.optString("themeMode", themeMode.value.persistedValue)
+            )
             settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
                 targets.keys().forEach { key ->
                     val month = runCatching { YearMonth.parse(key) }.getOrNull()
@@ -875,6 +879,7 @@ class ScheduleStore(private val context: Context) {
                 .putBoolean(KEY_SHIFT_REMINDERS, shiftRemindersEnabled.value)
                 .putInt(KEY_SHIFT_REMINDER_LEAD_MINUTES, shiftReminderLeadMinutes.value)
                 .putInt(KEY_STANDARD_DAILY_MINUTES, standardDailyMinutes.value)
+                .putString(KEY_THEME_MODE, themeMode.value.persistedValue)
                 .apply()
             persistShiftColors()
             persistCustomShiftPresets()
@@ -1345,7 +1350,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_IMPORT_CHARS = 20_000_000
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
-        private const val DATA_SCHEMA_VERSION = 7
+        private const val DATA_SCHEMA_VERSION = 8
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"
         private const val PREFS_NAME = "takto_schedule"

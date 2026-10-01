@@ -27,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Android SDK 36
+      - name: Install Android SDK 37.1
         shell: bash
         run: |
           SDKMANAGER="${ANDROID_SDK_ROOT:-${ANDROID_HOME}}/cmdline-tools/latest/bin/sdkmanager"
@@ -64,7 +64,15 @@ jobs:
         shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          gh release create "$GITHUB_REF_NAME" \
-            --title "Takto ${VERSION}" \
-            --notes-file docs/RELEASE_0.1.0.md \
-            release-assets/*
+          NOTES_FILE="docs/RELEASE_${VERSION}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            gh release create "$GITHUB_REF_NAME" \
+              --title "Takto ${VERSION}" \
+              --notes-file "$NOTES_FILE" \
+              release-assets/*
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              --title "Takto ${VERSION}" \
+              --generate-notes \
+              release-assets/*
+          fi

@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "hr.takto.app"
-    compileSdk = 37
+    compileSdk = 37\n    compileSdkMinor = 1
 
     defaultConfig {
         applicationId = "hr.takto.app"

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-label="Takto calendar and statistics preview">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06101F"/>
+      <stop offset=".55" stop-color="#0B1530"/>
+      <stop offset="1" stop-color="#17133E"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1DE1E8"/>
+      <stop offset=".5" stop-color="#2488FF"/>
+      <stop offset="1" stop-color="#8B46F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="640" rx="36" fill="url(#bg)"/>
+  <circle cx="1020" cy="110" r="190" fill="#2488FF" opacity=".08"/>
+  <circle cx="180" cy="580" r="220" fill="#8B46F6" opacity=".08"/>
+  <text x="54" y="72" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800">Takto 0.1.0</text>
+  <text x="54" y="108" fill="#C4CBE7" font-family="Arial, Helvetica, sans-serif" font-size="20">Raspored, sati i statistika — bez komplikacija.</text>
+
+  <g transform="translate(55 150)">
+    <rect width="515" height="425" rx="30" fill="#0F172A" stroke="#31446B" stroke-width="2"/>
+    <text x="26" y="48" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700">Ožujak 2025.</text>
+    <g font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#9AA7C7">
+      <text x="35" y="82">Pon</text><text x="103" y="82">Uto</text><text x="171" y="82">Sri</text>
+      <text x="239" y="82">Čet</text><text x="307" y="82">Pet</text><text x="375" y="82">Sub</text><text x="443" y="82">Ned</text>
+    </g>
+    <g font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800" text-anchor="middle" fill="#fff">
+      <rect x="20" y="100" width="58" height="58" rx="12" fill="#2488FF"/><text x="49" y="137">D</text>
+      <rect x="88" y="100" width="58" height="58" rx="12" fill="#8B46F6"/><text x="117" y="137">N</text>
+      <rect x="156" y="100" width="58" height="58" rx="12" fill="#13D7A0"/><text x="185" y="137" font-size="18">GO</text>
+      <rect x="224" y="100" width="58" height="58" rx="12" fill="#0F172A" stroke="#31446B"/>
+      <rect x="292" y="100" width="58" height="58" rx="12" fill="#FFB21D"/><text x="321" y="137" font-size="18">BO</text>
+      <rect x="360" y="100" width="58" height="58" rx="12" fill="#FF4B55"/><text x="389" y="137" font-size="18">PD</text>
+      <rect x="428" y="100" width="58" height="58" rx="12" fill="#2488FF"/><text x="457" y="137">D</text>
+    </g>
+    <g transform="translate(20 178)" font-family="Arial, Helvetica, sans-serif">
+      <rect width="466" height="92" rx="18" fill="#142136"/>
+      <text x="20" y="34" fill="#9AA7C7" font-size="14">Mjesečni fond</text>
+      <text x="20" y="67" fill="#F8FAFC" font-size="26" font-weight="800">168 h</text>
+      <text x="180" y="34" fill="#9AA7C7" font-size="14">Redovno</text>
+      <text x="180" y="67" fill="#13D7A0" font-size="26" font-weight="800">160 h</text>
+      <text x="336" y="34" fill="#9AA7C7" font-size="14">Prekovremeno</text>
+      <text x="336" y="67" fill="#FFB21D" font-size="26" font-weight="800">8 h</text>
+    </g>
+    <rect x="20" y="292" width="466" height="86" rx="18" fill="#142136"/>
+    <text x="40" y="326" fill="#9AA7C7" font-family="Arial, Helvetica, sans-serif" font-size="14">Trajna arhiva</text>
+    <text x="40" y="356" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700">Povijest i budući rasporedi ostaju spremljeni</text>
+  </g>
+
+  <g transform="translate(615 150)">
+    <rect width="530" height="425" rx="30" fill="#0F172A" stroke="#31446B" stroke-width="2"/>
+    <text x="28" y="50" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700">Statistika</text>
+    <rect x="28" y="78" width="474" height="70" rx="18" fill="#142136"/>
+    <text x="50" y="106" fill="#9AA7C7" font-family="Arial, Helvetica, sans-serif" font-size="14">Evidentirano / fond</text>
+    <text x="50" y="136" fill="#1DE1E8" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="800">176 h / 168 h</text>
+    <g transform="translate(28 170)">
+      <rect width="145" height="100" rx="18" fill="#132744"/><text x="20" y="34" fill="#9AA7C7" font-family="Arial" font-size="13">Redovni sati</text><text x="20" y="72" fill="#13D7A0" font-family="Arial" font-size="28" font-weight="800">168 h</text>
+      <rect x="164" width="145" height="100" rx="18" fill="#2B2130"/><text x="184" y="34" fill="#9AA7C7" font-family="Arial" font-size="13">Prekovremeno</text><text x="184" y="72" fill="#FFB21D" font-family="Arial" font-size="28" font-weight="800">8 h</text>
+      <rect x="328" width="146" height="100" rx="18" fill="#251C45"/><text x="348" y="34" fill="#9AA7C7" font-family="Arial" font-size="13">Noćni rad</text><text x="348" y="72" fill="#8B46F6" font-family="Arial" font-size="28" font-weight="800">42 h</text>
+    </g>
+    <text x="28" y="310" fill="#9AA7C7" font-family="Arial" font-size="14">Radni profil</text>
+    <rect x="28" y="326" width="474" height="64" rx="16" fill="#142136"/>
+    <text x="48" y="353" fill="#F8FAFC" font-family="Arial" font-size="16" font-weight="700">Javni / državni / privatni sektor</text>
+    <text x="48" y="378" fill="#9AA7C7" font-family="Arial" font-size="13">Ustanova, djelatnost i bilo koje radno mjesto</text>
+  </g>
+  <rect x="54" y="606" width="1092" height="4" rx="2" fill="url(#accent)"/>
+</svg>

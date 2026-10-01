@@ -1,5 +1,13 @@
 # Takto
 
+<p align="center">
+  <img src="docs/assets/takto-logo.svg" alt="Takto — Dodirni. Označi. Radi." width="760">
+</p>
+
+<p align="center">
+  <img src="docs/assets/takto-app-icon.svg" alt="Takto ikona aplikacije" width="132">
+</p>
+
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer smjena koji pretvara cijeli mjesec rada u jasan, brz i vizualan raspored.
 
@@ -11,6 +19,10 @@
 ![License](https://img.shields.io/badge/license-MIT-0F172A)
 
 Takto je aplikacija za ljude koji rade u smjenama i žele raspored koji se razumije **na prvi pogled**. Velike kalendarske ćelije, jasne oznake, vlastite boje, radni sati, podsjetnici, uzorci i statistika spojeni su u jedno tamno, premium sučelje inspirirano dostavljenim Takto vizualima.
+
+<p align="center">
+  <img src="docs/assets/takto-ui-preview.svg" alt="Takto pregled kalendara, fonda sati i statistike" width="100%">
+</p>
 
 ## Zašto Takto
 
@@ -37,12 +49,17 @@ Takto je aplikacija za ljude koji rade u smjenama i žele raspored koji se razum
 - BO — Bolovanje
 - PD — Plaćeni dopust
 - vlastiti tekst, naziv i boja
+- dodatne kratice poput **J** i **SD** iz stvarnog referentnog rasporeda
+- sve nepoznate kratice iz CSV uvoza automatski se čuvaju kao vlastite brze oznake
 - napomena za svaki datum
 - današnji datum i aktivni datum jasno istaknuti
 - TalkBack opis datuma, smjene, napomene i radnog vremena
 
 ### Brzo uređivanje rasporeda
 
+- navigacija do mjeseca **100 godina unatrag i 100 godina unaprijed**
+- nema automatskog brisanja starih ni budućih rasporeda
+- append-only lokalna arhiva svake promjene rasporeda
 - višestruki odabir više datuma
 - prečaci **Cijeli mjesec** i **Pon–pet**
 - bulk dodjela smjena
@@ -53,6 +70,10 @@ Takto je aplikacija za ljude koji rade u smjenama i žele raspored koji se razum
 
 ### Radni sati i fond
 
+- mjesečni fond sati
+- redovni odrađeni sati
+- prekovremeni sati prema mjesečnom fondu
+- dodatni dnevni obračun prekovremenog rada
 - početak i kraj smjene
 - pauza u minutama
 - smjene preko ponoći
@@ -73,6 +94,21 @@ D, D, N, N, -, -, -, -
 ```
 
 `-` znači slobodan dan. Uzorci podržavaju ugrađene i vlastite oznake te se mogu primijeniti na veći raspon dana uz izbor hoće li postojeći unosi biti sačuvani ili prepisani.
+
+### Radni profil
+
+U postavkama se može spremiti osobni radni profil koji ostaje na uređaju:
+
+- ime i prezime
+- sektor
+- djelatnost / industrija
+- vrsta ustanove
+- naziv ustanove ili poslodavca
+- radno mjesto / pozicija
+- prijedlozi za javni sektor, državni sektor, javne i državne ustanove, zdravstvo, obrazovanje, policiju, pravosuđe, vatrogastvo, komunalne službe i druga područja
+- potpuno slobodan unos za ustanove i radna mjesta koja nisu na popisu
+
+Početna stranica koristi ime iz profila za osobni pozdrav, dok backup čuva i profil zajedno s rasporedom i postavkama.
 
 ### Podsjetnici
 
@@ -179,7 +215,9 @@ gradle --no-daemon testDebugUnitTest lintDebug lintRelease assembleDebug assembl
 ## Privatnost i sigurnost
 
 - nema INTERNET dopuštenja
-- raspored se pohranjuje lokalno
+- raspored i profil pohranjuju se lokalno
+- svaka promjena rasporeda ulazi u append-only lokalnu arhivu
+- stari i budući rasporedi ne brišu se automatski
 - notification permission traži se samo na Androidu 13+
 - datoteke se izvoze kroz Androidov sustav za datoteke/dijeljenje
 - uvoz ima ograničenja veličine i broja redaka

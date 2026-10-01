@@ -86,6 +86,8 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val standardDaily = store.standardDailyMinutes.value
     val monthlyTarget = store.monthlyTargetMinutes(month)
     val monthlyBalance = totalWorkMinutes - monthlyTarget
+    val regularMonthlyMinutes = minOf(totalWorkMinutes, monthlyTarget).coerceAtLeast(0)
+    val fundOvertimeMinutes = (totalWorkMinutes - monthlyTarget).coerceAtLeast(0)
     val nightWorkMinutes = store.totalNightWorkMinutes(timedEntries)
     val weekendWorkMinutes = store.totalWeekendWorkMinutes(timedEntries)
     val sundayWorkMinutes = store.totalSundayWorkMinutes(timedEntries)
@@ -148,6 +150,10 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     TimeMetric(Modifier.weight(1f), "Evidentirano", totalWorkMinutes, TaktoBlue)
                     TimeMetric(Modifier.weight(1f), if (targetIsManual) "Fond · ručni" else "Fond · automatski", monthlyTarget, Color(0xFF22B8CF))
                     SignedTimeMetric(Modifier.weight(1f), "Razlika", monthlyBalance)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    TimeMetric(Modifier.weight(1f), "Redovni sati", regularMonthlyMinutes, Color(0xFF13D7A0))
+                    TimeMetric(Modifier.weight(1f), "Prekovremeni · fond", fundOvertimeMinutes, Color(0xFFFFB21D))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TimeMetric(Modifier.weight(1f), "Prekovremeno po danu", overtimeMinutes, Color(0xFFFFB21D))

@@ -48,6 +48,7 @@ import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
 import java.util.Locale
@@ -388,7 +389,7 @@ private fun MonthlyTargetDialog(
 private fun StatTile(modifier: Modifier, code: String, label: String, count: Int, color: Color) {
     GlassCard(modifier = modifier, padding = PaddingValues(12.dp), corner = 17.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(code, color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            Text(code, color = color, fontSize = shiftCodeCompactFontSize(code), fontWeight = FontWeight.ExtraBold, maxLines = 1)
             Text(count.toString(), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, maxLines = 2)
         }

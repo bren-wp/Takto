@@ -58,6 +58,7 @@ import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.ShiftEntry
+import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.MonthCalendar
 import hr.takto.app.ui.components.ShiftChoice
@@ -244,9 +245,9 @@ fun CalendarScreen(
 
         Text(
             if (multiSelect) {
-                "Dodirni više datuma pa im odjednom dodijeli D, N, GO, BO, PD, vlastitu oznaku ili ih postavi kao slobodne."
+                "Dodirni više datuma pa im odjednom dodijeli bilo koju spremljenu ili vlastitu oznaku."
             } else {
-                "Prazna kućica znači slobodan dan. Dodirni datum za D, N, GO, BO, PD ili vlastiti unos."
+                "Prazna kućica znači da nema spremljenog unosa. Dodirni datum i odaberi oznaku ili vlastiti unos."
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
@@ -255,12 +256,10 @@ fun CalendarScreen(
 
     selectedDate?.let { date ->
         var note by remember(date) { mutableStateOf(store.entryFor(date)?.note.orEmpty()) }
+        var showAllTypes by remember(date) { mutableStateOf(false) }
         val current = store.entryFor(date)
-        val dayType = store.shiftType("D") ?: DefaultShiftTypes.day
-        val nightType = store.shiftType("N") ?: DefaultShiftTypes.night
-        val annualType = store.shiftType("GO") ?: DefaultShiftTypes.annual
-        val sickType = store.shiftType("BO") ?: DefaultShiftTypes.sick
-        val paidType = store.shiftType("PD") ?: DefaultShiftTypes.paid
+        val rankedTypes = store.suggestedShiftTypes(date)
+        val visibleTypes = if (showAllTypes) rankedTypes else rankedTypes.take(6)
 
         ModalBottomSheet(
             onDismissRequest = { selectedDate = null },
@@ -287,7 +286,7 @@ fun CalendarScreen(
                             store.removeEntry(date)
                             selectedDate = null
                         }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Slobodan dan", tint = MaterialTheme.colorScheme.error)
+                            Icon(Icons.Default.Delete, contentDescription = "Ukloni unos", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -338,47 +337,37 @@ fun CalendarScreen(
                     }
                 }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ShiftChoice(dayType, Modifier.weight(1f)) { store.setEntry(date, dayType, note); selectedDate = null }
-                    ShiftChoice(nightType, Modifier.weight(1f)) { store.setEntry(date, nightType, note); selectedDate = null }
+                Text(
+                    if (showAllTypes) "Sve spremljene oznake" else "Brzi odabir",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge
+                )
+                ShiftTypeGrid(types = visibleTypes) { type ->
+                    store.setEntry(date, type, note)
+                    selectedDate = null
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ShiftChoice(annualType, Modifier.weight(1f)) { store.setEntry(date, annualType, note); selectedDate = null }
-                    ShiftChoice(sickType, Modifier.weight(1f)) { store.setEntry(date, sickType, note); selectedDate = null }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ShiftChoice(paidType, Modifier.weight(1f)) { store.setEntry(date, paidType, note); selectedDate = null }
-                    Button(
-                        onClick = {
-                            customPendingNote = note
-                            customDate = date
-                            customDialog = true
-                            selectedDate = null
-                        },
-                        modifier = Modifier.weight(1f).height(84.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                        shape = RoundedCornerShape(18.dp)
+                if (rankedTypes.size > 6) {
+                    TextButton(
+                        onClick = { showAllTypes = !showAllTypes },
+                        modifier = Modifier.align(Alignment.End)
                     ) {
-                        Icon(Icons.Default.Edit, null)
-                        Spacer(Modifier.size(5.dp))
-                        Text("Vlastiti\nunos", fontWeight = FontWeight.Bold)
+                        Text(if (showAllTypes) "Prikaži manje" else "Prikaži sve oznake (${rankedTypes.size})")
                     }
                 }
-
-                val quickCustomTypes = store.customShiftTypes()
-                if (quickCustomTypes.isNotEmpty()) {
-                    Text("Vlastite brze oznake", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
-                    quickCustomTypes.chunked(2).forEach { pair ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            pair.forEach { type ->
-                                ShiftChoice(type, Modifier.weight(1f)) {
-                                    store.setEntry(date, type, note)
-                                    selectedDate = null
-                                }
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
+                Button(
+                    onClick = {
+                        customPendingNote = note
+                        customDate = date
+                        customDialog = true
+                        selectedDate = null
+                    },
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Edit, null)
+                    Spacer(Modifier.size(6.dp))
+                    Text("Vlastiti unos", fontWeight = FontWeight.Bold)
                 }
 
                 Text("Tjedan", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
@@ -414,7 +403,7 @@ fun CalendarScreen(
                 }
                 if (copiedWeek.size == 7) {
                     Text(
-                        "U memoriji: ${copiedWeek.count { it != null }} označenih dana i ${copiedWeek.count { it == null }} slobodnih.",
+                        "U memoriji: ${copiedWeek.count { it != null }} označenih dana i ${copiedWeek.count { it == null }} praznih.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -426,7 +415,7 @@ fun CalendarScreen(
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
-                        Text(" Postavi kao slobodan dan", color = MaterialTheme.colorScheme.error)
+                        Text(" Ukloni unos za ovaj dan", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -435,11 +424,10 @@ fun CalendarScreen(
 
     if (bulkSheet && selectedDates.isNotEmpty()) {
         var note by remember(selectedDates) { mutableStateOf("") }
-        val dayType = store.shiftType("D") ?: DefaultShiftTypes.day
-        val nightType = store.shiftType("N") ?: DefaultShiftTypes.night
-        val annualType = store.shiftType("GO") ?: DefaultShiftTypes.annual
-        val sickType = store.shiftType("BO") ?: DefaultShiftTypes.sick
-        val paidType = store.shiftType("PD") ?: DefaultShiftTypes.paid
+        var showAllBulkTypes by remember(selectedDates) { mutableStateOf(false) }
+        val bulkReferenceDate = selectedDates.maxOrNull() ?: LocalDate.now()
+        val rankedTypes = store.suggestedShiftTypes(bulkReferenceDate)
+        val visibleTypes = if (showAllBulkTypes) rankedTypes else rankedTypes.take(6)
 
         ModalBottomSheet(
             onDismissRequest = { bulkSheet = false },
@@ -483,43 +471,32 @@ fun CalendarScreen(
                     resetMultiSelection()
                 }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ShiftChoice(dayType, Modifier.weight(1f)) { assign(dayType) }
-                    ShiftChoice(nightType, Modifier.weight(1f)) { assign(nightType) }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ShiftChoice(annualType, Modifier.weight(1f)) { assign(annualType) }
-                    ShiftChoice(sickType, Modifier.weight(1f)) { assign(sickType) }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ShiftChoice(paidType, Modifier.weight(1f)) { assign(paidType) }
-                    Button(
-                        onClick = {
-                            customPendingNote = note
-                            bulkSheet = false
-                            bulkCustomDialog = true
-                        },
-                        modifier = Modifier.weight(1f).height(84.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                        shape = RoundedCornerShape(18.dp)
+                Text(
+                    if (showAllBulkTypes) "Sve spremljene oznake" else "Brzi odabir",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelLarge
+                )
+                ShiftTypeGrid(types = visibleTypes) { type -> assign(type) }
+                if (rankedTypes.size > 6) {
+                    TextButton(
+                        onClick = { showAllBulkTypes = !showAllBulkTypes },
+                        modifier = Modifier.align(Alignment.End)
                     ) {
-                        Icon(Icons.Default.Edit, null)
-                        Spacer(Modifier.size(5.dp))
-                        Text("Vlastiti\nunos", fontWeight = FontWeight.Bold)
+                        Text(if (showAllBulkTypes) "Prikaži manje" else "Prikaži sve oznake (${rankedTypes.size})")
                     }
                 }
-
-                val quickCustomTypes = store.customShiftTypes()
-                if (quickCustomTypes.isNotEmpty()) {
-                    Text("Vlastite brze oznake", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
-                    quickCustomTypes.chunked(2).forEach { pair ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            pair.forEach { type ->
-                                ShiftChoice(type, Modifier.weight(1f)) { assign(type) }
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
+                Button(
+                    onClick = {
+                        customPendingNote = note
+                        bulkSheet = false
+                        bulkCustomDialog = true
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Edit, null)
+                    Text(" Vlastiti unos")
                 }
 
                 Button(
@@ -544,7 +521,7 @@ fun CalendarScreen(
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
-                    Text(" Postavi sve kao slobodne dane", color = MaterialTheme.colorScheme.error)
+                    Text(" Ukloni unose s odabranih dana", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -709,6 +686,24 @@ fun CalendarScreen(
 }
 
 @Composable
+private fun ShiftTypeGrid(
+    types: List<ShiftType>,
+    onSelect: (ShiftType) -> Unit
+) {
+    types.chunked(2).forEach { pair ->
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            pair.forEach { type ->
+                ShiftChoice(type, Modifier.weight(1f)) { onSelect(type) }
+            }
+            if (pair.size == 1) Spacer(Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
 private fun ScheduleSearchDialog(
     store: ScheduleStore,
     onDismiss: () -> Unit,
@@ -750,7 +745,7 @@ private fun ScheduleSearchDialog(
                     singleLine = true
                 )
                 when {
-                    normalized.isBlank() -> Text("Upiši D, N, GO, BO, PD, vlastitu oznaku, napomenu ili datum.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    normalized.isBlank() -> Text("Upiši oznaku, naziv, napomenu ili datum.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     results.isEmpty() -> Text("Nema pronađenih unosa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else -> results.forEach { entry ->
                         Row(
@@ -823,7 +818,7 @@ private fun WorkTimeDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "Ako je završetak ranije od početka, Takto automatski računa da smjena završava sljedeći dan.",
+                    "Ako je završetak ranije od početka, Takto automatski računa da rad završava sljedeći dan.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )

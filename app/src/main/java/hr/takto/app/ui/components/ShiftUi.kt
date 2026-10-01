@@ -14,6 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,6 +30,10 @@ fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> U
         modifier = modifier
             .height(84.dp)
             .background(type.color, RoundedCornerShape(18.dp))
+            .semantics {
+                role = Role.Button
+                contentDescription = "Oznaka ${type.code}, ${type.name}"
+            }
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center

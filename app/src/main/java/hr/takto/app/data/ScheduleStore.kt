@@ -1307,10 +1307,25 @@ class ScheduleStore(private val context: Context) {
                         LocalDate.parse(revision.optString("date"), DateTimeFormatter.ISO_LOCAL_DATE)
                     }.getOrNull() ?: return@forEach
 
-                    if (revision.isNull("after")) {
-                        target.remove(date)
+                    val before = if (revision.isNull("before")) {
+                        null
                     } else {
-                        parseEntry(revision.optJSONObject("after"))?.let { target[date] = it }
+                        parseEntry(revision.optJSONObject("before"))
+                    }
+                    val after = if (revision.isNull("after")) {
+                        null
+                    } else {
+                        parseEntry(revision.optJSONObject("after"))
+                    }
+                    val current = target[date]
+
+                    when {
+                        current == after -> Unit
+                        current == before && after == null -> target.remove(date)
+                        current == before && after != null -> target[date] = after
+                        // Ako se lokalno stanje razlikuje i od before i od after,
+                        // ne prepisuj ga starijom ili nepovezanom revizijom.
+                        else -> Unit
                     }
                 }
             }

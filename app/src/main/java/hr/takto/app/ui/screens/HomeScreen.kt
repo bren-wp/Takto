@@ -35,11 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.MonthCalendar
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoAmber
 import hr.takto.app.ui.theme.TaktoBlue
 import hr.takto.app.ui.theme.TaktoGreen
@@ -71,7 +73,9 @@ fun HomeScreen(
     val monthRegularMinutes = minOf(monthWorkMinutes, monthTargetMinutes).coerceAtLeast(0)
     val monthOvertimeMinutes = (monthWorkMinutes - monthTargetMinutes).coerceAtLeast(0)
     val monthBalanceMinutes = monthWorkMinutes - monthTargetMinutes
-    val next = store.nextEntry(today)
+    val todayEntry = store.entryFor(today)
+    val todayQuickTypes = store.suggestedShiftTypes(today).take(4)
+    val next = store.nextEntry(today.plusDays(1))
 
     val greeting = when (LocalTime.now().hour) {
         in 5..10 -> "Dobro jutro"
@@ -132,6 +136,128 @@ fun HomeScreen(
                 color = TaktoGreen,
                 icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
             )
+        }
+
+        GlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = todayEntry != null) { onOpenCalendar(today) },
+            padding = PaddingValues(16.dp),
+            corner = 20.dp
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "DANAS",
+                            color = colors.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.6.sp,
+                            fontSize = 11.sp
+                        )
+                        Text(
+                            croatianDate(today),
+                            color = colors.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
+                    if (todayEntry != null) {
+                        Text(
+                            "Dodirni za uređivanje",
+                            color = colors.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                if (todayEntry != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            Modifier
+                                .size(56.dp)
+                                .background(todayEntry.color, RoundedCornerShape(15.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                todayEntry.code,
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = shiftCodeCompactFontSize(todayEntry.code),
+                                maxLines = 1
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(todayEntry.label, fontWeight = FontWeight.Bold)
+                            if (todayEntry.hasWorkTime) {
+                                Text(
+                                    "${ScheduleLogic.formatClock(todayEntry.startMinute)} – ${ScheduleLogic.formatClock(todayEntry.endMinute)} · ${ScheduleLogic.formatDuration(todayEntry.workMinutes ?: 0)}",
+                                    color = colors.onSurfaceVariant,
+                                    fontSize = 11.sp,
+                                    maxLines = 1
+                                )
+                            } else {
+                                Text(
+                                    "Radno vrijeme nije upisano.",
+                                    color = colors.onSurfaceVariant,
+                                    fontSize = 11.sp
+                                )
+                            }
+                            if (todayEntry.note.isNotBlank()) {
+                                Text(
+                                    todayEntry.note,
+                                    color = colors.onSurfaceVariant,
+                                    fontSize = 11.sp,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                        Icon(
+                            Icons.Default.ArrowForward,
+                            contentDescription = "Uredi današnji unos",
+                            tint = colors.primary
+                        )
+                    }
+                } else {
+                    Text(
+                        "Još nema unosa za danas. Najčešću oznaku možeš dodati jednim dodirom.",
+                        color = colors.onSurfaceVariant
+                    )
+                    if (todayQuickTypes.isNotEmpty()) {
+                        todayQuickTypes.chunked(2).forEach { pair ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                pair.forEach { type ->
+                                    TodayQuickButton(
+                                        type = type,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        store.setEntry(today, type)
+                                    }
+                                }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
+                    Button(
+                        onClick = { onOpenCalendar(today) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceVariant),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = colors.primary)
+                        Spacer(Modifier.size(7.dp))
+                        Text("Otvori detalje za danas", color = colors.primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(16.dp), corner = 20.dp) {
@@ -245,6 +371,34 @@ fun HomeScreen(
                 }
             }
         }
+        else {
+            GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(14.dp), corner = 18.dp) {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.EventBusy, contentDescription = null, tint = colors.onSurfaceVariant)
+                        Text(
+                            " Nema budućih unosa",
+                            fontWeight = FontWeight.Bold,
+                            color = colors.onSurfaceVariant
+                        )
+                    }
+                    Text(
+                        "Raspored nakon današnjeg dana još je prazan.",
+                        color = colors.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                    Button(
+                        onClick = { onOpenCalendar(today.plusDays(1)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceVariant),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Text("Planiraj sljedeći dan", color = colors.primary, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -326,6 +480,37 @@ fun HomeScreen(
             }
         }
         Spacer(Modifier.height(6.dp))
+    }
+}
+
+@Composable
+private fun TodayQuickButton(
+    type: ShiftType,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(52.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = type.color),
+        shape = RoundedCornerShape(14.dp),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = type.code,
+            color = Color.White,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = shiftCodeCompactFontSize(type.code),
+            maxLines = 1
+        )
+        Spacer(Modifier.size(7.dp))
+        Text(
+            text = type.name,
+            color = Color.White,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            fontSize = 11.sp
+        )
     }
 }
 

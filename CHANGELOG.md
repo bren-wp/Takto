@@ -19,6 +19,13 @@ Adaptivni UI/UX, pristupačnost i daljnja generalizacija Takto rasporeda.
 - poboljšane TalkBack semantike za tipke oznaka
 - duge vlastite kratice bolje se skaliraju u statistici
 - dodani unit testovi za spremanje i zadani odabir teme
+- vizualni graditelj uzoraka koristi najrelevantnije korisničke oznake umjesto unaprijed nametnutih D/N predložaka
+- ugrađeni prijedlozi uzoraka dinamički se grade iz najčešće korištenih oznaka
+- CSV parser obrađuje retke sekvencijalno i izbjegava velike privremene kolekcije
+- CSV i backup datoteke čitaju se uz strogo ograničenje veličine prije potpune alokacije sadržaja
+- izvoz trajne arhive zapisuje podatke izravno u odabranu datoteku bez učitavanja cijele arhive u memoriju
+- Android Back iz Kalendar/Statistika/Uzorci/Više vraća korisnika na Početnu prije izlaska iz aplikacije
+- notification ikona pojednostavljena je na prepoznatljivi Takto T kako bi bila čitljiva u Android statusnoj traci
 
 ### Toolchain
 

@@ -1,6 +1,7 @@
 package hr.takto.app.data
 
 import android.content.Context
+import android.util.AtomicFile
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +20,9 @@ import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.OutputStream
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -30,10 +33,13 @@ import java.util.UUID
 /**
  * Jedini izvor istine za Takto raspored i korisničke postavke.
  *
- * Namjerno ne koristi bazu podataka: jedan korisnik ima najviše nekoliko tisuća
- * dnevnih zapisa pa je verzionirani JSON u SharedPreferences dovoljno malen,
- * brz i jednostavan za sigurnosnu kopiju. Sve bulk operacije spremaju stanje
- * samo jednom kako bi uvoz i primjena uzoraka ostali brzi.
+ * Dnevni raspored sprema se u atomsku datotečnu snimku, uz prethodnu recovery
+ * kopiju i append-only revizijsku arhivu. Time veliki višegodišnji rasporedi
+ * više ne ovise o jednom velikom SharedPreferences stringu, a prekid procesa
+ * tijekom spremanja ne može ostaviti napola zapisanu glavnu snimku.
+ *
+ * SharedPreferences ostaje za male postavke i kao jednokratni legacy izvor
+ * pri migraciji starijih instalacija.
  */
 class ScheduleStore(private val context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -1143,14 +1149,134 @@ class ScheduleStore(private val context: Context) {
     }
 
     private fun loadEntries() {
-        val raw = prefs.getString(KEY_ENTRIES, null) ?: return
-        runCatching {
+        val currentSnapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE)
+        val recoverySnapshot = if (currentSnapshot == null) {
+            readSnapshotFile(RECOVERY_SCHEDULE_FILE)
+        } else {
+            null
+        }
+        val legacySnapshot = if (currentSnapshot == null && recoverySnapshot == null) {
+            readLegacyPreferenceEntries()
+        } else {
+            null
+        }
+
+        val recovered = when {
+            currentSnapshot != null -> currentSnapshot.toMutableMap()
+            recoverySnapshot != null -> recoverySnapshot.toMutableMap()
+            legacySnapshot != null -> legacySnapshot.toMutableMap()
+            else -> mutableMapOf()
+        }
+
+        // Arhiva se primjenjuje i na valjanu glavnu snimku. Ako je proces bio
+        // prekinut nakon zapisa revizije, ali prije završetka atomske snimke,
+        // zadnja promjena se na ovaj način automatski vrati pri sljedećem startu.
+        applyArchiveRevisions(recovered)
+
+        entries.clear()
+        entries.putAll(recovered.toSortedMap())
+
+        // Svako uspješno učitavanje konsolidira stanje u dvije datotečne
+        // snimke. Legacy SharedPreferences ključ briše se tek kada su obje
+        // snimke sigurno zapisane.
+        val currentWritten = writeSnapshotFile(CURRENT_SCHEDULE_FILE, entries.values)
+        val recoveryWritten = writeSnapshotFile(RECOVERY_SCHEDULE_FILE, entries.values)
+        if (currentWritten && recoveryWritten) {
+            prefs.edit().remove(KEY_ENTRIES).apply()
+        }
+    }
+
+    private fun readLegacyPreferenceEntries(): Map<LocalDate, ShiftEntry>? {
+        val raw = prefs.getString(KEY_ENTRIES, null) ?: return null
+        return runCatching {
             val array = JSONArray(raw)
-            repeat(array.length()) { i ->
-                parseEntry(array.optJSONObject(i))?.let { entries[it.date] = it }
+            buildMap {
+                repeat(array.length()) { index ->
+                    parseEntry(array.optJSONObject(index))?.let { put(it.date, it) }
+                }
             }
-        }.onFailure {
-            entries.clear()
+        }.getOrNull()
+    }
+
+    private fun readSnapshotFile(fileName: String): Map<LocalDate, ShiftEntry>? {
+        val file = context.getFileStreamPath(fileName)
+        if (!file.exists() || file.length() > MAX_SNAPSHOT_BYTES) return null
+
+        return runCatching {
+            val atomic = AtomicFile(file)
+            val raw = atomic.openRead()
+                .bufferedReader(StandardCharsets.UTF_8)
+                .use { it.readText() }
+            val root = JSONObject(raw)
+            val schema = root.optInt("schema", -1)
+            if (schema !in 1..CURRENT_SNAPSHOT_SCHEMA_VERSION) return@runCatching null
+
+            val array = root.optJSONArray("entries") ?: return@runCatching null
+            buildMap {
+                repeat(array.length().coerceAtMost(MAX_IMPORT_ROWS)) { index ->
+                    parseEntry(array.optJSONObject(index))?.let { put(it.date, it) }
+                }
+            }
+        }.getOrNull()
+    }
+
+    private fun writeSnapshotFile(
+        fileName: String,
+        source: Collection<ShiftEntry>
+    ): Boolean {
+        val file = context.getFileStreamPath(fileName)
+        val atomic = AtomicFile(file)
+        val payload = JSONObject().apply {
+            put("schema", CURRENT_SNAPSHOT_SCHEMA_VERSION)
+            put("savedAt", java.time.Instant.now().toString())
+            put("entryCount", source.size)
+            put("entries", JSONArray().apply {
+                source.sortedBy { it.date }.forEach { put(entryToJsonObject(it)) }
+            })
+        }.toString().toByteArray(StandardCharsets.UTF_8)
+
+        if (payload.size > MAX_SNAPSHOT_BYTES) return false
+
+        val output = runCatching { atomic.startWrite() }.getOrNull() ?: return false
+        return runCatching {
+            output.write(payload)
+            output.flush()
+            atomic.finishWrite(output)
+            true
+        }.getOrElse {
+            runCatching { atomic.failWrite(output) }
+            false
+        }
+    }
+
+    private fun copyCurrentSnapshotToRecovery() {
+        val current = context.getFileStreamPath(CURRENT_SCHEDULE_FILE)
+        if (!current.exists()) return
+
+        val snapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE) ?: return
+        writeSnapshotFile(RECOVERY_SCHEDULE_FILE, snapshot.values)
+    }
+
+    private fun applyArchiveRevisions(target: MutableMap<LocalDate, ShiftEntry>) {
+        val history = context.getFileStreamPath(HISTORY_FILE)
+        if (!history.exists()) return
+
+        runCatching {
+            history.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
+                lines.forEach { line ->
+                    if (line.isBlank()) return@forEach
+                    val revision = runCatching { JSONObject(line) }.getOrNull() ?: return@forEach
+                    val date = runCatching {
+                        LocalDate.parse(revision.optString("date"), DateTimeFormatter.ISO_LOCAL_DATE)
+                    }.getOrNull() ?: return@forEach
+
+                    if (revision.isNull("after")) {
+                        target.remove(date)
+                    } else {
+                        parseEntry(revision.optJSONObject("after"))?.let { target[date] = it }
+                    }
+                }
+            }
         }
     }
 
@@ -1181,7 +1307,19 @@ class ScheduleStore(private val context: Context) {
 
     private fun persistEntries() {
         appendArchiveDiff()
-        prefs.edit().putString(KEY_ENTRIES, entriesToJson().toString()).apply()
+
+        // Recovery zadržava posljednju potvrđenu snimku prije zamjene glavne.
+        copyCurrentSnapshotToRecovery()
+        val snapshotWritten = writeSnapshotFile(CURRENT_SCHEDULE_FILE, entries.values)
+
+        if (snapshotWritten) {
+            prefs.edit().remove(KEY_ENTRIES).apply()
+        } else {
+            // Krajnji fallback za neuobičajene I/O kvarove. Arhiva je već
+            // zapisana pa se sljedeći start može oporaviti i iz recovery kopije.
+            prefs.edit().putString(KEY_ENTRIES, entriesToJson().toString()).commit()
+        }
+
         persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
     }
 
@@ -1375,6 +1513,10 @@ class ScheduleStore(private val context: Context) {
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
         private const val DATA_SCHEMA_VERSION = 8
         private const val ARCHIVE_SCHEMA_VERSION = 1
+        private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 1
+        private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L
+        private const val CURRENT_SCHEDULE_FILE = "takto_schedule_current.json"
+        private const val RECOVERY_SCHEDULE_FILE = "takto_schedule_recovery.json"
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"
         private const val PREFS_NAME = "takto_schedule"
         private const val KEY_ENTRIES = "entries_json"

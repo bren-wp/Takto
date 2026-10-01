@@ -437,11 +437,11 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         SettingsRow(
             icon = Icons.Default.Notifications,
-            title = "Podsjetnik prije smjene",
+            title = "Podsjetnik prije rada",
             subtitle = when {
                 store.shiftRemindersEnabled.value && !notificationPermissionGranted -> "Potrebno je dopustiti obavijesti"
                 store.shiftRemindersEnabled.value -> "Uključen · ${reminderLeadText(store.shiftReminderLeadMinutes.value)}"
-                else -> "Isključen · radi samo za dane s upisanim početkom smjene"
+                else -> "Isključen · radi za dane s upisanim početkom rada"
             },
             trailing = {
                 Switch(
@@ -459,7 +459,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         SettingsRow(
             icon = Icons.Default.AccessTime,
-            title = "Koliko ranije upozoriti",
+            title = "Koliko ranije podsjetiti",
             subtitle = reminderLeadText(store.shiftReminderLeadMinutes.value),
             onClick = { shiftReminderLeadDialog = true }
         )
@@ -1105,16 +1105,16 @@ private fun ReminderTimeDialog(
 
 private fun reminderLeadText(minutes: Int): String = when {
     minutes <= 0 -> "U trenutku početka"
-    minutes < 60 -> "$minutes min prije smjene"
+    minutes < 60 -> "$minutes min prije rada"
     minutes % (24 * 60) == 0 -> {
         val days = minutes / (24 * 60)
-        if (days == 1) "1 dan prije smjene" else "$days dana prije smjene"
+        if (days == 1) "1 dan prije rada" else "$days dana prije rada"
     }
     minutes % 60 == 0 -> {
         val hours = minutes / 60
-        if (hours == 1) "1 h prije smjene" else "$hours h prije smjene"
+        if (hours == 1) "1 h prije rada" else "$hours h prije rada"
     }
-    else -> "${minutes / 60} h ${minutes % 60} min prije smjene"
+    else -> "${minutes / 60} h ${minutes % 60} min prije rada"
 }
 
 @Composable
@@ -1126,11 +1126,11 @@ private fun ShiftReminderLeadDialog(
     val options = listOf(0, 15, 30, 60, 120, 240, 720, 1440)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Podsjetnik prije smjene") },
+        title = { Text("Podsjetnik prije rada") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "Takto prati sljedeću smjenu s upisanim početkom i obavještava te prije nje. Nakon obavijesti automatski zakazuje sljedeću.",
+                    "Takto prati sljedeći radni unos s upisanim početkom i obavještava te prije njega. Nakon obavijesti automatski zakazuje sljedeći.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )

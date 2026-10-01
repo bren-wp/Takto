@@ -19,6 +19,7 @@ Takto 0.1.4 fokusiran je na dugoročnu stabilnost i zaštitu rasporeda, posebno 
 - cloud backup i device transfer uključuju glavnu snimku, recovery snimku i revizijsku arhivu
 - Postavke prikazuju broj rasporednih unosa i slojeve zaštite lokalnih podataka
 - dodani unit testovi za nedestruktivni recovery algoritam
+- broj revizija i duljina arhive imaju cache; cijela višegodišnja arhiva ponovno se skenira samo kada se stvarna datoteka razlikuje od spremljene metadata vrijednosti
 
 ## Kompatibilnost
 

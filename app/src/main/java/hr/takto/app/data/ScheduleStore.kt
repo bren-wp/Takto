@@ -13,6 +13,7 @@ import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.SavedPattern
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.ScheduleRecovery
 import hr.takto.app.model.ScheduleSuggestions
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
@@ -1317,15 +1318,14 @@ class ScheduleStore(private val context: Context) {
                     } else {
                         parseEntry(revision.optJSONObject("after"))
                     }
-                    val current = target[date]
-
-                    when {
-                        current == after -> Unit
-                        current == before && after == null -> target.remove(date)
-                        current == before && after != null -> target[date] = after
-                        // Ako se lokalno stanje razlikuje i od before i od after,
-                        // ne prepisuj ga starijom ili nepovezanom revizijom.
-                        else -> Unit
+                    val resolution = ScheduleRecovery.resolve(
+                        current = target[date],
+                        before = before,
+                        after = after
+                    )
+                    if (resolution.shouldApply) {
+                        if (resolution.next == null) target.remove(date)
+                        else target[date] = resolution.next
                     }
                 }
             }

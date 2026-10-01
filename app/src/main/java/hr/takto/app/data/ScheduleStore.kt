@@ -93,6 +93,24 @@ class ScheduleStore(private val context: Context) {
 
     fun allShiftTypes(): List<ShiftType> = shiftTypes() + customShiftTypes()
 
+    fun suggestedShiftTypes(referenceDate: LocalDate = LocalDate.now()): List<ShiftType> {
+        val all = allShiftTypes()
+        if (all.size <= 1) return all
+
+        val windowStart = referenceDate.minusDays(SUGGESTION_LOOKBACK_DAYS)
+        val usage = entries.values
+            .asSequence()
+            .filter { !it.date.isBefore(windowStart) && !it.date.isAfter(referenceDate) }
+            .groupingBy { it.code.uppercase(Locale.ROOT) }
+            .eachCount()
+
+        return all.sortedWith(
+            compareByDescending<ShiftType> { usage[it.code.uppercase(Locale.ROOT)] ?: 0 }
+                .thenBy { if (it.isPreset) 1 else 0 }
+                .thenBy { it.name.lowercase(Locale.forLanguageTag("hr")) }
+        )
+    }
+
     fun saveCustomShiftPreset(code: String, name: String, colorArgb: Long): Boolean {
         val normalizedCode = ScheduleLogic.normalizeReusableCode(code)
         val normalizedName = ScheduleLogic.normalizeDisplayName(name).ifBlank { normalizedCode }
@@ -1350,6 +1368,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_IMPORT_CHARS = 20_000_000
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
+        private const val SUGGESTION_LOOKBACK_DAYS = 90L
         private const val DATA_SCHEMA_VERSION = 8
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"

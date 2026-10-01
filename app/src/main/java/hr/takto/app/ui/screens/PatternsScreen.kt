@@ -64,13 +64,44 @@ private data class PatternDef(
 @Composable
 fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
-    val builtInPatterns = remember {
-        listOf(
-            PatternDef("Radni tjedan", "Pet radnih dana pa dva slobodna dana.", listOf("D", "D", "D", "D", "D", null, null)),
-            PatternDef("2D / 2N / 4 slobodna", "Dvije dnevne, dvije noćne i četiri slobodna dana.", listOf("D", "D", "N", "N", null, null, null, null)),
-            PatternDef("D / N / slobodno", "Jednostavna trodnevna rotacija.", listOf("D", "N", null)),
-            PatternDef("D / D / GO / slobodno", "Primjer kombiniranog obrasca.", listOf("D", "D", "GO", null))
-        )
+    val suggestedTypes = store.suggestedShiftTypes()
+    val primaryType = suggestedTypes.firstOrNull()
+    val secondaryType = suggestedTypes.getOrNull(1)
+    val builtInPatterns = buildList {
+        primaryType?.let { primary ->
+            add(
+                PatternDef(
+                    "5 × ${primary.code} / 2 bez unosa",
+                    "Pet dana s oznakom ${primary.code}, zatim dva dana bez unosa.",
+                    listOf(primary.code, primary.code, primary.code, primary.code, primary.code, null, null)
+                )
+            )
+        }
+        if (primaryType != null && secondaryType != null) {
+            add(
+                PatternDef(
+                    "2 ${primaryType.code} / 2 ${secondaryType.code} / 4 bez unosa",
+                    "Prilagodljiva osmodnevna rotacija iz tvojih najčešćih oznaka.",
+                    listOf(
+                        primaryType.code,
+                        primaryType.code,
+                        secondaryType.code,
+                        secondaryType.code,
+                        null,
+                        null,
+                        null,
+                        null
+                    )
+                )
+            )
+            add(
+                PatternDef(
+                    "${primaryType.code} / ${secondaryType.code} / bez unosa",
+                    "Jednostavna trodnevna rotacija iz tvojih najčešćih oznaka.",
+                    listOf(primaryType.code, secondaryType.code, null)
+                )
+            )
+        }
     }
     val patterns = builtInPatterns + store.savedPatterns.map { saved ->
         PatternDef(saved.name, "Tvoj spremljeni uzorak.", saved.codes, saved.id)
@@ -176,7 +207,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 )
                 Toast.makeText(
                     context,
-                    "Promijenjeno: ${result.changed} · preskočeno: ${result.skipped} · slobodno: ${result.freeDays}",
+                    "Promijenjeno: ${result.changed} · preskočeno: ${result.skipped} · bez unosa: ${result.freeDays}",
                     Toast.LENGTH_LONG
                 ).show()
                 selectedPattern = null

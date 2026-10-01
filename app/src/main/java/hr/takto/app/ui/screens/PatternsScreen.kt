@@ -49,7 +49,6 @@ import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.theme.TaktoBlue
-import hr.takto.app.ui.theme.TaktoMuted
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -90,15 +89,15 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TaktoLogo(iconSize = 34.dp)
             Spacer(Modifier.weight(1f))
-            Text("Uzorci", color = TaktoMuted)
+            Text("Uzorci", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Uzorci smjena", style = MaterialTheme.typography.headlineLarge)
-            Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju slobodni dani.", color = TaktoMuted)
+            Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju slobodni dani.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = { customPatternDialog = true },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A2942)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Icon(Icons.Default.Add, null, tint = TaktoBlue)
@@ -114,11 +113,11 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         Text(pattern.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 10.dp).weight(1f))
                         pattern.id?.let { id ->
                             IconButton(onClick = { store.removeSavedPattern(id) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Obriši uzorak", tint = Color(0xFFFF6570))
+                                Icon(Icons.Default.Delete, contentDescription = "Obriši uzorak", tint = MaterialTheme.colorScheme.error)
                             }
                         }
                     }
-                    Text(pattern.description, color = TaktoMuted)
+                    Text(pattern.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                         pattern.codes.take(8).forEach { code ->
                             val preset = code?.let(store::shiftType)
@@ -126,14 +125,14 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(48.dp)
-                                    .background(preset?.color ?: Color(0xFF142136), RoundedCornerShape(10.dp)),
+                                    .background(preset?.color ?: MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(code.orEmpty(), fontWeight = FontWeight.ExtraBold, maxLines = 1)
                             }
                         }
                     }
-                    if (pattern.codes.size > 8) Text("+ još ${pattern.codes.size - 8} koraka", color = TaktoMuted, style = MaterialTheme.typography.bodySmall)
+                    if (pattern.codes.size > 8) Text("+ još ${pattern.codes.size - 8} koraka", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Button(
                         onClick = { selectedPattern = pattern },
                         modifier = Modifier.fillMaxWidth(),
@@ -219,7 +218,7 @@ private fun CustomPatternDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (codes.isNotEmpty()) {
-                    Text("Pregled", color = TaktoMuted, style = MaterialTheme.typography.labelMedium)
+                    Text("Pregled", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                         codes.take(8).forEach { code ->
                             val type = code?.let(store::shiftType)
@@ -227,18 +226,18 @@ private fun CustomPatternDialog(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(42.dp)
-                                    .background(type?.color ?: Color(0xFF142136), RoundedCornerShape(9.dp)),
+                                    .background(type?.color ?: MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(9.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(code.orEmpty(), fontWeight = FontWeight.ExtraBold, maxLines = 1)
                             }
                         }
                     }
-                    if (codes.size > 8) Text("+ još ${codes.size - 8} koraka", color = TaktoMuted)
+                    if (codes.size > 8) Text("+ još ${codes.size - 8} koraka", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
                     "Možeš koristiti D, N, GO, BO, PD, spremljene vlastite oznake ili bilo koju novu kratku oznaku.",
-                    color = TaktoMuted
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },
@@ -270,7 +269,7 @@ private fun PatternApplyDialog(
         title = { Text("Primijeni: ${pattern.name}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("Odaberi datum od kojeg uzorak počinje.", color = TaktoMuted)
+                Text("Odaberi datum od kojeg uzorak počinje.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = startText,
                     onValueChange = { startText = it.filter { ch -> ch.isDigit() || ch == '.' }.take(11) },
@@ -278,7 +277,7 @@ private fun PatternApplyDialog(
                     supportingText = {
                         Text(
                             startDate?.let { croatianDate(it) } ?: "Format: 1.10.2026.",
-                            color = if (startDate != null) TaktoMuted else Color(0xFFFF8A92)
+                            color = if (startDate != null) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
                         )
                     },
                     isError = startText.isNotBlank() && startDate == null,
@@ -316,7 +315,7 @@ private fun PatternApplyDialog(
                         Text("Prepiši postojeće unose", fontWeight = FontWeight.SemiBold)
                         Text(
                             if (overwrite) "Postojeći raspored u rasponu može biti zamijenjen." else "Postojeći dani ostaju netaknuti.",
-                            color = TaktoMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }

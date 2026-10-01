@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
     <include domain="sharedpref" path="." />
+    <include domain="file" path="takto_schedule_current.json" />
+    <include domain="file" path="takto_schedule_recovery.json" />
     <include domain="file" path="takto_schedule_history.jsonl" />
 </full-backup-content>

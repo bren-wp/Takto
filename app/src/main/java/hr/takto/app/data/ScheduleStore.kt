@@ -21,7 +21,6 @@ import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 import java.io.OutputStream
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate

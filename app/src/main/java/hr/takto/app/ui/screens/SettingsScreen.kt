@@ -152,15 +152,20 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     ) { uri ->
         if (uri != null) {
             runCatching {
-                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
+                readUtf8TextLimited(context, uri, ScheduleStore.MAX_IMPORT_CHARS)
             }.onSuccess { text ->
                 if (text.isBlank()) {
                     Toast.makeText(context, "Odabrana CSV datoteka je prazna.", Toast.LENGTH_SHORT).show()
                 } else {
                     pendingCsvContent = text
                 }
-            }.onFailure {
-                Toast.makeText(context, "CSV datoteku nije moguće pročitati.", Toast.LENGTH_SHORT).show()
+            }.onFailure { error ->
+                val message = if (error is ImportFileTooLargeException) {
+                    "CSV datoteka je prevelika za siguran uvoz."
+                } else {
+                    "CSV datoteku nije moguće pročitati."
+                }
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -202,15 +207,20 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     ) { uri ->
         if (uri != null) {
             runCatching {
-                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }.orEmpty()
+                readUtf8TextLimited(context, uri, ScheduleStore.MAX_IMPORT_CHARS)
             }.onSuccess { text ->
                 if (text.isBlank()) {
                     Toast.makeText(context, "Sigurnosna kopija je prazna.", Toast.LENGTH_SHORT).show()
                 } else {
                     pendingBackupContent = text
                 }
-            }.onFailure {
-                Toast.makeText(context, "Sigurnosnu kopiju nije moguće pročitati.", Toast.LENGTH_SHORT).show()
+            }.onFailure { error ->
+                val message = if (error is ImportFileTooLargeException) {
+                    "Sigurnosna kopija je prevelika za siguran uvoz."
+                } else {
+                    "Sigurnosnu kopiju nije moguće pročitati."
+                }
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -1274,6 +1284,30 @@ private fun StandardDayDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
     )
+}
+
+private class ImportFileTooLargeException : IllegalArgumentException()
+
+private fun readUtf8TextLimited(
+    context: android.content.Context,
+    uri: Uri,
+    maxChars: Int
+): String {
+    val stream = context.contentResolver.openInputStream(uri)
+        ?: error("Datoteku nije moguće otvoriti.")
+    return stream.bufferedReader(StandardCharsets.UTF_8).use { reader ->
+        val output = StringBuilder(minOf(maxChars, 64 * 1024))
+        val buffer = CharArray(8 * 1024)
+        var total = 0
+        while (true) {
+            val read = reader.read(buffer)
+            if (read < 0) break
+            if (total + read > maxChars) throw ImportFileTooLargeException()
+            output.append(buffer, 0, read)
+            total += read
+        }
+        output.toString()
+    }
 }
 
 private fun timeText(hour: Int, minute: Int): String =

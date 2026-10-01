@@ -192,7 +192,8 @@ private fun CustomPatternDialog(
     onSave: (String, List<String?>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var sequence by remember { mutableStateOf("D, D, N, N, -, -, -, -") }
+    var sequence by remember { mutableStateOf("") }
+    val quickTypes = store.suggestedShiftTypes().take(6)
     val codes = ScheduleLogic.parsePatternSequence(sequence)
     val valid = name.isNotBlank() && codes.isNotEmpty() && codes.any { it != null }
 
@@ -212,11 +213,57 @@ private fun CustomPatternDialog(
                     value = sequence,
                     onValueChange = { sequence = it.take(240) },
                     label = { Text("Koraci odvojeni zarezom") },
-                    supportingText = { Text("Primjer: D, D, N, N, -, -, -, -  ·  '-' znači bez unosa") },
+                    supportingText = { Text("Primjer: R, R, EDU, -, -  ·  '-' znači bez unosa") },
                     minLines = 2,
                     maxLines = 4,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Text(
+                    "Brzo dodaj korak",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                quickTypes.chunked(3).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        row.forEach { type ->
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val next = if (sequence.isBlank()) type.code else "$sequence, ${type.code}"
+                                    sequence = next.take(240)
+                                },
+                                label = { Text(type.code, maxLines = 1) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            val next = if (sequence.isBlank()) "-" else "$sequence, -"
+                            sequence = next.take(240)
+                        },
+                        label = { Text("Bez unosa") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { sequence = "" },
+                        enabled = sequence.isNotBlank(),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Očisti")
+                    }
+                }
                 if (codes.isNotEmpty()) {
                     Text("Pregled", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {

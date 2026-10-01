@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="Takto app icon">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#13D7A0"/>
+      <stop offset=".33" stop-color="#1DE1E8"/>
+      <stop offset=".68" stop-color="#2488FF"/>
+      <stop offset="1" stop-color="#8B46F6"/>
+    </linearGradient>
+    <radialGradient id="bg" cx=".5" cy=".15" r=".95">
+      <stop offset="0" stop-color="#142B52"/>
+      <stop offset="1" stop-color="#06101F"/>
+    </radialGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#bg)" stroke="#31446B" stroke-width="8"/>
+  <rect x="96" y="116" width="320" height="104" rx="48" fill="url(#g)"/>
+  <rect x="218" y="180" width="116" height="224" rx="52" fill="url(#g)"/>
+  <rect x="284" y="184" width="42" height="84" rx="20" fill="#06101F" opacity=".22"/>
+</svg>

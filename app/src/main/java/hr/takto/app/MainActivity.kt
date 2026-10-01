@@ -3,6 +3,7 @@ package hr.takto.app
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
@@ -150,6 +151,11 @@ private fun TaktoRoot(
     if (!store.onboardingDone.value) {
         OnboardingScreen(onFinish = store::finishOnboarding)
         return
+    }
+
+    BackHandler(enabled = current != MainSection.HOME) {
+        current = MainSection.HOME
+        calendarDate = null
     }
 
     Box(

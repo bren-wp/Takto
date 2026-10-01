@@ -18,6 +18,7 @@ import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.OutputStream
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -92,6 +93,24 @@ class ScheduleStore(private val context: Context) {
         .map { ShiftType(it.code, it.name, Color(it.colorArgb), isPreset = false) }
 
     fun allShiftTypes(): List<ShiftType> = shiftTypes() + customShiftTypes()
+
+    fun suggestedShiftTypes(referenceDate: LocalDate = LocalDate.now()): List<ShiftType> {
+        val all = allShiftTypes()
+        if (all.size <= 1) return all
+
+        val windowStart = referenceDate.minusDays(SUGGESTION_LOOKBACK_DAYS)
+        val usage = entries.values
+            .asSequence()
+            .filter { !it.date.isBefore(windowStart) && !it.date.isAfter(referenceDate) }
+            .groupingBy { it.code.uppercase(Locale.ROOT) }
+            .eachCount()
+
+        return all.sortedWith(
+            compareByDescending<ShiftType> { usage[it.code.uppercase(Locale.ROOT)] ?: 0 }
+                .thenBy { if (it.isPreset) 1 else 0 }
+                .thenBy { it.name.lowercase(Locale.forLanguageTag("hr")) }
+        )
+    }
 
     fun saveCustomShiftPreset(code: String, name: String, colorArgb: Long): Boolean {
         val normalizedCode = ScheduleLogic.normalizeReusableCode(code)
@@ -316,14 +335,14 @@ class ScheduleStore(private val context: Context) {
 
     fun removeEntry(date: LocalDate) {
         if (!entries.containsKey(date)) return
-        val before = captureUndo(listOf(date), "Slobodan dan ${date}")
+        val before = captureUndo(listOf(date), "Uklonjen unos ${date}")
         entries.remove(date)
         persistEntries()
         commitUndo(before)
     }
 
     /**
-     * Dodjeljuje istu vrstu smjene većem broju datuma i stanje sprema samo jednom.
+     * Dodjeljuje istu oznaku većem broju datuma i stanje sprema samo jednom.
      * Kad je overwriteExisting=false, već popunjeni dani ostaju netaknuti.
      */
     fun setEntries(
@@ -418,7 +437,7 @@ class ScheduleStore(private val context: Context) {
     }
 
     /**
-     * Snima ponedjeljak-nedjelja tjedna kao predložak. null znači slobodan dan.
+     * Snima ponedjeljak-nedjelja tjedna kao predložak. null znači dan bez unosa.
      * Snapshot je memorijski i ne mijenja spremljeni raspored.
      */
     fun copyWeek(dateInWeek: LocalDate): List<ShiftEntry?> =
@@ -494,6 +513,14 @@ class ScheduleStore(private val context: Context) {
     fun exportArchiveJsonLines(): String =
         runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
             .getOrDefault("")
+
+    fun writeArchiveTo(output: OutputStream) {
+        val file = context.getFileStreamPath(HISTORY_FILE)
+        if (!file.exists()) return
+        file.inputStream().buffered().use { input ->
+            input.copyTo(output)
+        }
+    }
 
     fun finishOnboarding() {
         onboardingDone.value = true
@@ -675,11 +702,14 @@ class ScheduleStore(private val context: Context) {
         val normalized = content.removePrefix("\uFEFF")
         val firstLine = normalized.lineSequence().firstOrNull { it.isNotBlank() } ?: return ImportResult(0, 0, 0)
         val delimiter = detectDelimiter(firstLine)
-        val rows = parseCsv(normalized, delimiter).filter { row -> row.any { it.isNotBlank() } }
-        if (rows.size > MAX_IMPORT_ROWS) return ImportResult(0, 0, 0, valid = false)
-        if (rows.isEmpty()) return ImportResult(0, 0, 0)
+        fun meaningfulRows(): Sequence<List<String>> =
+            parseCsv(normalized, delimiter).filter { row -> row.any { it.isNotBlank() } }
 
-        rows.forEachIndexed { index, parts ->
+        val rowCount = meaningfulRows().take(MAX_IMPORT_ROWS + 1).count()
+        if (rowCount > MAX_IMPORT_ROWS) return ImportResult(0, 0, 0, valid = false)
+        if (rowCount == 0) return ImportResult(0, 0, 0)
+
+        meaningfulRows().forEachIndexed { index, parts ->
             if (index == 0 && isHeader(parts)) return@forEachIndexed
             if (parts.size < 2) {
                 skipped++
@@ -1285,8 +1315,7 @@ class ScheduleStore(private val context: Context) {
         return null
     }
 
-    private fun parseCsv(content: String, delimiter: Char): List<List<String>> {
-        val rows = mutableListOf<List<String>>()
+    private fun parseCsv(content: String, delimiter: Char): Sequence<List<String>> = sequence {
         val row = mutableListOf<String>()
         val current = StringBuilder()
         var quoted = false
@@ -1295,11 +1324,6 @@ class ScheduleStore(private val context: Context) {
         fun pushField() {
             row += current.toString().trim()
             current.clear()
-        }
-        fun pushRow() {
-            pushField()
-            rows += row.toList()
-            row.clear()
         }
 
         while (i < content.length) {
@@ -1311,14 +1335,21 @@ class ScheduleStore(private val context: Context) {
                 }
                 c == '"' -> quoted = !quoted
                 c == delimiter && !quoted -> pushField()
-                c == '\n' && !quoted -> pushRow()
+                c == '\n' && !quoted -> {
+                    pushField()
+                    yield(row.toList())
+                    row.clear()
+                }
                 c == '\r' && !quoted -> Unit
                 else -> current.append(c)
             }
             i++
         }
-        if (current.isNotEmpty() || row.isNotEmpty()) pushRow()
-        return rows
+
+        if (current.isNotEmpty() || row.isNotEmpty()) {
+            pushField()
+            yield(row.toList())
+        }
     }
 
     private data class UndoState(val label: String, val entries: Map<LocalDate, ShiftEntry?>)
@@ -1347,9 +1378,10 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_WORK_TIME_PRESETS = 40
         private const val MAX_SAVED_PATTERNS = 20
         private const val MAX_IMPORT_ROWS = 100_000
-        private const val MAX_IMPORT_CHARS = 20_000_000
+        const val MAX_IMPORT_CHARS = 20_000_000
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
+        private const val SUGGESTION_LOOKBACK_DAYS = 90L
         private const val DATA_SCHEMA_VERSION = 8
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"

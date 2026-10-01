@@ -54,7 +54,7 @@ class ShiftReminderReceiver : BroadcastReceiver() {
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("Smjena uskoro · $dateText")
+                .setContentTitle("Rad uskoro · $dateText")
                 .setContentText(details)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(details))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -64,13 +64,44 @@ private data class PatternDef(
 @Composable
 fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
-    val builtInPatterns = remember {
-        listOf(
-            PatternDef("Radni tjedan", "Pet radnih dana pa dva slobodna dana.", listOf("D", "D", "D", "D", "D", null, null)),
-            PatternDef("2D / 2N / 4 slobodna", "Dvije dnevne, dvije noćne i četiri slobodna dana.", listOf("D", "D", "N", "N", null, null, null, null)),
-            PatternDef("D / N / slobodno", "Jednostavna trodnevna rotacija.", listOf("D", "N", null)),
-            PatternDef("D / D / GO / slobodno", "Primjer kombiniranog obrasca.", listOf("D", "D", "GO", null))
-        )
+    val suggestedTypes = store.suggestedShiftTypes()
+    val primaryType = suggestedTypes.firstOrNull()
+    val secondaryType = suggestedTypes.getOrNull(1)
+    val builtInPatterns = buildList {
+        primaryType?.let { primary ->
+            add(
+                PatternDef(
+                    "5 × ${primary.code} / 2 bez unosa",
+                    "Pet dana s oznakom ${primary.code}, zatim dva dana bez unosa.",
+                    listOf(primary.code, primary.code, primary.code, primary.code, primary.code, null, null)
+                )
+            )
+        }
+        if (primaryType != null && secondaryType != null) {
+            add(
+                PatternDef(
+                    "2 ${primaryType.code} / 2 ${secondaryType.code} / 4 bez unosa",
+                    "Prilagodljiva osmodnevna rotacija iz tvojih najčešćih oznaka.",
+                    listOf(
+                        primaryType.code,
+                        primaryType.code,
+                        secondaryType.code,
+                        secondaryType.code,
+                        null,
+                        null,
+                        null,
+                        null
+                    )
+                )
+            )
+            add(
+                PatternDef(
+                    "${primaryType.code} / ${secondaryType.code} / bez unosa",
+                    "Jednostavna trodnevna rotacija iz tvojih najčešćih oznaka.",
+                    listOf(primaryType.code, secondaryType.code, null)
+                )
+            )
+        }
     }
     val patterns = builtInPatterns + store.savedPatterns.map { saved ->
         PatternDef(saved.name, "Tvoj spremljeni uzorak.", saved.codes, saved.id)
@@ -93,7 +124,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Uzorci rasporeda", style = MaterialTheme.typography.headlineLarge)
-            Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju slobodni dani.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju bez unosa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = { customPatternDialog = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -176,7 +207,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 )
                 Toast.makeText(
                     context,
-                    "Promijenjeno: ${result.changed} · preskočeno: ${result.skipped} · slobodno: ${result.freeDays}",
+                    "Promijenjeno: ${result.changed} · preskočeno: ${result.skipped} · bez unosa: ${result.freeDays}",
                     Toast.LENGTH_LONG
                 ).show()
                 selectedPattern = null
@@ -192,7 +223,8 @@ private fun CustomPatternDialog(
     onSave: (String, List<String?>) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-    var sequence by remember { mutableStateOf("D, D, N, N, -, -, -, -") }
+    var sequence by remember { mutableStateOf("") }
+    val quickTypes = store.suggestedShiftTypes().take(6)
     val codes = ScheduleLogic.parsePatternSequence(sequence)
     val valid = name.isNotBlank() && codes.isNotEmpty() && codes.any { it != null }
 
@@ -212,11 +244,57 @@ private fun CustomPatternDialog(
                     value = sequence,
                     onValueChange = { sequence = it.take(240) },
                     label = { Text("Koraci odvojeni zarezom") },
-                    supportingText = { Text("Primjer: D, D, N, N, -, -, -, -  ·  '-' znači slobodan dan") },
+                    supportingText = { Text("Primjer: R, R, EDU, -, -  ·  '-' znači bez unosa") },
                     minLines = 2,
                     maxLines = 4,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Text(
+                    "Brzo dodaj korak",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                quickTypes.chunked(3).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        row.forEach { type ->
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val next = if (sequence.isBlank()) type.code else "$sequence, ${type.code}"
+                                    sequence = next.take(240)
+                                },
+                                label = { Text(type.code, maxLines = 1) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = false,
+                        onClick = {
+                            val next = if (sequence.isBlank()) "-" else "$sequence, -"
+                            sequence = next.take(240)
+                        },
+                        label = { Text("Bez unosa") },
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = { sequence = "" },
+                        enabled = sequence.isNotBlank(),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Očisti")
+                    }
+                }
                 if (codes.isNotEmpty()) {
                     Text("Pregled", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -236,7 +314,7 @@ private fun CustomPatternDialog(
                     if (codes.size > 8) Text("+ još ${codes.size - 8} koraka", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
-                    "Možeš koristiti D, N, GO, BO, PD, spremljene vlastite oznake ili bilo koju novu kratku oznaku.",
+                    "Možeš koristiti bilo koju spremljenu oznaku ili novu kratku oznaku. Znak '-' ostavlja dan bez unosa.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

@@ -28,14 +28,14 @@ class TaktoApplication : Application() {
             "Dnevni raspored",
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
-            description = "Podsjetnik za današnju smjenu ili obvezu u Takto rasporedu."
+            description = "Podsjetnik za današnji rad, obvezu ili drugi unos u Takto rasporedu."
         }
         val shifts = NotificationChannel(
             ShiftReminderReceiver.CHANNEL_ID,
-            "Podsjetnici prije smjene",
+            "Podsjetnici prije rada",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "Obavijest prije početka smjene s upisanim radnim vremenom."
+            description = "Obavijest prije početka unosa s upisanim radnim vremenom."
         }
         manager.createNotificationChannel(daily)
         manager.createNotificationChannel(shifts)

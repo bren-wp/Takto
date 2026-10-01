@@ -44,39 +44,40 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
-import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
+import java.util.Locale
+
+private data class ScheduleCodeStat(
+    val code: String,
+    val label: String,
+    val count: Int,
+    val color: Color
+)
 
 @Composable
 fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     var month by remember { mutableStateOf(YearMonth.now()) }
     var monthlyTargetDialog by remember { mutableStateOf(false) }
     val monthEntries = store.entriesForMonth(month)
-    val counts = linkedMapOf(
-        "D" to monthEntries.count { it.code.equals("D", true) },
-        "N" to monthEntries.count { it.code.equals("N", true) },
-        "GO" to monthEntries.count { it.code.equals("GO", true) },
-        "BO" to monthEntries.count { it.code.equals("BO", true) },
-        "PD" to monthEntries.count { it.code.equals("PD", true) }
-    )
-    val customEntries = monthEntries.filter { item -> counts.keys.none { item.code.equals(it, true) } }
-    val custom = customEntries.size
-    val customGroups = customEntries
-        .groupBy { it.code.uppercase() }
-        .map { (code, items) -> Triple(code, items.size, items.first()) }
-        .sortedWith(compareByDescending<Triple<String, Int, hr.takto.app.model.ShiftEntry>> { it.second }.thenBy { it.first })
-    val dayColor = store.shiftType("D")?.color ?: DefaultShiftTypes.day.color
-    val nightColor = store.shiftType("N")?.color ?: DefaultShiftTypes.night.color
-    val annualColor = store.shiftType("GO")?.color ?: DefaultShiftTypes.annual.color
-    val sickColor = store.shiftType("BO")?.color ?: DefaultShiftTypes.sick.color
-    val paidColor = store.shiftType("PD")?.color ?: DefaultShiftTypes.paid.color
+    val distribution = monthEntries
+        .groupBy { it.code.uppercase(Locale.ROOT) }
+        .map { (code, items) ->
+            val sample = items.first()
+            ScheduleCodeStat(
+                code = code,
+                label = sample.label.ifBlank { code },
+                count = items.size,
+                color = sample.color
+            )
+        }
+        .sortedWith(compareByDescending<ScheduleCodeStat> { it.count }.thenBy { it.code })
     val total = monthEntries.size
-    val workShifts = counts.getValue("D") + counts.getValue("N")
     val freeDays = (month.lengthOfMonth() - monthEntries.map { it.date.dayOfMonth }.distinct().size).coerceAtLeast(0)
     val timedEntries = monthEntries.filter { it.workMinutes != null }
     val totalWorkMinutes = store.totalWorkMinutes(timedEntries)
@@ -119,14 +120,14 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 Column(Modifier.weight(1f)) {
                     Text(total.toString(), fontSize = 46.sp, fontWeight = FontWeight.ExtraBold)
                     Text("Unosa u rasporedu", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("D + N oznake: $workShifts", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text("Različitih oznaka: ${distribution.size}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     if (timedEntries.isNotEmpty()) {
                         Text("Evidentirano: ${ScheduleLogic.formatDuration(totalWorkMinutes)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(freeDays.toString(), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TaktoBlue)
-                    Text("Slobodnih dana", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Dana bez unosa", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -173,7 +174,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Posebni radni sati", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Noćni rad koristi prozor 22:00–06:00. Vikend i nedjelja računaju se prema stvarnom datumu, uključujući smjene koje prelaze ponoć. Pauza se proporcionalno raspoređuje.",
+                    "Noćni rad koristi prozor 22:00–06:00. Vikend i nedjelja računaju se prema stvarnom datumu, uključujući radne unose koji prelaze ponoć. Pauza se proporcionalno raspoređuje.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
@@ -185,67 +186,70 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Modifier.weight(1f), "D", "Dnevne", counts.getValue("D"), dayColor)
-            StatTile(Modifier.weight(1f), "N", "Noćne", counts.getValue("N"), nightColor)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Modifier.weight(1f), "GO", "Godišnji", counts.getValue("GO"), annualColor)
-            StatTile(Modifier.weight(1f), "BO", "Bolovanje", counts.getValue("BO"), sickColor)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Modifier.weight(1f), "PD", "Plaćeni dopust", counts.getValue("PD"), paidColor)
-            StatTile(Modifier.weight(1f), "✎", "Vlastiti", custom, Color(0xFF22B8CF))
-        }
-
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Vizualni uvid", style = MaterialTheme.typography.titleLarge)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    DonutChart(
-                        counts = listOf(
-                            counts.getValue("D") to dayColor,
-                            counts.getValue("N") to nightColor,
-                            counts.getValue("GO") to annualColor,
-                            counts.getValue("BO") to sickColor,
-                            counts.getValue("PD") to paidColor,
-                            custom to Color(0xFF22B8CF)
-                        ),
-                        modifier = Modifier.size(170.dp)
+                Text("Raspodjela oznaka", style = MaterialTheme.typography.titleLarge)
+                if (distribution.isEmpty()) {
+                    Text(
+                        "Za ovaj mjesec još nema spremljenih unosa.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Legend("Oznaka D", counts.getValue("D"), dayColor)
-                        Legend("Oznaka N", counts.getValue("N"), nightColor)
-                        Legend("Godišnji odmor", counts.getValue("GO"), annualColor)
-                        Legend("Bolovanje", counts.getValue("BO"), sickColor)
-                        Legend("Plaćeni dopust", counts.getValue("PD"), paidColor)
-                        if (custom > 0) Legend("Vlastiti unosi", custom, Color(0xFF22B8CF))
+                } else {
+                    distribution.take(6).chunked(2).forEach { pair ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            pair.forEach { stat ->
+                                StatTile(
+                                    modifier = Modifier.weight(1f),
+                                    code = stat.code,
+                                    label = stat.label,
+                                    count = stat.count,
+                                    color = stat.color
+                                )
+                            }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                    if (distribution.size > 6) {
+                        Text(
+                            "+ još ${distribution.size - 6} različitih oznaka",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
                     }
                 }
             }
         }
 
-        if (customGroups.isNotEmpty()) {
+        if (distribution.isNotEmpty()) {
+            val chartPrimary = distribution.take(6)
+            val otherCount = distribution.drop(6).sumOf { it.count }
+            val otherColor = MaterialTheme.colorScheme.outline
+
             GlassCard(modifier = Modifier.fillMaxWidth()) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Vlastite oznake", style = MaterialTheme.typography.titleLarge)
-                    Text("Pregled vlastitih i spremljenih brzih oznaka za odabrani mjesec.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    customGroups.take(10).forEach { (code, count, sample) ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                Modifier.size(36.dp).background(sample.color, RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(code, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = if (code.length <= 3) 11.sp else 8.sp, maxLines = 1)
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Vizualni uvid", style = MaterialTheme.typography.titleLarge)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DonutChart(
+                            counts = buildList {
+                                chartPrimary.forEach { add(it.count to it.color) }
+                                if (otherCount > 0) add(otherCount to otherColor)
+                            },
+                            modifier = Modifier.size(170.dp)
+                        )
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            chartPrimary.forEach { stat ->
+                                Legend(
+                                    name = "${stat.code} · ${stat.label}",
+                                    count = stat.count,
+                                    color = stat.color
+                                )
                             }
-                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                Text(sample.label, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                                Text(code, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                            }
-                            Text(count.toString(), fontWeight = FontWeight.ExtraBold, color = sample.color)
+                            if (otherCount > 0) Legend("Ostale oznake", otherCount, otherColor)
                         }
                     }
-                    if (customGroups.size > 10) Text("+ još ${customGroups.size - 10} različitih oznaka", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -385,7 +389,7 @@ private fun MonthlyTargetDialog(
 private fun StatTile(modifier: Modifier, code: String, label: String, count: Int, color: Color) {
     GlassCard(modifier = modifier, padding = PaddingValues(12.dp), corner = 17.dp) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(code, color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            Text(code, color = color, fontSize = shiftCodeCompactFontSize(code), fontWeight = FontWeight.ExtraBold, maxLines = 1)
             Text(count.toString(), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, maxLines = 2)
         }
@@ -434,7 +438,7 @@ private fun DonutChart(counts: List<Pair<Int, Color>>, modifier: Modifier = Modi
 @Composable
 private fun MonthlyBars(store: ScheduleStore, year: Int) {
     val values = (1..12).map { month ->
-        store.entries.values.count { it.date.year == year && it.date.monthValue == month && (it.code.equals("D", true) || it.code.equals("N", true)) }
+        store.entries.values.count { it.date.year == year && it.date.monthValue == month }
     }
     val max = (values.maxOrNull() ?: 1).coerceAtLeast(1)
     val names = listOf("Sij", "Velj", "Ožu", "Tra", "Svi", "Lip", "Srp", "Kol", "Ruj", "Lis", "Stu", "Pro")

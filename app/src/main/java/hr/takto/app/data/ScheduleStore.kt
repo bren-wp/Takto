@@ -64,6 +64,7 @@ class ScheduleStore(private val context: Context) {
     init {
         loadShiftColors()
         loadCustomShiftPresets()
+        seedReferenceShortcutsOnce()
         loadWorkTimePresets()
         loadMonthlyTargetOverrides()
         loadSavedPatterns()
@@ -721,7 +722,14 @@ class ScheduleStore(private val context: Context) {
                     return@forEachIndexed
                 }
                 val label = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }?.take(MAX_CUSTOM_LENGTH) ?: cleanCode
-                val color = parseColorArgb(parts.getOrNull(4)) ?: DEFAULT_CUSTOM_COLOR
+                val color = parseColorArgb(parts.getOrNull(4)) ?: importedCodeColor(cleanCode)
+                if (
+                    customShiftPresets.keys.none { it.equals(cleanCode, ignoreCase = true) } &&
+                    DefaultShiftTypes.presets.none { it.code.equals(cleanCode, ignoreCase = true) } &&
+                    customShiftPresets.size < MAX_CUSTOM_PRESETS
+                ) {
+                    customShiftPresets[cleanCode] = CustomShiftPreset(cleanCode, label, color)
+                }
                 entries[date] = ShiftEntry(
                     date, cleanCode, label, color, note,
                     startMinute = if (hasValidTime) startMinute else null,
@@ -731,6 +739,7 @@ class ScheduleStore(private val context: Context) {
             }
             imported++
         }
+        persistCustomShiftPresets()
         persistEntries()
         clearUndoState()
         return ImportResult(imported, skipped, freeDays)
@@ -939,6 +948,35 @@ class ScheduleStore(private val context: Context) {
         val obj = JSONObject()
         shiftColors.forEach { (code, argb) -> obj.put(code, argb) }
         prefs.edit().putString(KEY_SHIFT_COLORS, obj.toString()).apply()
+    }
+
+    private fun seedReferenceShortcutsOnce() {
+        if (prefs.getBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, false)) return
+
+        val defaults = listOf(
+            CustomShiftPreset("J", "J", 0xFF64748BL),
+            CustomShiftPreset("SD", "SD", 0xFF334155L)
+        )
+        defaults.forEach { preset ->
+            if (
+                customShiftPresets.keys.none { it.equals(preset.code, ignoreCase = true) } &&
+                DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) } &&
+                customShiftPresets.size < MAX_CUSTOM_PRESETS
+            ) {
+                customShiftPresets[preset.code] = preset
+            }
+        }
+        persistCustomShiftPresets()
+        prefs.edit().putBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, true).apply()
+    }
+
+    private fun importedCodeColor(code: String): Long {
+        val palette = longArrayOf(
+            0xFF22B8CFL, 0xFF2488FFL, 0xFF8B46F6L, 0xFF13D7A0L,
+            0xFFFFB21DL, 0xFFFF4B55L, 0xFF64748BL, 0xFF0EA5E9L
+        )
+        val index = (code.uppercase(Locale.ROOT).hashCode() and Int.MAX_VALUE) % palette.size
+        return palette[index]
     }
 
     private fun loadCustomShiftPresets() {
@@ -1323,6 +1361,7 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
+        private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
 
         private val DATE_FORMATS = listOf(
             DateTimeFormatter.ISO_LOCAL_DATE,

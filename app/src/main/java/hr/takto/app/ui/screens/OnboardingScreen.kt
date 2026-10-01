@@ -15,15 +15,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,31 +40,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.ui.components.GlassCard
-import hr.takto.app.ui.components.ShiftChoice
 import hr.takto.app.ui.components.TaktoLogo
-import hr.takto.app.ui.theme.TaktoBackground
+import hr.takto.app.ui.theme.TaktoAmber
 import hr.takto.app.ui.theme.TaktoBlue
 import hr.takto.app.ui.theme.TaktoCyan
 import hr.takto.app.ui.theme.TaktoGreen
-import hr.takto.app.ui.theme.TaktoMuted
 import hr.takto.app.ui.theme.TaktoPurple
-import hr.takto.app.ui.theme.TaktoSurface
-import hr.takto.app.ui.theme.TaktoText
+import hr.takto.app.ui.theme.TaktoRed
 
 @Composable
 fun OnboardingScreen(onFinish: () -> Unit) {
     var page by remember { mutableIntStateOf(0) }
+    val colors = MaterialTheme.colorScheme
     val title = when (page) {
         0 -> "Dobrodošli u Takto"
-        1 -> "Dodijeli svoju smjenu"
-        else -> "Pogledaj svoj mjesec odmah"
+        1 -> "Prilagodi Takto svom poslu"
+        else -> "Tvoj mjesec na prvi pogled"
     }
     val body = when (page) {
-        0 -> "Jednostavan način za planiranje i upravljanje smjenama."
-        1 -> "Jednim dodirom postavi oznaku smjene koja ti odgovara."
-        else -> "Dobij jasan pregled rasporeda. Prazna kućica znači slobodan dan."
+        0 -> "Jedno mjesto za raspored, obveze, odsutnosti i radne sate — bez obzira kako izgleda tvoj radni dan."
+        1 -> "Koristi gotove oznake ili napravi svoje. Postavi fond sati, radno vrijeme, podsjetnike i način prikaza."
+        else -> "Pregledaj cijeli mjesec, brzo pronađi važan dan i zadrži stare i buduće rasporede spremljene."
     }
 
     Box(
@@ -69,47 +69,64 @@ fun OnboardingScreen(onFinish: () -> Unit) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF111B3E), TaktoBackground, Color(0xFF080D1C))
+                    listOf(
+                        colors.surfaceContainerHigh,
+                        colors.background,
+                        colors.background
+                    )
                 )
             )
     ) {
         Box(
             Modifier
                 .align(Alignment.TopEnd)
-                .size(260.dp)
+                .size(280.dp)
                 .background(
-                    Brush.radialGradient(listOf(TaktoCyan.copy(alpha = 0.18f), Color.Transparent)),
+                    Brush.radialGradient(
+                        listOf(colors.primary.copy(alpha = 0.16f), Color.Transparent)
+                    ),
                     CircleShape
                 )
         )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 54.dp),
+                .padding(horizontal = 24.dp, vertical = 48.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                TaktoLogo(iconSize = 54.dp)
+                TaktoLogo(iconSize = 52.dp)
                 Spacer(Modifier.weight(1f))
-                androidx.compose.material3.TextButton(onClick = onFinish) {
-                    Text("Preskoči", color = TaktoMuted)
+                TextButton(onClick = onFinish) {
+                    Text("Preskoči", color = colors.onSurfaceVariant)
                 }
             }
+
             Text(
-                "Dodirni. Označi. Radi.",
-                color = TaktoMuted,
-                letterSpacing = 3.sp,
-                fontWeight = FontWeight.Medium
+                "PLANIRAJ · OZNAČI · BUDI U TIJEKU",
+                color = colors.onSurfaceVariant,
+                letterSpacing = 2.2.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp
             )
-            Spacer(Modifier.height(36.dp))
-            Text(title, style = MaterialTheme.typography.headlineLarge, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(30.dp))
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineLarge,
+                textAlign = TextAlign.Center
+            )
             Spacer(Modifier.height(8.dp))
-            Text(body, color = TaktoMuted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
-            Spacer(Modifier.height(28.dp))
+            Text(
+                body,
+                color = colors.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Spacer(Modifier.height(26.dp))
 
             when (page) {
                 0 -> WelcomePanel()
-                1 -> ShiftPanel()
+                1 -> PersonalizationPanel()
                 else -> CalendarPreviewPanel()
             }
 
@@ -119,20 +136,22 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                     Box(
                         Modifier
                             .size(if (index == page) 10.dp else 7.dp)
-                            .background(if (index == page) TaktoBlue else TaktoMuted.copy(alpha = 0.35f), CircleShape)
+                            .background(
+                                if (index == page) colors.primary
+                                else colors.onSurfaceVariant.copy(alpha = 0.30f),
+                                CircleShape
+                            )
                     )
                 }
             }
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(16.dp))
             Button(
-                onClick = {
-                    if (page < 2) page++ else onFinish()
-                },
+                onClick = { if (page < 2) page++ else onFinish() },
                 modifier = Modifier.fillMaxWidth().height(58.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue),
+                colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Text(if (page < 2) "Dalje" else "Počni planirati", fontWeight = FontWeight.Bold)
+                Text(if (page < 2) "Dalje" else "Otvori Takto", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.size(8.dp))
                 Icon(Icons.Default.ArrowForward, contentDescription = null)
             }
@@ -142,79 +161,152 @@ fun OnboardingScreen(onFinish: () -> Unit) {
 
 @Composable
 private fun WelcomePanel() {
-    GlassCard(modifier = Modifier.fillMaxWidth(), padding = androidx.compose.foundation.layout.PaddingValues(20.dp)) {
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            FeatureLine(Icons.Default.CalendarMonth, "Jednostavno i brzo", "Velike kućice kalendara za lagani dodir.")
-            FeatureLine(Icons.Default.GridView, "Stvoreno za smjenski rad", "D, N, GO, BO i PD uvijek su jasno vidljivi.")
-            FeatureLine(Icons.Default.Insights, "Tvoj raspored. Na tvoj način.", "Vlastiti unos može sadržavati bilo što.")
+            FeatureLine(
+                Icons.Default.CalendarMonth,
+                "Raspored bez komplikacija",
+                "Upiši rad, obvezu, odsutnost ili vlastitu oznaku za bilo koji dan."
+            )
+            FeatureLine(
+                Icons.Default.Schedule,
+                "Sati i mjesečni fond",
+                "Prati evidentirano vrijeme, redovne sate i prekovremene."
+            )
+            FeatureLine(
+                Icons.Default.Tune,
+                "Radi na tvoj način",
+                "Takto se prilagođava korisniku, a ne korisnik aplikaciji."
+            )
         }
     }
 }
 
 @Composable
-private fun ShiftPanel() {
+private fun PersonalizationPanel() {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ShiftChoice(DefaultShiftTypes.day, Modifier.weight(1f)) {}
-            ShiftChoice(DefaultShiftTypes.night, Modifier.weight(1f)) {}
+            CompactFeature(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Edit,
+                title = "Vlastite oznake",
+                subtitle = "Naziv, kratica i boja"
+            )
+            CompactFeature(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Schedule,
+                title = "Radno vrijeme",
+                subtitle = "Početak, kraj i pauza"
+            )
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ShiftChoice(DefaultShiftTypes.annual, Modifier.weight(1f)) {}
-            ShiftChoice(DefaultShiftTypes.sick, Modifier.weight(1f)) {}
-        }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ShiftChoice(DefaultShiftTypes.paid, Modifier.weight(1f)) {}
-            GlassCard(modifier = Modifier.weight(1f).height(84.dp), padding = androidx.compose.foundation.layout.PaddingValues(8.dp)) {
-                Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Default.Edit, null, tint = TaktoText)
-                    Text("Vlastiti unos", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-                }
-            }
+            CompactFeature(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Notifications,
+                title = "Podsjetnici",
+                subtitle = "Kad ih želiš"
+            )
+            CompactFeature(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Backup,
+                title = "Sigurnosna kopija",
+                subtitle = "Uvoz, izvoz i arhiva"
+            )
         }
     }
 }
 
 @Composable
 private fun CalendarPreviewPanel() {
+    val colors = MaterialTheme.colorScheme
     GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Ožujak 2025.", style = MaterialTheme.typography.titleLarge)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Primjer pregleda", style = MaterialTheme.typography.titleLarge)
+            Text(
+                "Oznake mogu predstavljati ono što je tebi važno.",
+                color = colors.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 listOf(
-                    "D" to DefaultShiftTypes.day.color,
-                    "N" to DefaultShiftTypes.night.color,
-                    "GO" to DefaultShiftTypes.annual.color,
-                    "" to TaktoSurface,
-                    "BO" to DefaultShiftTypes.sick.color,
-                    "PD" to DefaultShiftTypes.paid.color,
-                    "" to TaktoSurface
+                    "R" to TaktoBlue,
+                    "GO" to TaktoGreen,
+                    "EDU" to TaktoPurple,
+                    "" to colors.surfaceVariant,
+                    "BO" to TaktoAmber,
+                    "+" to TaktoCyan,
+                    "" to colors.surfaceVariant
                 ).forEach { (code, color) ->
                     Box(
                         Modifier
                             .weight(1f)
                             .height(62.dp)
-                            .background(color, RoundedCornerShape(10.dp)),
+                            .background(color, RoundedCornerShape(11.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (code.isNotBlank()) Text(code, fontWeight = FontWeight.ExtraBold)
+                        if (code.isNotBlank()) {
+                            Text(
+                                code,
+                                color = if (code == "+") Color(0xFF07354A) else Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = if (code.length > 2) 12.sp else 16.sp
+                            )
+                        }
                     }
                 }
             }
-            Text("Prazna kućica = slobodan dan", color = TaktoMuted, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "Prazno polje znači da za taj dan nema spremljenog unosa.",
+                color = colors.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
 
 @Composable
-private fun FeatureLine(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String) {
+private fun CompactFeature(
+    modifier: Modifier,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String
+) {
+    val colors = MaterialTheme.colorScheme
+    GlassCard(modifier = modifier, padding = androidx.compose.foundation.layout.PaddingValues(14.dp), corner = 18.dp) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .background(colors.primary.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = colors.primary)
+            }
+            Text(title, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = colors.onSurfaceVariant, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun FeatureLine(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String
+) {
+    val colors = MaterialTheme.colorScheme
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         Box(
-            Modifier.size(48.dp).background(TaktoBlue.copy(alpha = 0.12f), RoundedCornerShape(14.dp)),
+            Modifier
+                .size(48.dp)
+                .background(colors.primary.copy(alpha = 0.12f), RoundedCornerShape(14.dp)),
             contentAlignment = Alignment.Center
-        ) { Icon(icon, null, tint = TaktoCyan) }
+        ) {
+            Icon(icon, contentDescription = null, tint = colors.primary)
+        }
         Column {
             Text(title, fontWeight = FontWeight.Bold)
-            Text(subtitle, color = TaktoMuted, style = MaterialTheme.typography.bodyMedium)
+            Text(subtitle, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

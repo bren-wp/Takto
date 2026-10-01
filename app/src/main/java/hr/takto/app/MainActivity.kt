@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -22,6 +24,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,7 +34,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import hr.takto.app.data.ScheduleStore
+import hr.takto.app.model.AppThemeMode
 import hr.takto.app.reminders.ReminderScheduler
 import hr.takto.app.ui.screens.CalendarScreen
 import hr.takto.app.ui.screens.HomeScreen
@@ -57,7 +63,20 @@ class MainActivity : ComponentActivity() {
         consumeNavigationIntent(intent)
         val store = (application as TaktoApplication).scheduleStore
         setContent {
-            TaktoTheme {
+            val systemDark = isSystemInDarkTheme()
+            val darkAppearance = when (store.themeMode.value) {
+                AppThemeMode.DARK -> true
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.SYSTEM -> systemDark
+            }
+            val view = LocalView.current
+            SideEffect {
+                val controller = WindowCompat.getInsetsController(window, view)
+                controller.isAppearanceLightStatusBars = !darkAppearance
+                controller.isAppearanceLightNavigationBars = !darkAppearance
+            }
+
+            TaktoTheme(mode = store.themeMode.value) {
                 TaktoRoot(
                     store = store,
                     requestedDate = openDateRequest.value,
@@ -139,9 +158,9 @@ private fun TaktoRoot(
             .background(
                 Brush.radialGradient(
                     colors = listOf(
-                        TaktoPurple.copy(alpha = 0.16f),
-                        TaktoGreen.copy(alpha = 0.06f),
-                        TaktoBackground
+                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f),
+                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f),
+                        MaterialTheme.colorScheme.background
                     )
                 )
             )
@@ -177,7 +196,7 @@ private fun TaktoRoot(
 
 @Composable
 private fun TaktoBottomBar(current: MainSection, onSelect: (MainSection) -> Unit) {
-    NavigationBar(containerColor = TaktoSurface.copy(alpha = 0.98f)) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)) {
         MainSection.entries.forEach { section ->
             NavigationBarItem(
                 selected = current == section,
@@ -188,8 +207,8 @@ private fun TaktoBottomBar(current: MainSection, onSelect: (MainSection) -> Unit
                     selectedIconColor = TaktoBlue,
                     selectedTextColor = TaktoBlue,
                     indicatorColor = TaktoBlue.copy(alpha = 0.12f),
-                    unselectedIconColor = Color(0xFF9EB0C9),
-                    unselectedTextColor = Color(0xFF9EB0C9)
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         }

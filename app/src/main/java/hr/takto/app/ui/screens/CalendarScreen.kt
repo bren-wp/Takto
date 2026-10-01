@@ -65,8 +65,6 @@ import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.theme.TaktoBlue
-import hr.takto.app.ui.theme.TaktoMuted
-import hr.takto.app.ui.theme.TaktoSurface
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -125,7 +123,7 @@ fun CalendarScreen(
             TaktoLogo(iconSize = 34.dp)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = { searchDialog = true }) {
-                Icon(Icons.Default.Search, contentDescription = "Pretraži raspored", tint = TaktoMuted)
+                Icon(Icons.Default.Search, contentDescription = "Pretraži raspored", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             IconButton(
                 onClick = {
@@ -137,7 +135,7 @@ fun CalendarScreen(
                 Icon(
                     Icons.Default.Undo,
                     contentDescription = if (store.canUndo.value) "Vrati: ${store.undoLabel.value}" else "Nema promjene za vratiti",
-                    tint = if (store.canUndo.value) TaktoBlue else TaktoMuted.copy(alpha = 0.35f)
+                    tint = if (store.canUndo.value) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
                 )
             }
             IconButton(
@@ -150,7 +148,7 @@ fun CalendarScreen(
                 Icon(
                     Icons.Default.Checklist,
                     contentDescription = "Odaberi više dana",
-                    tint = if (multiSelect) TaktoBlue else TaktoMuted
+                    tint = if (multiSelect) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             TextButton(onClick = {
@@ -216,7 +214,7 @@ fun CalendarScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Višestruki odabir", fontWeight = FontWeight.Bold)
-                            Text("Odabrano: ${selectedDates.size} dana", color = TaktoMuted)
+                            Text("Odabrano: ${selectedDates.size} dana", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         TextButton(onClick = { selectedDates = emptySet() }) { Text("Očisti") }
                     }
@@ -250,7 +248,7 @@ fun CalendarScreen(
             } else {
                 "Prazna kućica znači slobodan dan. Dodirni datum za D, N, GO, BO, PD ili vlastiti unos."
             },
-            color = TaktoMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -266,7 +264,7 @@ fun CalendarScreen(
 
         ModalBottomSheet(
             onDismissRequest = { selectedDate = null },
-            containerColor = TaktoSurface
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -276,7 +274,7 @@ fun CalendarScreen(
                     .padding(bottom = 30.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(croatianDate(date), color = TaktoMuted)
+                Text(croatianDate(date), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(if (current == null) "Odaberi oznaku" else "Promijeni oznaku", style = MaterialTheme.typography.headlineMedium)
@@ -289,7 +287,7 @@ fun CalendarScreen(
                             store.removeEntry(date)
                             selectedDate = null
                         }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Slobodan dan", tint = Color(0xFFFF6570))
+                            Icon(Icons.Default.Delete, contentDescription = "Slobodan dan", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -319,16 +317,16 @@ fun CalendarScreen(
                                 Text("Radno vrijeme", fontWeight = FontWeight.Bold)
                                 when {
                                     ScheduleLogic.isLeaveCode(current.code) ->
-                                        Text("GO, BO i PD ne ulaze u obračun radnih sati.", color = TaktoMuted, fontSize = 12.sp)
+                                        Text("GO, BO i PD ne ulaze u obračun radnih sati.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                     current.hasWorkTime -> {
                                         Text(
                                             "${ScheduleLogic.formatClock(current.startMinute)} – ${ScheduleLogic.formatClock(current.endMinute)} · ${ScheduleLogic.formatDuration(current.workMinutes ?: 0)}",
-                                            color = TaktoMuted,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 12.sp
                                         )
-                                        if (current.breakMinutes > 0) Text("Pauza: ${current.breakMinutes} min", color = TaktoMuted, fontSize = 11.sp)
+                                        if (current.breakMinutes > 0) Text("Pauza: ${current.breakMinutes} min", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                     }
-                                    else -> Text("Vrijeme još nije upisano.", color = TaktoMuted, fontSize = 12.sp)
+                                    else -> Text("Vrijeme još nije upisano.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 }
                             }
                             if (!ScheduleLogic.isLeaveCode(current.code)) {
@@ -358,7 +356,7 @@ fun CalendarScreen(
                             selectedDate = null
                         },
                         modifier = Modifier.weight(1f).height(84.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22324B)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                         shape = RoundedCornerShape(18.dp)
                     ) {
                         Icon(Icons.Default.Edit, null)
@@ -369,7 +367,7 @@ fun CalendarScreen(
 
                 val quickCustomTypes = store.customShiftTypes()
                 if (quickCustomTypes.isNotEmpty()) {
-                    Text("Vlastite brze oznake", color = TaktoMuted, style = MaterialTheme.typography.labelLarge)
+                    Text("Vlastite brze oznake", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
                     quickCustomTypes.chunked(2).forEach { pair ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             pair.forEach { type ->
@@ -383,7 +381,7 @@ fun CalendarScreen(
                     }
                 }
 
-                Text("Tjedan", color = TaktoMuted, style = MaterialTheme.typography.labelLarge)
+                Text("Tjedan", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
@@ -396,7 +394,7 @@ fun CalendarScreen(
                             selectedDate = null
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22324B))
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
                     ) {
                         Icon(Icons.Default.ContentCopy, null)
                         Text(" Kopiraj")
@@ -417,7 +415,7 @@ fun CalendarScreen(
                 if (copiedWeek.size == 7) {
                     Text(
                         "U memoriji: ${copiedWeek.count { it != null }} označenih dana i ${copiedWeek.count { it == null }} slobodnih.",
-                        color = TaktoMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -427,8 +425,8 @@ fun CalendarScreen(
                         onClick = { store.removeEntry(date); selectedDate = null },
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6570))
-                        Text(" Postavi kao slobodan dan", color = Color(0xFFFF6570))
+                        Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                        Text(" Postavi kao slobodan dan", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -445,7 +443,7 @@ fun CalendarScreen(
 
         ModalBottomSheet(
             onDismissRequest = { bulkSheet = false },
-            containerColor = TaktoSurface
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
                 modifier = Modifier
@@ -458,14 +456,14 @@ fun CalendarScreen(
                 Text("Uredi ${selectedDates.size} dana", style = MaterialTheme.typography.headlineMedium)
                 Text(
                     "Od ${croatianDate(selectedDates.minOrNull()!!)} do ${croatianDate(selectedDates.maxOrNull()!!)}",
-                    color = TaktoMuted
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Prepiši postojeće unose", fontWeight = FontWeight.SemiBold)
                         Text(
                             if (bulkOverwrite) "Odabrani postojeći dani bit će zamijenjeni." else "Već popunjeni dani bit će preskočeni.",
-                            color = TaktoMuted,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -502,7 +500,7 @@ fun CalendarScreen(
                             bulkCustomDialog = true
                         },
                         modifier = Modifier.weight(1f).height(84.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22324B)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                         shape = RoundedCornerShape(18.dp)
                     ) {
                         Icon(Icons.Default.Edit, null)
@@ -513,7 +511,7 @@ fun CalendarScreen(
 
                 val quickCustomTypes = store.customShiftTypes()
                 if (quickCustomTypes.isNotEmpty()) {
-                    Text("Vlastite brze oznake", color = TaktoMuted, style = MaterialTheme.typography.labelLarge)
+                    Text("Vlastite brze oznake", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
                     quickCustomTypes.chunked(2).forEach { pair ->
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             pair.forEach { type ->
@@ -530,7 +528,7 @@ fun CalendarScreen(
                         bulkWorkTimeDialog = true
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22324B)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Icon(Icons.Default.AccessTime, null)
@@ -545,8 +543,8 @@ fun CalendarScreen(
                     },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Icon(Icons.Default.Delete, null, tint = Color(0xFFFF6570))
-                    Text(" Postavi sve kao slobodne dane", color = Color(0xFFFF6570))
+                    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                    Text(" Postavi sve kao slobodne dane", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -580,18 +578,18 @@ fun CalendarScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         "Ciljni tjedan: ${croatianDate(weekStart)} – ${croatianDate(weekStart.plusDays(6))}",
-                        color = TaktoMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         "Kopirano: ${copiedWeek.count { it != null }} unosa · ${copiedWeek.count { it == null }} slobodnih dana.",
-                        color = TaktoMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Prepiši postojeće", fontWeight = FontWeight.SemiBold)
                             Text(
                                 if (overwrite) "I prazni dani iz kopiranog tjedna mogu obrisati postojeći unos." else "Postojeći popunjeni dani bit će preskočeni.",
-                                color = TaktoMuted,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -752,13 +750,13 @@ private fun ScheduleSearchDialog(
                     singleLine = true
                 )
                 when {
-                    normalized.isBlank() -> Text("Upiši D, N, GO, BO, PD, vlastitu oznaku, napomenu ili datum.", color = TaktoMuted)
-                    results.isEmpty() -> Text("Nema pronađenih unosa.", color = TaktoMuted)
+                    normalized.isBlank() -> Text("Upiši D, N, GO, BO, PD, vlastitu oznaku, napomenu ili datum.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    results.isEmpty() -> Text("Nema pronađenih unosa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else -> results.forEach { entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(Color(0xFF16243A), RoundedCornerShape(13.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp))
                                 .clickable { onSelect(entry.date) }
                                 .padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -771,16 +769,16 @@ private fun ScheduleSearchDialog(
                             }
                             Column(Modifier.weight(1f).padding(start = 10.dp)) {
                                 Text(entry.label, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                                Text(croatianDate(entry.date), color = TaktoMuted, fontSize = 11.sp)
+                                Text(croatianDate(entry.date), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                 if (entry.hasWorkTime) {
                                     Text(
                                         "${ScheduleLogic.formatClock(entry.startMinute)} – ${ScheduleLogic.formatClock(entry.endMinute)} · ${ScheduleLogic.formatDuration(entry.workMinutes ?: 0)}",
-                                        color = TaktoMuted,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontSize = 11.sp,
                                         maxLines = 1
                                     )
                                 }
-                                if (entry.note.isNotBlank()) Text(entry.note, color = TaktoMuted, fontSize = 11.sp, maxLines = 1)
+                                if (entry.note.isNotBlank()) Text(entry.note, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 1)
                             }
                         }
                     }
@@ -826,7 +824,7 @@ private fun WorkTimeDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     "Ako je završetak ranije od početka, Takto automatski računa da smjena završava sljedeći dan.",
-                    color = TaktoMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
                 if (preset != null) {
@@ -876,11 +874,11 @@ private fun WorkTimeDialog(
                         fontWeight = FontWeight.Bold
                     )
                 } else if (startText.isNotBlank() || endText.isNotBlank()) {
-                    Text("Upiši valjano vrijeme u obliku HH:mm.", color = Color(0xFFFF6570), fontSize = 12.sp)
+                    Text("Upiši valjano vrijeme u obliku HH:mm.", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                 }
                 if (showClear) {
                     TextButton(onClick = onClear) {
-                        Text("Ukloni radno vrijeme", color = Color(0xFFFF6570))
+                        Text("Ukloni radno vrijeme", color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -913,7 +911,7 @@ private fun CustomEntryDialog(
         title = { Text("Vlastiti unos") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Upiši bilo što. Oznaka se prikazuje preko kućice kalendara.", color = TaktoMuted)
+                Text("Upiši bilo što. Oznaka se prikazuje preko kućice kalendara.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it.take(ScheduleStore.MAX_CUSTOM_LENGTH) },
@@ -929,7 +927,7 @@ private fun CustomEntryDialog(
                     label = { Text("Napomena (neobavezno)") },
                     maxLines = 3
                 )
-                Text("Boja", color = TaktoMuted, style = MaterialTheme.typography.labelMedium)
+                Text("Boja", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     palette.forEach { option ->
                         Box(
@@ -986,7 +984,7 @@ private fun JumpToMonthDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     "Brzi skok do bilo kojeg mjeseca u rasponu od 100 godina unatrag do 100 godina unaprijed.",
-                    color = TaktoMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1010,7 +1008,7 @@ private fun JumpToMonthDialog(
                 if (!valid && (monthText.isNotBlank() || yearText.isNotBlank())) {
                     Text(
                         "Dopušten je mjesec 1–12 i godina $minYear–$maxYear.",
-                        color = Color(0xFFFF6570),
+                        color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp
                     )
                 }

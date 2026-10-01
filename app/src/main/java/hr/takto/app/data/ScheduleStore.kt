@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import hr.takto.app.model.AppThemeMode
 import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
@@ -42,6 +43,7 @@ class ScheduleStore(private val context: Context) {
     val workTimePresets = mutableStateMapOf<String, WorkTimePreset>()
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
+    val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
     val onboardingDone = mutableStateOf(prefs.getBoolean(KEY_ONBOARDING, false))
@@ -464,6 +466,11 @@ class ScheduleStore(private val context: Context) {
         return BulkEditResult(changed, skipped, freeDays)
     }
 
+    fun setThemeMode(mode: AppThemeMode) {
+        themeMode.value = mode
+        prefs.edit().putString(KEY_THEME_MODE, mode.persistedValue).apply()
+    }
+
     fun saveUserProfile(profile: UserProfile) {
         val sanitized = profile.copy(
             fullName = profile.fullName.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
@@ -764,6 +771,7 @@ class ScheduleStore(private val context: Context) {
             put("shiftRemindersEnabled", shiftRemindersEnabled.value)
             put("shiftReminderLeadMinutes", shiftReminderLeadMinutes.value)
             put("standardDailyMinutes", standardDailyMinutes.value)
+            put("themeMode", themeMode.value.persistedValue)
             put("monthlyTargetOverrides", JSONObject().apply {
                 monthlyTargetOverrides.forEach { (month, minutes) -> put(month, minutes) }
             })
@@ -819,6 +827,9 @@ class ScheduleStore(private val context: Context) {
                 .coerceIn(0, MAX_SHIFT_REMINDER_LEAD_MINUTES)
             standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
                 .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
+            themeMode.value = AppThemeMode.fromPersisted(
+                settings.optString("themeMode", themeMode.value.persistedValue)
+            )
             settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
                 targets.keys().forEach { key ->
                     val month = runCatching { YearMonth.parse(key) }.getOrNull()
@@ -868,6 +879,7 @@ class ScheduleStore(private val context: Context) {
                 .putBoolean(KEY_SHIFT_REMINDERS, shiftRemindersEnabled.value)
                 .putInt(KEY_SHIFT_REMINDER_LEAD_MINUTES, shiftReminderLeadMinutes.value)
                 .putInt(KEY_STANDARD_DAILY_MINUTES, standardDailyMinutes.value)
+                .putString(KEY_THEME_MODE, themeMode.value.persistedValue)
                 .apply()
             persistShiftColors()
             persistCustomShiftPresets()
@@ -1338,7 +1350,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_IMPORT_CHARS = 20_000_000
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
-        private const val DATA_SCHEMA_VERSION = 7
+        private const val DATA_SCHEMA_VERSION = 8
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"
         private const val PREFS_NAME = "takto_schedule"
@@ -1356,6 +1368,7 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
+        private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
 
         private val DATE_FORMATS = listOf(

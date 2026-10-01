@@ -9,16 +9,16 @@
 </p>
 
 > **Dodirni. Označi. Radi.**  
-> Moderan Android planer smjena koji pretvara cijeli mjesec rada u jasan, brz i vizualan raspored.
+> Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.0-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.1-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
-![Target](https://img.shields.io/badge/target-Android%2016-8B46F6)
+![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-2026.09.00-1DE1E8)
 ![License](https://img.shields.io/badge/license-MIT-0F172A)
 
-Takto je aplikacija za ljude koji rade u smjenama i žele raspored koji se razumije **na prvi pogled**. Velike kalendarske ćelije, jasne oznake, vlastite boje, radni sati, podsjetnici, uzorci i statistika spojeni su u jedno tamno, premium sučelje inspirirano dostavljenim Takto vizualima.
+Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi pogled**. Velike kalendarske ćelije, vlastite oznake, radni sati, fond sati, podsjetnici, uzorci i statistika spojeni su u čisto sučelje koje radi u tamnom, svijetlom ili sistemskom načinu prikaza.
 
 <p align="center">
   <img src="docs/assets/takto-ui-preview.svg" alt="Takto pregled kalendara, fonda sati i statistike" width="100%">
@@ -26,11 +26,11 @@ Takto je aplikacija za ljude koji rade u smjenama i žele raspored koji se razum
 
 ## Zašto Takto
 
-**Planiraj bez tablica i papira.** Dodirni datum i odaberi oznaku. Dnevna smjena, noćna, godišnji, bolovanje, plaćeni dopust ili potpuno vlastiti unos spremaju se u nekoliko sekundi.
+**Planiraj bez tablica i papira.** Dodirni datum i odaberi oznaku ili upiši vlastitu. Radni dan, obveza, odsutnost, edukacija, teren ili bilo koji drugi unos sprema se u nekoliko sekundi.
 
 **Vidi cijeli mjesec odjednom.** Kalendar koristi velike obojene ćelije i dosljedan sustav boja: plava, ljubičasta, zelena, jantarna i crvena. Prazna ćelija znači slobodan dan.
 
-**Prati stvarno radno vrijeme.** Za svaku radnu smjenu moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, prekovremene sate, noćni rad, vikend i nedjelju.
+**Prati stvarno radno vrijeme.** Za svaki radni unos moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, redovne i prekovremene sate, noćni rad, vikend i nedjelju.
 
 **Prilagodi aplikaciju svom poslu.** Oznake, boje, vlastite brze oznake, predlošci radnog vremena i ponavljajući uzorci mogu se prilagoditi korisniku.
 
@@ -143,12 +143,12 @@ Početna stranica koristi ime iz profila za osobni pozdrav, dok backup čuva i p
 
 ## Vizualni identitet
 
-Takto koristi tamni premium sustav s jakim akcentnim bojama:
+Takto koristi prepoznatljiv premium sustav boja s poboljšanim kontrastom. Korisnik može odabrati **tamni**, **svijetli** ili **sistemski** izgled:
 
 | Element | Boja |
 | --- | --- |
-| Pozadina | `#06101F` |
-| Površina | `#0F172A` |
+| Tamna pozadina | `#0D1726` |
+| Tamna površina | `#152238` |
 | D / primarna plava | `#2488FF` |
 | N / ljubičasta | `#8B46F6` |
 | GO / zelena | `#13D7A0` |
@@ -162,7 +162,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.0 koristi stabilni Android toolchain:
+Takto 0.1.1 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -172,7 +172,8 @@ Takto 0.1.0 koristi stabilni Android toolchain:
 - **AndroidX Core 1.19.1**
 - **Activity Compose 1.13.0**
 - **Lifecycle 2.11.0**
-- **compileSdk 37.1 — Android 17 SDK**\n- **targetSdk 36 — Android 16**
+- **compileSdk 37.1 — Android 17 SDK**
+- **targetSdk 37 — Android 17**
 - **minSdk 26 — Android 8.0**
 - **Java 17**
 
@@ -195,22 +196,12 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.0-debug-apk** — instalabilni debug APK
-- **Takto-0.1.0-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.0-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.0-SHA256** — checksum datoteka
+- **Takto-0.1.1-debug-apk** — instalabilni debug APK
+- **Takto-0.1.1-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.1-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.1-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
-
-### Lokalna provjera
-
-Potrebni su Java 17, Android SDK Platform 37.1 i Gradle 9.8.0.
-
-```bash
-gradle --no-daemon testDebugUnitTest lintDebug lintRelease assembleDebug assembleRelease bundleRelease
-```
-
----
 
 ## Privatnost i sigurnost
 
@@ -227,34 +218,9 @@ gradle --no-daemon testDebugUnitTest lintDebug lintRelease assembleDebug assembl
 
 ---
 
-## Struktura projekta
+## Verzija 0.1.1
 
-```text
-app/
-  src/main/java/hr/takto/app/
-    data/         lokalna pohrana, uvoz/izvoz i backup
-    model/        smjene, izračuni i iCalendar
-    reminders/    dnevni i smjenski podsjetnici
-    ui/
-      components/ zajedničke Compose komponente
-      screens/    Početna, Kalendar, Statistika, Uzorci, Postavke
-      theme/      Takto boje i tipografija
-docs/
-  UI_SPEC.md
-  QA_CHECKLIST.md
-  VALIDATION.md
-samples/
-  raspored-primjer.csv
-  raspored-primjer-hr.csv
-```
-
----
-
-## Verzija 0.1.0
-
-Ovaj repozitorij namjerno započinje s verzijom **0.1.0**. To je prva javna razvojna baza Takto aplikacije u `bren-wp/Takto`.
-
-Svaka sljedeća verzija treba sadržavati stvarne funkcionalne promjene, proći testove, lint i Android build te zadržati Takto vizualni identitet i kompatibilnost s postojećim lokalnim podacima.
+Verzija **0.1.1** donosi svijetli način rada, poboljšanu tamnu temu, jasniji onboarding za sve tipove korisnika, dorađenu početnu stranicu i statistiku, reorganizirane postavke, novi launcher icon te Brendigo podatke i podršku unutar aplikacije.
 
 ## Licenca
 

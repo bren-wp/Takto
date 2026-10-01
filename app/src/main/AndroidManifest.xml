@@ -12,6 +12,8 @@
         android:label="Takto"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="false"
+        android:enableOnBackInvokedCallback="true"
         android:theme="@style/Theme.Takto">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>

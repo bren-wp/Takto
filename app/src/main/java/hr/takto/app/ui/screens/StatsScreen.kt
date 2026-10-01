@@ -50,7 +50,6 @@ import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.theme.TaktoBlue
-import hr.takto.app.ui.theme.TaktoMuted
 import java.time.YearMonth
 
 @Composable
@@ -104,7 +103,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TaktoLogo(iconSize = 34.dp)
             Spacer(Modifier.weight(1f))
-            Text("Statistike", color = TaktoMuted)
+            Text("Statistike", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(7.dp), corner = 17.dp) {
@@ -118,16 +117,16 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(workShifts.toString(), fontSize = 46.sp, fontWeight = FontWeight.ExtraBold)
-                    Text("Radnih smjena (D + N)", color = TaktoMuted)
-                    Text("Ukupno oznaka: $total", color = TaktoMuted, fontSize = 12.sp)
+                    Text(total.toString(), fontSize = 46.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("Unosa u rasporedu", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("D + N oznake: $workShifts", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     if (timedEntries.isNotEmpty()) {
-                        Text("Evidentirano: ${ScheduleLogic.formatDuration(totalWorkMinutes)}", color = TaktoMuted, fontSize = 12.sp)
+                        Text("Evidentirano: ${ScheduleLogic.formatDuration(totalWorkMinutes)}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     }
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(freeDays.toString(), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = TaktoBlue)
-                    Text("Slobodnih dana", color = TaktoMuted)
+                    Text("Slobodnih dana", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -142,8 +141,8 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     }
                 }
                 Text(
-                    "Obračun koristi samo dane kojima si upisao početak i kraj smjene. Standardni radni dan: ${ScheduleLogic.formatDuration(standardDaily)}.",
-                    color = TaktoMuted,
+                    "Obračun koristi dane kojima si upisao početak i kraj radnog vremena. Standardni radni dan: ${ScheduleLogic.formatDuration(standardDaily)}.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -157,13 +156,13 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TimeMetric(Modifier.weight(1f), "Prekovremeno po danu", overtimeMinutes, Color(0xFFFFB21D))
-                    TimeMetric(Modifier.weight(1f), "Prosjek smjene", averageShiftMinutes, Color(0xFF22B8CF))
+                    TimeMetric(Modifier.weight(1f), "Prosjek radnog unosa", averageShiftMinutes, Color(0xFF22B8CF))
                 }
-                Text("Smjena s vremenom: ${timedEntries.size}", color = TaktoMuted, fontSize = 12.sp)
+                Text("Unosi s vremenom: ${timedEntries.size}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 if (!targetIsManual) {
                     Text(
                         "Automatski fond = svi dani ponedjeljak–petak × standardni radni dan. Blagdani se ne oduzimaju automatski; za to postavi ručni fond za ovaj mjesec.",
-                        color = TaktoMuted,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 }
@@ -175,7 +174,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 Text("Posebni radni sati", style = MaterialTheme.typography.titleLarge)
                 Text(
                     "Noćni rad koristi prozor 22:00–06:00. Vikend i nedjelja računaju se prema stvarnom datumu, uključujući smjene koje prelaze ponoć. Pauza se proporcionalno raspoređuje.",
-                    color = TaktoMuted,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -215,8 +214,8 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         modifier = Modifier.size(170.dp)
                     )
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Legend("Dnevne smjene", counts.getValue("D"), dayColor)
-                        Legend("Noćne smjene", counts.getValue("N"), nightColor)
+                        Legend("Oznaka D", counts.getValue("D"), dayColor)
+                        Legend("Oznaka N", counts.getValue("N"), nightColor)
                         Legend("Godišnji odmor", counts.getValue("GO"), annualColor)
                         Legend("Bolovanje", counts.getValue("BO"), sickColor)
                         Legend("Plaćeni dopust", counts.getValue("PD"), paidColor)
@@ -230,7 +229,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("Vlastite oznake", style = MaterialTheme.typography.titleLarge)
-                    Text("Pregled vlastitih i spremljenih brzih oznaka za odabrani mjesec.", color = TaktoMuted)
+                    Text("Pregled vlastitih i spremljenih brzih oznaka za odabrani mjesec.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     customGroups.take(10).forEach { (code, count, sample) ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
@@ -241,19 +240,19 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                             }
                             Column(Modifier.weight(1f).padding(start = 10.dp)) {
                                 Text(sample.label, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                                Text(code, color = TaktoMuted, fontSize = 11.sp)
+                                Text(code, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                             }
                             Text(count.toString(), fontWeight = FontWeight.ExtraBold, color = sample.color)
                         }
                     }
-                    if (customGroups.size > 10) Text("+ još ${customGroups.size - 10} različitih oznaka", color = TaktoMuted)
+                    if (customGroups.size > 10) Text("+ još ${customGroups.size - 10} različitih oznaka", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Trendovi smjena ${month.year}.", style = MaterialTheme.typography.titleLarge)
+                Text("Trendovi oznaka ${month.year}.", style = MaterialTheme.typography.titleLarge)
                 MonthlyBars(store, month.year)
             }
         }
@@ -261,7 +260,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Trendovi radnih sati ${month.year}.", style = MaterialTheme.typography.titleLarge)
-                Text("Prikaz uključuje samo unose s evidentiranim radnim vremenom.", color = TaktoMuted, fontSize = 12.sp)
+                Text("Prikaz uključuje samo unose s evidentiranim radnim vremenom.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 MonthlyHoursBars(store, month.year)
             }
         }
@@ -291,12 +290,12 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 private fun TimeMetric(modifier: Modifier, label: String, minutes: Int, color: Color) {
     Box(
         modifier = modifier
-            .background(Color(0xFF16243A), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .padding(horizontal = 10.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(ScheduleLogic.formatDuration(minutes), color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-            Text(label, color = TaktoMuted, fontSize = 11.sp, maxLines = 2)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 2)
         }
     }
 }
@@ -312,12 +311,12 @@ private fun SignedTimeMetric(modifier: Modifier, label: String, minutes: Int) {
     }
     Box(
         modifier = modifier
-            .background(Color(0xFF16243A), RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp))
             .padding(horizontal = 10.dp, vertical = 12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(value, color = if (positive) Color(0xFF13D7A0) else Color(0xFFFF6570), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
-            Text(label, color = TaktoMuted, fontSize = 11.sp, maxLines = 2)
+            Text(value, color = if (positive) Color(0xFF13D7A0) else MaterialTheme.colorScheme.error, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 2)
         }
     }
 }
@@ -348,7 +347,7 @@ private fun MonthlyTargetDialog(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     if (isManual) "Trenutno koristiš ručni fond." else "Trenutno koristiš automatski fond prema radnim danima pon–pet.",
-                    color = TaktoMuted
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text("Automatski: ${ScheduleLogic.formatDuration(automaticMinutes)}", color = Color(0xFF22B8CF), fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -367,7 +366,7 @@ private fun MonthlyTargetDialog(
                         singleLine = true
                     )
                 }
-                Text("Ručni fond vrijedi samo za odabrani mjesec i ulazi u sigurnosnu kopiju.", color = TaktoMuted, fontSize = 11.sp)
+                Text("Ručni fond vrijedi samo za odabrani mjesec i ulazi u sigurnosnu kopiju.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         },
         confirmButton = {
@@ -388,7 +387,7 @@ private fun StatTile(modifier: Modifier, code: String, label: String, count: Int
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(code, color = color, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
             Text(count.toString(), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
-            Text(label, color = TaktoMuted, style = MaterialTheme.typography.labelMedium, maxLines = 2)
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, maxLines = 2)
         }
     }
 }
@@ -397,7 +396,7 @@ private fun StatTile(modifier: Modifier, code: String, label: String, count: Int
 private fun Legend(name: String, count: Int, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(10.dp).background(color, RoundedCornerShape(4.dp)))
-        Text(name, modifier = Modifier.padding(start = 8.dp).weight(1f), fontSize = 12.sp, color = TaktoMuted)
+        Text(name, modifier = Modifier.padding(start = 8.dp).weight(1f), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(count.toString(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
     }
 }
@@ -427,7 +426,7 @@ private fun DonutChart(counts: List<Pair<Int, Color>>, modifier: Modifier = Modi
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(rawTotal.toString(), fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-            Text("UKUPNO", fontSize = 10.sp, color = TaktoMuted, letterSpacing = 1.5.sp)
+            Text("UKUPNO", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 1.5.sp)
         }
     }
 }
@@ -446,7 +445,7 @@ private fun MonthlyBars(store: ScheduleStore, year: Int) {
     ) {
         values.forEachIndexed { index, value ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                if (value > 0) Text(value.toString(), fontSize = 9.sp, color = TaktoMuted)
+                if (value > 0) Text(value.toString(), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -454,7 +453,7 @@ private fun MonthlyBars(store: ScheduleStore, year: Int) {
                         .background(TaktoBlue, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                 )
                 Spacer(Modifier.height(5.dp))
-                Text(names[index], fontSize = 9.sp, color = TaktoMuted, textAlign = TextAlign.Center)
+                Text(names[index], fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             }
         }
     }
@@ -476,7 +475,7 @@ private fun MonthlyHoursBars(store: ScheduleStore, year: Int) {
     ) {
         values.forEachIndexed { index, value ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                if (value > 0) Text("${value / 60}h", fontSize = 9.sp, color = TaktoMuted)
+                if (value > 0) Text("${value / 60}h", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -484,7 +483,7 @@ private fun MonthlyHoursBars(store: ScheduleStore, year: Int) {
                         .background(Color(0xFF22B8CF), RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                 )
                 Spacer(Modifier.height(5.dp))
-                Text(names[index], fontSize = 9.sp, color = TaktoMuted, textAlign = TextAlign.Center)
+                Text(names[index], fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
             }
         }
     }

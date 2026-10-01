@@ -34,6 +34,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,6 +58,8 @@ import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.ScheduleSearch
+import hr.takto.app.model.ScheduleSearchFilter
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
@@ -710,22 +713,19 @@ private fun ScheduleSearchDialog(
     onSelect: (LocalDate) -> Unit
 ) {
     var query by remember { mutableStateOf("") }
+    var filter by remember { mutableStateOf(ScheduleSearchFilter.ALL) }
     val normalized = query.trim()
-    val results = if (normalized.isBlank()) {
-        emptyList()
+    val hasSearch = normalized.isNotBlank() || filter != ScheduleSearchFilter.ALL
+    val results = if (hasSearch) {
+        ScheduleSearch.search(
+            entries = store.entries.values,
+            query = normalized,
+            filter = filter,
+            today = LocalDate.now(),
+            limit = 30
+        )
     } else {
-        store.entries.values
-            .asSequence()
-            .filter { entry ->
-                entry.code.contains(normalized, ignoreCase = true) ||
-                    entry.label.contains(normalized, ignoreCase = true) ||
-                    entry.note.contains(normalized, ignoreCase = true) ||
-                    entry.date.toString().contains(normalized, ignoreCase = true) ||
-                    croatianDate(entry.date).contains(normalized, ignoreCase = true)
-            }
-            .sortedBy { it.date }
-            .take(20)
-            .toList()
+        emptyList()
     }
 
     AlertDialog(
@@ -738,42 +738,112 @@ private fun ScheduleSearchDialog(
             ) {
                 OutlinedTextField(
                     value = query,
-                    onValueChange = { query = it.take(60) },
+                    onValueChange = { query = it.take(80) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Oznaka, napomena ili datum") },
-                    leadingIcon = { Icon(Icons.Default.Search, null) },
+                    label = { Text("Oznaka, naziv, napomena ili datum") },
+                    supportingText = { Text("Podržava i: danas, sutra, jučer") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     singleLine = true
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SearchFilterChip(
+                        selected = filter == ScheduleSearchFilter.ALL,
+                        label = "Sve",
+                        modifier = Modifier.weight(1f)
+                    ) { filter = ScheduleSearchFilter.ALL }
+                    SearchFilterChip(
+                        selected = filter == ScheduleSearchFilter.TODAY,
+                        label = "Danas",
+                        modifier = Modifier.weight(1f)
+                    ) { filter = ScheduleSearchFilter.TODAY }
+                    SearchFilterChip(
+                        selected = filter == ScheduleSearchFilter.UPCOMING,
+                        label = "Buduće",
+                        modifier = Modifier.weight(1f)
+                    ) { filter = ScheduleSearchFilter.UPCOMING }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    SearchFilterChip(
+                        selected = filter == ScheduleSearchFilter.WITH_WORK_TIME,
+                        label = "S vremenom",
+                        modifier = Modifier.weight(1f)
+                    ) { filter = ScheduleSearchFilter.WITH_WORK_TIME }
+                    SearchFilterChip(
+                        selected = filter == ScheduleSearchFilter.WITH_NOTE,
+                        label = "S napomenom",
+                        modifier = Modifier.weight(1f)
+                    ) { filter = ScheduleSearchFilter.WITH_NOTE }
+                }
+
                 when {
-                    normalized.isBlank() -> Text("Upiši oznaku, naziv, napomenu ili datum.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    results.isEmpty() -> Text("Nema pronađenih unosa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    else -> results.forEach { entry ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp))
-                                .clickable { onSelect(entry.date) }
-                                .padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                Modifier.size(42.dp).background(entry.color, RoundedCornerShape(11.dp)),
-                                contentAlignment = Alignment.Center
+                    !hasSearch -> Text(
+                        "Upiši pojam ili odaberi filtar. Pretraga ignorira dijakritičke znakove pa npr. “godisnji” pronalazi “Godišnji”.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    results.isEmpty() -> Text(
+                        "Nema pronađenih unosa za odabranu pretragu.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    else -> {
+                        Text(
+                            "Prikazano: ${results.size}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        results.forEach { entry ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp))
+                                    .clickable { onSelect(entry.date) }
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(entry.code, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = if (entry.code.length <= 2) 16.sp else 11.sp, maxLines = 1)
-                            }
-                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                Text(entry.label, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                                Text(croatianDate(entry.date), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                                if (entry.hasWorkTime) {
+                                Box(
+                                    Modifier
+                                        .size(42.dp)
+                                        .background(entry.color, RoundedCornerShape(11.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
                                     Text(
-                                        "${ScheduleLogic.formatClock(entry.startMinute)} – ${ScheduleLogic.formatClock(entry.endMinute)} · ${ScheduleLogic.formatDuration(entry.workMinutes ?: 0)}",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 11.sp,
+                                        entry.code,
+                                        color = Color.White,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = if (entry.code.length <= 2) 16.sp else 11.sp,
                                         maxLines = 1
                                     )
                                 }
-                                if (entry.note.isNotBlank()) Text(entry.note, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp, maxLines = 1)
+                                Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                    Text(entry.label, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                                    Text(
+                                        croatianDate(entry.date),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 11.sp
+                                    )
+                                    if (entry.hasWorkTime) {
+                                        Text(
+                                            "${ScheduleLogic.formatClock(entry.startMinute)} – ${ScheduleLogic.formatClock(entry.endMinute)} · ${ScheduleLogic.formatDuration(entry.workMinutes ?: 0)}",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 11.sp,
+                                            maxLines = 1
+                                        )
+                                    }
+                                    if (entry.note.isNotBlank()) {
+                                        Text(
+                                            entry.note,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 11.sp,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -782,6 +852,27 @@ private fun ScheduleSearchDialog(
         },
         confirmButton = {},
         dismissButton = { TextButton(onClick = onDismiss) { Text("Zatvori") } }
+    )
+}
+
+@Composable
+private fun SearchFilterChip(
+    selected: Boolean,
+    label: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = {
+            Text(
+                text = label,
+                maxLines = 1,
+                fontSize = 11.sp
+            )
+        },
+        modifier = modifier
     )
 }
 

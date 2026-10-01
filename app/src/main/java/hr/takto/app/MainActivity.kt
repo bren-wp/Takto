@@ -123,7 +123,7 @@ private fun TaktoRoot(
     var current by remember { mutableStateOf(MainSection.HOME) }
     var calendarDate by remember { mutableStateOf<LocalDate?>(null) }
     val context = LocalContext.current
-    // Čitanje snapshot mape ovdje osigurava da se alarm sljedeće smjene ponovno
+    // Čitanje snapshot mape ovdje osigurava da se alarm sljedećeg rada ponovno
     // izračuna nakon dodavanja, brisanja ili promjene vremena bez ručnog poziva iz svakog ekrana.
     val reminderScheduleSignature = store.entries.values
         .asSequence()

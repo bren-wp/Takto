@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.1.3
+
+Brži dnevni unos, pametnija pretraga i preciznije adaptivne preporuke.
+
+### Poboljšano
+
+- Početna sada uvijek ima jasnu karticu **Danas**
+- kada današnji unos ne postoji, do četiri najrelevantnije oznake mogu se dodati jednim dodirom bez otvaranja kalendara
+- kada današnji unos postoji, kartica prikazuje oznaku, radno vrijeme i napomenu te vodi izravno na uređivanje tog datuma
+- budući raspored ima jasno prazno stanje i akciju **Planiraj sljedeći dan**
+- sljedeći budući unos više se ne duplicira s današnjim unosom na Početnoj
+- preporuke oznaka koriste ponderiranu učestalost i svježinu korištenja: zadnjih 7 dana imaju najveću težinu, zatim 30 i 90 dana
+- kod jednakog rezultata prednost ima novije korištena oznaka
+- kalendarska pretraga je izdvojena u testiranu logiku i ignorira dijakritičke znakove
+- pretraga podržava izraze **danas**, **sutra** i **jučer**
+- podržani su ISO i uobičajeni hrvatski datumi, uključujući `02.10.2026.`
+- dodani filtri **Danas**, **Buduće**, **S vremenom** i **S napomenom**
+- rezultati pretrage rangiraju točne kratice i nazive ispred slabijih podudaranja
+- višerječne pretrage mogu kombinirati naziv i napomenu, npr. `teren rijeka`
+- dodani unit testovi za pametnu pretragu i recency-aware rangiranje oznaka
+- release workflow sada na novoj verziji u `main` automatski gradi, provjerava i objavljuje odgovarajući `vX.Y.Z` GitHub Release bez dupliciranja postojećih izdanja
+
+### Toolchain
+
+- Kotlin 2.4.20
+- Android Gradle Plugin 9.4.1
+- Gradle 9.8.0
+- Jetpack Compose BOM 2026.09.00
+- compileSdk 37.1
+- targetSdk 37
+
+### Verzija
+
+- `versionName`: `0.1.3`
+- `versionCode`: `4`
+
 ## 0.1.2
 
 Adaptivni UI/UX, pristupačnost i daljnja generalizacija Takto rasporeda.

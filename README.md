@@ -2,6 +2,8 @@
 
 **Takto** je Android aplikacija za osobni raspored rada i evidenciju smjena. Projekt je pisan u **Kotlinu** i **Jetpack Composeu**, s tamnim premium sučeljem i velikim kalendarskim poljima prilagođenim brzom unosu rasporeda.
 
+![Android CI](https://github.com/bren-wp/Takto/actions/workflows/android-ci.yml/badge.svg)
+
 > Trenutna razvojna verzija: **0.1.0** (`versionCode 1`)
 
 ## Oznake rasporeda
@@ -42,7 +44,7 @@
 - Material 3
 - Android Gradle Plugin 8.9.1
 - Kotlin 2.1.10
-- Gradle 8.11.1
+- Gradle Wrapper 8.11.1
 - Java 17
 - `minSdk 26`
 - `targetSdk 35`
@@ -50,19 +52,29 @@
 
 ## Build
 
-Projekt se otvara izravno u Android Studiju. GitHub Actions koristi Gradle 8.11.1 i Java 17 te na svaki push/PR prema `main` grani pokreće:
+Repozitorij sadrži potpuni Gradle Wrapper pa lokalni build ne ovisi o zasebno instaliranoj verziji Gradlea.
 
-```text
-testDebugUnitTest
-lintDebug
-assembleDebug
+Linux/macOS:
+
+```bash
+./gradlew testDebugUnitTest
+./gradlew lintDebug
+./gradlew assembleDebug
 ```
 
-Debug APK se nakon uspješnog CI builda objavljuje kao GitHub Actions artifact.
+Windows:
+
+```powershell
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat lintDebug
+.\gradlew.bat assembleDebug
+```
+
+GitHub Actions prije builda provjerava integritet Gradle Wrappera, zatim pokreće unit testove, Android lint i debug APK build. Debug APK se nakon uspješnog CI builda objavljuje kao GitHub Actions artifact.
 
 ## Privatnost
 
-Takto trenutačno nema `INTERNET` permission. Raspored, postavke i sigurnosne kopije obrađuju se lokalno na uređaju, osim kada korisnik sam izveze ili podijeli podatke putem Android sustava.
+Takto trenutačno nema `INTERNET` permission. Raspored i postavke aplikacije ne šalju se na Takto poslužitelje. Korisnik može namjerno izvesti/podijeliti CSV, JSON ili ICS podatke kroz Android sustav. Androidova sigurnosna kopija uređaja može obuhvatiti lokalne postavke ako je sigurnosno kopiranje uključeno na uređaju.
 
 ## Struktura
 
@@ -78,7 +90,7 @@ Dodatna dokumentacija nalazi se u `docs/`.
 
 ## Razvoj
 
-Od ove točke sav daljnji razvoj vodi se izravno u repozitoriju **`bren-wp/Takto`**. Verzije kreću od `0.1.0` i povećavaju se samo kada postoje stvarne promjene u funkcionalnosti, kvaliteti ili stabilnosti.
+Sav daljnji razvoj vodi se izravno u repozitoriju **`bren-wp/Takto`**. Verzije kreću od `0.1.0` i povećavaju se samo kada postoje stvarne promjene u funkcionalnosti, kvaliteti ili stabilnosti.
 
 ## Licenca
 

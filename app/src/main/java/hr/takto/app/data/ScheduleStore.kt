@@ -982,3 +982,248 @@ class ScheduleStore(context: Context) {
 
     private fun persistMonthlyTargetOverrides() {
         val obj = JSONObject()
+        monthlyTargetOverrides.toSortedMap().forEach { (month, minutes) -> obj.put(month, minutes) }
+        prefs.edit().putString(KEY_MONTHLY_TARGET_OVERRIDES, obj.toString()).apply()
+    }
+
+    private fun loadSavedPatterns() {
+        val raw = prefs.getString(KEY_SAVED_PATTERNS, null) ?: return
+        runCatching {
+            val array = JSONArray(raw)
+            repeat(array.length().coerceAtMost(MAX_SAVED_PATTERNS)) { index ->
+                parseSavedPattern(array.optJSONObject(index))?.let(savedPatterns::add)
+            }
+        }.onFailure { savedPatterns.clear() }
+    }
+
+    private fun persistSavedPatterns() {
+        prefs.edit().putString(KEY_SAVED_PATTERNS, savedPatternsToJson().toString()).apply()
+    }
+
+    private fun savedPatternsToJson(): JSONArray = JSONArray().apply {
+        savedPatterns.forEach { pattern ->
+            put(JSONObject().apply {
+                put("id", pattern.id)
+                put("name", pattern.name)
+                put("codes", JSONArray().apply { pattern.codes.forEach { code -> put(code ?: JSONObject.NULL) } })
+            })
+        }
+    }
+
+    private fun parseSavedPattern(obj: JSONObject?): SavedPattern? {
+        if (obj == null) return null
+        val id = obj.optString("id", "").takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
+        val name = ScheduleLogic.normalizePatternName(obj.optString("name", ""))
+        val array = obj.optJSONArray("codes") ?: return null
+        val codes = buildList<String?> {
+            repeat(array.length().coerceAtMost(ScheduleLogic.MAX_PATTERN_STEPS)) { index ->
+                if (array.isNull(index)) add(null)
+                else add(ScheduleLogic.normalizeReusableCode(array.optString(index)).takeIf { it.isNotBlank() })
+            }
+        }
+        if (name.isBlank() || codes.isEmpty() || codes.all { it == null }) return null
+        return SavedPattern(id, name, codes)
+    }
+
+    private fun loadEntries() {
+        val raw = prefs.getString(KEY_ENTRIES, null) ?: return
+        runCatching {
+            val array = JSONArray(raw)
+            repeat(array.length()) { i ->
+                parseEntry(array.optJSONObject(i))?.let { entries[it.date] = it }
+            }
+        }.onFailure {
+            entries.clear()
+        }
+    }
+
+    private fun parseEntry(obj: JSONObject?): ShiftEntry? {
+        if (obj == null) return null
+        val date = runCatching {
+            LocalDate.parse(obj.getString("date"), DateTimeFormatter.ISO_LOCAL_DATE)
+        }.getOrNull() ?: return null
+        val code = sanitizeCustomText(obj.optString("code", ""))
+        if (code.isBlank()) return null
+        val start = obj.optInt("startMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY }
+        val end = obj.optInt("endMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY }
+        val breakMinutes = obj.optInt("breakMinutes", 0).coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        val validTime = start != null && end != null &&
+            ScheduleLogic.workDurationMinutes(start, end, breakMinutes)?.let { it > 0 } == true &&
+            !ScheduleLogic.isLeaveCode(code)
+        return ShiftEntry(
+            date = date,
+            code = code,
+            label = obj.optString("label", code).take(MAX_CUSTOM_LENGTH),
+            colorArgb = obj.optLong("color", DEFAULT_CUSTOM_COLOR),
+            note = obj.optString("note", "").take(MAX_NOTE_LENGTH),
+            startMinute = if (validTime) start else null,
+            endMinute = if (validTime) end else null,
+            breakMinutes = if (validTime) breakMinutes else 0
+        )
+    }
+
+    private fun persistEntries() {
+        prefs.edit().putString(KEY_ENTRIES, entriesToJson().toString()).apply()
+    }
+
+    private fun entriesToJson(): JSONArray = JSONArray().apply {
+        entries.values.sortedBy { it.date }.forEach { item ->
+            put(JSONObject().apply {
+                put("date", item.date.toString())
+                put("code", item.code)
+                put("label", item.label)
+                put("color", item.colorArgb)
+                put("note", item.note)
+                if (item.startMinute != null) put("startMinute", item.startMinute)
+                if (item.endMinute != null) put("endMinute", item.endMinute)
+                put("breakMinutes", item.breakMinutes)
+            })
+        }
+    }
+
+    private fun captureUndo(dates: Collection<LocalDate>, label: String): UndoState {
+        val unique = dates.distinct().take(MAX_UNDO_DAYS)
+        return UndoState(label, unique.associateWith { entries[it]?.copy() })
+    }
+
+    private fun commitUndo(state: UndoState) {
+        if (state.entries.none { (date, previous) -> entries[date] != previous }) return
+        undoState = state
+        canUndo.value = true
+        undoLabel.value = state.label
+    }
+
+    private fun clearUndoState() {
+        undoState = null
+        canUndo.value = false
+        undoLabel.value = ""
+    }
+
+    private fun sanitizeCustomText(value: String): String =
+        value.trim().replace(Regex("\\s+"), " ").take(MAX_CUSTOM_LENGTH)
+
+    private fun csv(value: String): String = "\"" + value.replace("\"", "\"\"") + "\""
+
+    private fun formatColorArgb(value: Long): String = "#%08X".format(Locale.ROOT, value and 0xFFFFFFFFL)
+
+    private fun parseColorArgb(value: String?): Long? {
+        val clean = value?.trim()?.takeIf { it.isNotBlank() } ?: return null
+        return runCatching {
+            when {
+                clean.startsWith("#") && clean.length == 7 -> (0xFF000000L or clean.drop(1).toLong(16)) and 0xFFFFFFFFL
+                clean.startsWith("#") && clean.length == 9 -> clean.drop(1).toLong(16) and 0xFFFFFFFFL
+                else -> clean.toLong() and 0xFFFFFFFFL
+            }
+        }.getOrNull()
+    }
+
+    private fun detectDelimiter(firstLine: String): Char {
+        val commas = firstLine.count { it == ',' }
+        val semicolons = firstLine.count { it == ';' }
+        return if (semicolons > commas) ';' else ','
+    }
+
+    private fun isHeader(parts: List<String>): Boolean {
+        val first = parts.firstOrNull()?.trim()?.lowercase(Locale.ROOT).orEmpty()
+        return first in setOf("datum", "date", "dan")
+    }
+
+    private fun parseDate(value: String): LocalDate? {
+        val clean = value.trim().trim('"')
+        DATE_FORMATS.forEach { formatter ->
+            try {
+                return LocalDate.parse(clean, formatter)
+            } catch (_: DateTimeParseException) {
+            }
+        }
+        return null
+    }
+
+    private fun parseCsv(content: String, delimiter: Char): List<List<String>> {
+        val rows = mutableListOf<List<String>>()
+        val row = mutableListOf<String>()
+        val current = StringBuilder()
+        var quoted = false
+        var i = 0
+
+        fun pushField() {
+            row += current.toString().trim()
+            current.clear()
+        }
+        fun pushRow() {
+            pushField()
+            rows += row.toList()
+            row.clear()
+        }
+
+        while (i < content.length) {
+            val c = content[i]
+            when {
+                c == '"' && quoted && i + 1 < content.length && content[i + 1] == '"' -> {
+                    current.append('"')
+                    i++
+                }
+                c == '"' -> quoted = !quoted
+                c == delimiter && !quoted -> pushField()
+                c == '\n' && !quoted -> pushRow()
+                c == '\r' && !quoted -> Unit
+                else -> current.append(c)
+            }
+            i++
+        }
+        if (current.isNotEmpty() || row.isNotEmpty()) pushRow()
+        return rows
+    }
+
+    private data class UndoState(val label: String, val entries: Map<LocalDate, ShiftEntry?>)
+
+    data class ImportResult(
+        val imported: Int,
+        val skipped: Int,
+        val freeDays: Int,
+        val valid: Boolean = true
+    )
+    data class PatternApplyResult(val changed: Int, val skipped: Int, val freeDays: Int)
+    data class BulkEditResult(val changed: Int, val skipped: Int, val freeDays: Int)
+
+    companion object {
+        const val DEFAULT_CUSTOM_COLOR: Long = 0xFF22B8CFL
+        const val MAX_CUSTOM_LENGTH = 24
+        const val MAX_NOTE_LENGTH = 180
+        const val DEFAULT_SHIFT_REMINDER_LEAD_MINUTES = 30
+        const val MAX_SHIFT_REMINDER_LEAD_MINUTES = 7 * 24 * 60
+        const val DEFAULT_STANDARD_DAILY_MINUTES = 8 * 60
+        const val MIN_STANDARD_DAILY_MINUTES = 60
+        const val MAX_STANDARD_DAILY_MINUTES = 24 * 60
+        private const val MAX_PATTERN_DAYS = 366
+        private const val MAX_BULK_DAYS = 366
+        private const val MAX_CUSTOM_PRESETS = 20
+        private const val MAX_WORK_TIME_PRESETS = 40
+        private const val MAX_SAVED_PATTERNS = 20
+        private const val MAX_IMPORT_ROWS = 20_000
+        private const val MAX_IMPORT_CHARS = 2_000_000
+        private const val MAX_UNDO_DAYS = 1_000
+        private const val DATA_SCHEMA_VERSION = 6
+        private const val PREFS_NAME = "takto_schedule"
+        private const val KEY_ENTRIES = "entries_json"
+        private const val KEY_ONBOARDING = "onboarding_done"
+        private const val KEY_REMINDERS = "reminders"
+        private const val KEY_REMINDER_HOUR = "reminder_hour"
+        private const val KEY_REMINDER_MINUTE = "reminder_minute"
+        private const val KEY_SHIFT_REMINDERS = "shift_reminders"
+        private const val KEY_SHIFT_REMINDER_LEAD_MINUTES = "shift_reminder_lead_minutes"
+        private const val KEY_STANDARD_DAILY_MINUTES = "standard_daily_minutes"
+        private const val KEY_MONTHLY_TARGET_OVERRIDES = "monthly_target_overrides_json"
+        private const val KEY_WORK_TIME_PRESETS = "work_time_presets_json"
+        private const val KEY_SHIFT_COLORS = "shift_colors_json"
+        private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
+        private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
+
+        private val DATE_FORMATS = listOf(
+            DateTimeFormatter.ISO_LOCAL_DATE,
+            DateTimeFormatter.ofPattern("d.M.uuuu."),
+            DateTimeFormatter.ofPattern("d.M.uuuu"),
+            DateTimeFormatter.ofPattern("d/M/uuuu")
+        )
+    }
+}

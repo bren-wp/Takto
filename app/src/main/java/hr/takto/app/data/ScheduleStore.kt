@@ -18,6 +18,7 @@ import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.OutputStream
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -512,6 +513,14 @@ class ScheduleStore(private val context: Context) {
     fun exportArchiveJsonLines(): String =
         runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
             .getOrDefault("")
+
+    fun writeArchiveTo(output: OutputStream) {
+        val file = context.getFileStreamPath(HISTORY_FILE)
+        if (!file.exists()) return
+        file.inputStream().buffered().use { input ->
+            input.copyTo(output)
+        }
+    }
 
     fun finishOnboarding() {
         onboardingDone.value = true

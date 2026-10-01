@@ -65,6 +65,12 @@ class ScheduleSearchTest {
     }
 
     @Test
+    fun search_acceptsPaddedCroatianDateWithTrailingDot() {
+        val result = ScheduleSearch.search(entries, "02.10.2026.", today = today)
+        assertEquals(today, result.first().date)
+    }
+
+    @Test
     fun filtersWorkWithoutTextQuery() {
         val timed = ScheduleSearch.search(
             entries = entries,

@@ -77,6 +77,7 @@ fun HomeScreen(
         in 11..17 -> "Dobar dan"
         else -> "Dobra večer"
     }
+    val firstName = store.userProfile.value.firstName
 
     Column(
         modifier = Modifier
@@ -92,7 +93,10 @@ fun HomeScreen(
             Text("Hrvatski", color = TaktoMuted, style = MaterialTheme.typography.labelMedium)
         }
         Column {
-            Text("$greeting 👋", style = MaterialTheme.typography.headlineLarge)
+            Text(
+                if (firstName.isBlank()) "$greeting 👋" else "$greeting, $firstName 👋",
+                style = MaterialTheme.typography.headlineLarge
+            )
             Text("Tvoj raspored je spreman za ovaj tjedan.", color = TaktoMuted)
         }
 

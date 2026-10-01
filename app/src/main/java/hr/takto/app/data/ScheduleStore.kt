@@ -14,6 +14,7 @@ import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
 import hr.takto.app.model.WorkTimePreset
+import hr.takto.app.model.UserProfile
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
@@ -31,7 +32,7 @@ import java.util.UUID
  * brz i jednostavan za sigurnosnu kopiju. Sve bulk operacije spremaju stanje
  * samo jednom kako bi uvoz i primjena uzoraka ostali brzi.
  */
-class ScheduleStore(context: Context) {
+class ScheduleStore(private val context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     val entries = mutableStateMapOf<LocalDate, ShiftEntry>()
@@ -40,6 +41,9 @@ class ScheduleStore(context: Context) {
     val savedPatterns = mutableStateListOf<SavedPattern>()
     val workTimePresets = mutableStateMapOf<String, WorkTimePreset>()
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
+    val userProfile = mutableStateOf(loadUserProfile())
+    val archiveRevisionCount = mutableStateOf(0)
+    private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
     val onboardingDone = mutableStateOf(prefs.getBoolean(KEY_ONBOARDING, false))
     val remindersEnabled = mutableStateOf(prefs.getBoolean(KEY_REMINDERS, false))
     val reminderHour = mutableStateOf(prefs.getInt(KEY_REMINDER_HOUR, 7).coerceIn(0, 23))
@@ -60,10 +64,13 @@ class ScheduleStore(context: Context) {
     init {
         loadShiftColors()
         loadCustomShiftPresets()
+        seedReferenceShortcutsOnce()
         loadWorkTimePresets()
         loadMonthlyTargetOverrides()
         loadSavedPatterns()
         loadEntries()
+        persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
+        archiveRevisionCount.value = countArchiveRevisions()
     }
 
     fun shiftType(code: String): ShiftType? {
@@ -457,6 +464,30 @@ class ScheduleStore(context: Context) {
         return BulkEditResult(changed, skipped, freeDays)
     }
 
+    fun saveUserProfile(profile: UserProfile) {
+        val sanitized = profile.copy(
+            fullName = profile.fullName.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
+            sector = profile.sector.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
+            industry = profile.industry.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
+            institutionType = profile.institutionType.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
+            organizationName = profile.organizationName.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
+            position = profile.position.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT)
+        )
+        userProfile.value = sanitized
+        prefs.edit().putString(KEY_USER_PROFILE, JSONObject().apply {
+            put("fullName", sanitized.fullName)
+            put("sector", sanitized.sector)
+            put("industry", sanitized.industry)
+            put("institutionType", sanitized.institutionType)
+            put("organizationName", sanitized.organizationName)
+            put("position", sanitized.position)
+        }.toString()).apply()
+    }
+
+    fun exportArchiveJsonLines(): String =
+        runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
+            .getOrDefault("")
+
     fun finishOnboarding() {
         onboardingDone.value = true
         prefs.edit().putBoolean(KEY_ONBOARDING, true).apply()
@@ -691,7 +722,14 @@ class ScheduleStore(context: Context) {
                     return@forEachIndexed
                 }
                 val label = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }?.take(MAX_CUSTOM_LENGTH) ?: cleanCode
-                val color = parseColorArgb(parts.getOrNull(4)) ?: DEFAULT_CUSTOM_COLOR
+                val color = parseColorArgb(parts.getOrNull(4)) ?: importedCodeColor(cleanCode)
+                if (
+                    customShiftPresets.keys.none { it.equals(cleanCode, ignoreCase = true) } &&
+                    DefaultShiftTypes.presets.none { it.code.equals(cleanCode, ignoreCase = true) } &&
+                    customShiftPresets.size < MAX_CUSTOM_PRESETS
+                ) {
+                    customShiftPresets[cleanCode] = CustomShiftPreset(cleanCode, label, color)
+                }
                 entries[date] = ShiftEntry(
                     date, cleanCode, label, color, note,
                     startMinute = if (hasValidTime) startMinute else null,
@@ -701,6 +739,7 @@ class ScheduleStore(context: Context) {
             }
             imported++
         }
+        persistCustomShiftPresets()
         persistEntries()
         clearUndoState()
         return ImportResult(imported, skipped, freeDays)
@@ -710,6 +749,14 @@ class ScheduleStore(context: Context) {
         put("schema", DATA_SCHEMA_VERSION)
         put("exportedAt", java.time.Instant.now().toString())
         put("entries", entriesToJson())
+        put("profile", JSONObject().apply {
+            put("fullName", userProfile.value.fullName)
+            put("sector", userProfile.value.sector)
+            put("industry", userProfile.value.industry)
+            put("institutionType", userProfile.value.institutionType)
+            put("organizationName", userProfile.value.organizationName)
+            put("position", userProfile.value.position)
+        })
         put("settings", JSONObject().apply {
             put("remindersEnabled", remindersEnabled.value)
             put("reminderHour", reminderHour.value)
@@ -740,7 +787,6 @@ class ScheduleStore(context: Context) {
         repeat(array.length()) { index ->
             parseEntry(array.optJSONObject(index))?.let(parsed::add)
         }
-        if (replaceExisting) entries.clear()
         var imported = 0
         var skipped = 0
         parsed.forEach { item ->
@@ -751,6 +797,19 @@ class ScheduleStore(context: Context) {
                 imported++
             }
         }
+        root.optJSONObject("profile")?.let { profile ->
+            saveUserProfile(
+                UserProfile(
+                    fullName = profile.optString("fullName", userProfile.value.fullName),
+                    sector = profile.optString("sector", userProfile.value.sector),
+                    industry = profile.optString("industry", userProfile.value.industry),
+                    institutionType = profile.optString("institutionType", userProfile.value.institutionType),
+                    organizationName = profile.optString("organizationName", userProfile.value.organizationName),
+                    position = profile.optString("position", userProfile.value.position)
+                )
+            )
+        }
+
         root.optJSONObject("settings")?.let { settings ->
             remindersEnabled.value = settings.optBoolean("remindersEnabled", remindersEnabled.value)
             reminderHour.value = settings.optInt("reminderHour", reminderHour.value).coerceIn(0, 23)
@@ -761,7 +820,6 @@ class ScheduleStore(context: Context) {
             standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
                 .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
             settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
-                if (replaceExisting) monthlyTargetOverrides.clear()
                 targets.keys().forEach { key ->
                     val month = runCatching { YearMonth.parse(key) }.getOrNull()
                     if (month != null) {
@@ -776,7 +834,6 @@ class ScheduleStore(context: Context) {
                 }
             }
             settings.optJSONArray("customShiftPresets")?.let { array ->
-                if (replaceExisting) customShiftPresets.clear()
                 repeat(array.length().coerceAtMost(MAX_CUSTOM_PRESETS)) { index ->
                     parseCustomShiftPreset(array.optJSONObject(index))?.let { preset ->
                         if (
@@ -789,7 +846,6 @@ class ScheduleStore(context: Context) {
                 }
             }
             settings.optJSONArray("workTimePresets")?.let { array ->
-                if (replaceExisting) workTimePresets.clear()
                 repeat(array.length().coerceAtMost(MAX_WORK_TIME_PRESETS)) { index ->
                     parseWorkTimePreset(array.optJSONObject(index))?.let { preset ->
                         if (shiftType(preset.code) != null && !ScheduleLogic.isLeaveCode(preset.code)) {
@@ -799,7 +855,6 @@ class ScheduleStore(context: Context) {
                 }
             }
             settings.optJSONArray("savedPatterns")?.let { array ->
-                if (replaceExisting) savedPatterns.clear()
                 repeat(array.length().coerceAtMost(MAX_SAVED_PATTERNS)) { index ->
                     parseSavedPattern(array.optJSONObject(index))?.let { pattern ->
                         if (savedPatterns.none { it.id == pattern.id } && savedPatterns.size < MAX_SAVED_PATTERNS) savedPatterns += pattern
@@ -888,6 +943,35 @@ class ScheduleStore(context: Context) {
         val obj = JSONObject()
         shiftColors.forEach { (code, argb) -> obj.put(code, argb) }
         prefs.edit().putString(KEY_SHIFT_COLORS, obj.toString()).apply()
+    }
+
+    private fun seedReferenceShortcutsOnce() {
+        if (prefs.getBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, false)) return
+
+        val defaults = listOf(
+            CustomShiftPreset("J", "J", 0xFF64748BL),
+            CustomShiftPreset("SD", "SD", 0xFF334155L)
+        )
+        defaults.forEach { preset ->
+            if (
+                customShiftPresets.keys.none { it.equals(preset.code, ignoreCase = true) } &&
+                DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) } &&
+                customShiftPresets.size < MAX_CUSTOM_PRESETS
+            ) {
+                customShiftPresets[preset.code] = preset
+            }
+        }
+        persistCustomShiftPresets()
+        prefs.edit().putBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, true).apply()
+    }
+
+    private fun importedCodeColor(code: String): Long {
+        val palette = longArrayOf(
+            0xFF22B8CFL, 0xFF2488FFL, 0xFF8B46F6L, 0xFF13D7A0L,
+            0xFFFFB21DL, 0xFFFF4B55L, 0xFF64748BL, 0xFF0EA5E9L
+        )
+        val index = (code.uppercase(Locale.ROOT).hashCode() and Int.MAX_VALUE) % palette.size
+        return palette[index]
     }
 
     private fun loadCustomShiftPresets() {
@@ -1063,22 +1147,72 @@ class ScheduleStore(context: Context) {
     }
 
     private fun persistEntries() {
+        appendArchiveDiff()
         prefs.edit().putString(KEY_ENTRIES, entriesToJson().toString()).apply()
+        persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
+    }
+
+    private fun appendArchiveDiff() {
+        val dates = (persistedSnapshot.keys + entries.keys).toSortedSet()
+        val changed = dates.filter { date -> persistedSnapshot[date] != entries[date] }
+        if (changed.isEmpty()) return
+
+        runCatching {
+            context.openFileOutput(HISTORY_FILE, Context.MODE_APPEND).bufferedWriter().use { writer ->
+                changed.forEach { date ->
+                    val before = persistedSnapshot[date]
+                    val after = entries[date]
+                    val revision = JSONObject().apply {
+                        put("schema", ARCHIVE_SCHEMA_VERSION)
+                        put("changedAt", java.time.Instant.now().toString())
+                        put("date", date.toString())
+                        put("before", before?.let(::entryToJsonObject) ?: JSONObject.NULL)
+                        put("after", after?.let(::entryToJsonObject) ?: JSONObject.NULL)
+                    }
+                    writer.append(revision.toString()).append('\n')
+                }
+            }
+            archiveRevisionCount.value += changed.size
+        }
+    }
+
+    private fun countArchiveRevisions(): Int =
+        runCatching {
+            context.getFileStreamPath(HISTORY_FILE)
+                .takeIf { it.exists() }
+                ?.bufferedReader()
+                ?.useLines { lines -> lines.count().coerceAtMost(Int.MAX_VALUE) }
+                ?: 0
+        }.getOrDefault(0)
+
+    private fun loadUserProfile(): UserProfile {
+        val raw = prefs.getString(KEY_USER_PROFILE, null) ?: return UserProfile()
+        return runCatching {
+            val obj = JSONObject(raw)
+            UserProfile(
+                fullName = obj.optString("fullName", ""),
+                sector = obj.optString("sector", ""),
+                industry = obj.optString("industry", ""),
+                institutionType = obj.optString("institutionType", ""),
+                organizationName = obj.optString("organizationName", ""),
+                position = obj.optString("position", "")
+            )
+        }.getOrDefault(UserProfile())
+    }
+
+    private fun entryToJsonObject(item: ShiftEntry): JSONObject = JSONObject().apply {
+        put("date", item.date.toString())
+        put("code", item.code)
+        put("label", item.label)
+        put("color", item.colorArgb)
+        put("note", item.note)
+        if (item.startMinute != null) put("startMinute", item.startMinute)
+        if (item.endMinute != null) put("endMinute", item.endMinute)
+        put("breakMinutes", item.breakMinutes)
     }
 
     private fun entriesToJson(): JSONArray = JSONArray().apply {
-        entries.values.sortedBy { it.date }.forEach { item ->
-            put(JSONObject().apply {
-                put("date", item.date.toString())
-                put("code", item.code)
-                put("label", item.label)
-                put("color", item.colorArgb)
-                put("note", item.note)
-                if (item.startMinute != null) put("startMinute", item.startMinute)
-                if (item.endMinute != null) put("endMinute", item.endMinute)
-                put("breakMinutes", item.breakMinutes)
-            })
-        }
+        entries.values.sortedBy { it.date }.forEach { item -> put(entryToJsonObject(item)) }
     }
 
     private fun captureUndo(dates: Collection<LocalDate>, label: String): UndoState {
@@ -1200,10 +1334,13 @@ class ScheduleStore(context: Context) {
         private const val MAX_CUSTOM_PRESETS = 20
         private const val MAX_WORK_TIME_PRESETS = 40
         private const val MAX_SAVED_PATTERNS = 20
-        private const val MAX_IMPORT_ROWS = 20_000
-        private const val MAX_IMPORT_CHARS = 2_000_000
+        private const val MAX_IMPORT_ROWS = 100_000
+        private const val MAX_IMPORT_CHARS = 20_000_000
         private const val MAX_UNDO_DAYS = 1_000
-        private const val DATA_SCHEMA_VERSION = 6
+        private const val MAX_PROFILE_TEXT = 120
+        private const val DATA_SCHEMA_VERSION = 7
+        private const val ARCHIVE_SCHEMA_VERSION = 1
+        private const val HISTORY_FILE = "takto_schedule_history.jsonl"
         private const val PREFS_NAME = "takto_schedule"
         private const val KEY_ENTRIES = "entries_json"
         private const val KEY_ONBOARDING = "onboarding_done"
@@ -1218,6 +1355,8 @@ class ScheduleStore(context: Context) {
         private const val KEY_SHIFT_COLORS = "shift_colors_json"
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
+        private const val KEY_USER_PROFILE = "user_profile_json"
+        private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
 
         private val DATE_FORMATS = listOf(
             DateTimeFormatter.ISO_LOCAL_DATE,

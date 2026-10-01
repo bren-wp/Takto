@@ -15,6 +15,11 @@ Početno izdanje Takto aplikacije u repozitoriju `bren-wp/Takto`.
 - statistike i vlastiti uzorci
 - dnevni i smjenski podsjetnici
 - CSV, JSON backup i iCalendar izvoz
+- trajna append-only arhiva svih promjena rasporeda
+- praktična navigacija 100 godina unatrag i 100 godina unaprijed
+- radni profil: ime i prezime, sektor, djelatnost, ustanova i pozicija
+- J i SD brze oznake iz referentnog rasporeda te automatsko čuvanje nepoznatih uvezenih kratica
+- mjesečni fond, redovni sati i prekovremeni sati prema fondu
 - lokalno spremanje bez INTERNET dopuštenja
 - unit testovi i GitHub Actions provjera bez vlastitih Secrets varijabli
 

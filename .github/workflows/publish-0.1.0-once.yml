@@ -1,0 +1,69 @@
+name: Publish Takto 0.1.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-0.1.0-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Build and publish Takto 0.1.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          SDKMANAGER="$(find /usr/local/lib/android/sdk/cmdline-tools -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "platforms;android-37" "build-tools;36.0.0"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Verify
+        run: ./gradlew --no-daemon --stacktrace testDebugUnitTest lintDebug lintRelease
+
+      - name: Build APK and AAB
+        run: ./gradlew --no-daemon --stacktrace assembleDebug assembleRelease bundleRelease
+
+      - name: Prepare assets
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          cp app/build/outputs/apk/debug/app-debug.apk release-assets/Takto-0.1.0.apk
+          cp app/build/outputs/apk/release/app-release-unsigned.apk release-assets/Takto-0.1.0-release-unsigned.apk
+          cp app/build/outputs/bundle/release/app-release.aab release-assets/Takto-0.1.0-release-unsigned.aab
+          sha256sum release-assets/* > release-assets/SHA256SUMS.txt
+          test -s release-assets/Takto-0.1.0.apk
+          test -s release-assets/Takto-0.1.0-release-unsigned.apk
+          test -s release-assets/Takto-0.1.0-release-unsigned.aab
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view v0.1.0 >/dev/null 2>&1; then
+            echo "Release v0.1.0 already exists."
+            exit 0
+          fi
+          gh release create v0.1.0             --target "$GITHUB_SHA"             --title "Takto 0.1.0"             --notes-file docs/RELEASE_0.1.0.md             release-assets/*

@@ -334,14 +334,14 @@ class ScheduleStore(private val context: Context) {
 
     fun removeEntry(date: LocalDate) {
         if (!entries.containsKey(date)) return
-        val before = captureUndo(listOf(date), "Slobodan dan ${date}")
+        val before = captureUndo(listOf(date), "Uklonjen unos ${date}")
         entries.remove(date)
         persistEntries()
         commitUndo(before)
     }
 
     /**
-     * Dodjeljuje istu vrstu smjene većem broju datuma i stanje sprema samo jednom.
+     * Dodjeljuje istu oznaku većem broju datuma i stanje sprema samo jednom.
      * Kad je overwriteExisting=false, već popunjeni dani ostaju netaknuti.
      */
     fun setEntries(
@@ -436,7 +436,7 @@ class ScheduleStore(private val context: Context) {
     }
 
     /**
-     * Snima ponedjeljak-nedjelja tjedna kao predložak. null znači slobodan dan.
+     * Snima ponedjeljak-nedjelja tjedna kao predložak. null znači dan bez unosa.
      * Snapshot je memorijski i ne mijenja spremljeni raspored.
      */
     fun copyWeek(dateInWeek: LocalDate): List<ShiftEntry?> =

@@ -119,7 +119,7 @@ private fun CalendarDayCell(
                 selected = isSelected
                 contentDescription = when {
                     !enabled -> "${croatianDate(date)}, izvan odabranog mjeseca"
-                    entry == null -> "${croatianDate(date)}, slobodan dan"
+                    entry == null -> "${croatianDate(date)}, nema unosa"
                     else -> buildString {
                         append(croatianDate(date)).append(", ").append(entry.code).append(", ").append(entry.label)
                         if (entry.hasWorkTime) {

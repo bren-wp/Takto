@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import hr.takto.app.model.AppThemeMode
 import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
@@ -42,6 +43,7 @@ class ScheduleStore(private val context: Context) {
     val workTimePresets = mutableStateMapOf<String, WorkTimePreset>()
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
+    val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
     val onboardingDone = mutableStateOf(prefs.getBoolean(KEY_ONBOARDING, false))
@@ -462,6 +464,11 @@ class ScheduleStore(private val context: Context) {
             commitUndo(before)
         }
         return BulkEditResult(changed, skipped, freeDays)
+    }
+
+    fun setThemeMode(mode: AppThemeMode) {
+        themeMode.value = mode
+        prefs.edit().putString(KEY_THEME_MODE, mode.persistedValue).apply()
     }
 
     fun saveUserProfile(profile: UserProfile) {
@@ -1356,6 +1363,7 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
+        private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
 
         private val DATE_FORMATS = listOf(

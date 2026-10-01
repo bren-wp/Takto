@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.RestartAlt
@@ -64,6 +66,8 @@ import androidx.core.content.ContextCompat
 import hr.takto.app.BuildConfig
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.EmploymentCatalog
+import hr.takto.app.model.UserProfile
 import hr.takto.app.reminders.ReminderScheduler
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
@@ -75,6 +79,7 @@ import java.nio.charset.StandardCharsets
 fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
+    var profileDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
     var notificationPermissionTarget by remember { mutableStateOf<String?>(null) }
@@ -214,6 +219,56 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Postavke i personalizacija", style = MaterialTheme.typography.headlineLarge)
             Text("Prilagodi raspored svom radnom životu.", color = TaktoMuted)
+        }
+
+        val profile = store.userProfile.value
+        GlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { profileDialog = true }
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(52.dp)
+                        .background(TaktoBlue.copy(alpha = 0.14f), RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = TaktoBlue)
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        profile.fullName.ifBlank { "Moj radni profil" },
+                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        listOf(profile.sector, profile.industry)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" · ")
+                            .ifBlank { "Ime, sektor, djelatnost, ustanova i radno mjesto" },
+                        color = TaktoMuted,
+                        fontSize = 12.sp,
+                        maxLines = 2
+                    )
+                    if (profile.organizationName.isNotBlank() || profile.position.isNotBlank()) {
+                        Text(
+                            listOf(profile.organizationName, profile.position)
+                                .filter { it.isNotBlank() }
+                                .joinToString(" · "),
+                            color = TaktoMuted,
+                            fontSize = 11.sp,
+                            maxLines = 2
+                        )
+                    }
+                }
+                Icon(Icons.Default.Edit, contentDescription = "Uredi radni profil", tint = TaktoBlue)
+            }
         }
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
@@ -478,6 +533,18 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
     }
 
+
+    if (profileDialog) {
+        UserProfileDialog(
+            initial = store.userProfile.value,
+            onDismiss = { profileDialog = false },
+            onSave = { profile ->
+                store.saveUserProfile(profile)
+                profileDialog = false
+                Toast.makeText(context, "Radni profil je spremljen.", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
 
     pendingCsvContent?.let { content ->
         ImportModeDialog(
@@ -1088,4 +1155,208 @@ private fun SettingsRow(
             trailing?.invoke()
         }
     }
+}
+
+
+@Composable
+private fun UserProfileDialog(
+    initial: UserProfile,
+    onDismiss: () -> Unit,
+    onSave: (UserProfile) -> Unit
+) {
+    var fullName by remember(initial) { mutableStateOf(initial.fullName) }
+    var sector by remember(initial) { mutableStateOf(initial.sector) }
+    var industry by remember(initial) { mutableStateOf(initial.industry) }
+    var institutionType by remember(initial) { mutableStateOf(initial.institutionType) }
+    var organizationName by remember(initial) { mutableStateOf(initial.organizationName) }
+    var position by remember(initial) { mutableStateOf(initial.position) }
+    var picker by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Work, contentDescription = null, tint = TaktoBlue)
+                Text(" Radni profil")
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    "Sva polja ostaju spremljena na uređaju. Popisi su prijedlozi — možeš upisati bilo koju javnu ili državnu ustanovu i bilo koje radno mjesto.",
+                    color = TaktoMuted,
+                    fontSize = 12.sp
+                )
+                OutlinedTextField(
+                    value = fullName,
+                    onValueChange = { fullName = it.take(120) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Ime i prezime") },
+                    singleLine = true
+                )
+                ProfileFieldWithSuggestions(
+                    label = "Sektor",
+                    value = sector,
+                    onValueChange = { sector = it.take(120) },
+                    onSuggestions = { picker = "sector" }
+                )
+                ProfileFieldWithSuggestions(
+                    label = "Djelatnost / industrija",
+                    value = industry,
+                    onValueChange = { industry = it.take(120) },
+                    onSuggestions = { picker = "industry" }
+                )
+                ProfileFieldWithSuggestions(
+                    label = "Vrsta ustanove",
+                    value = institutionType,
+                    onValueChange = { institutionType = it.take(120) },
+                    onSuggestions = { picker = "institution" }
+                )
+                OutlinedTextField(
+                    value = organizationName,
+                    onValueChange = { organizationName = it.take(120) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Naziv ustanove / poslodavca") },
+                    singleLine = true
+                )
+                ProfileFieldWithSuggestions(
+                    label = "Radno mjesto / pozicija",
+                    value = position,
+                    onValueChange = { position = it.take(120) },
+                    onSuggestions = { picker = "position" }
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(
+                        UserProfile(
+                            fullName = fullName,
+                            sector = sector,
+                            industry = industry,
+                            institutionType = institutionType,
+                            organizationName = organizationName,
+                            position = position
+                        )
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
+            ) { Text("Spremi") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
+    )
+
+    picker?.let { kind ->
+        val title: String
+        val options: List<String>
+        val current: String
+        when (kind) {
+            "sector" -> {
+                title = "Odaberi sektor"
+                options = EmploymentCatalog.sectors
+                current = sector
+            }
+            "industry" -> {
+                title = "Odaberi djelatnost"
+                options = EmploymentCatalog.industries
+                current = industry
+            }
+            "institution" -> {
+                title = "Odaberi vrstu ustanove"
+                options = EmploymentCatalog.institutionTypes
+                current = institutionType
+            }
+            else -> {
+                title = "Odaberi radno mjesto"
+                options = EmploymentCatalog.commonPositions
+                current = position
+            }
+        }
+
+        OptionPickerDialog(
+            title = title,
+            options = options,
+            current = current,
+            onDismiss = { picker = null },
+            onSelect = { selected ->
+                when (kind) {
+                    "sector" -> sector = selected
+                    "industry" -> industry = selected
+                    "institution" -> institutionType = selected
+                    else -> position = selected
+                }
+                picker = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun ProfileFieldWithSuggestions(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSuggestions: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(label) },
+            singleLine = true
+        )
+        TextButton(
+            onClick = onSuggestions,
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Prijedlozi", color = TaktoBlue, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun OptionPickerDialog(
+    title: String,
+    options: List<String>,
+    current: String,
+    onDismiss: () -> Unit,
+    onSelect: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                if (option == current) TaktoBlue.copy(alpha = 0.14f) else Color(0xFF1A2942),
+                                RoundedCornerShape(12.dp)
+                            )
+                            .clickable { onSelect(option) }
+                            .padding(horizontal = 12.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(option, modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                        if (option == current) Text("✓", color = TaktoBlue, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Zatvori") } }
+    )
 }

@@ -1273,15 +1273,22 @@ class ScheduleStore(private val context: Context) {
     }
 
     private fun copyCurrentSnapshotToRecovery() {
-        val current = context.getFileStreamPath(CURRENT_SCHEDULE_FILE)
-        if (!current.exists()) return
+        val currentFile = context.getFileStreamPath(CURRENT_SCHEDULE_FILE)
+        if (!currentFile.exists() || currentFile.length() > MAX_SNAPSHOT_BYTES) return
 
-        val snapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE) ?: return
-        writeSnapshotFile(
-            fileName = RECOVERY_SCHEDULE_FILE,
-            source = snapshot.entries.values,
-            checkpointRevisionCount = snapshot.archiveRevisionCount
-        )
+        val currentAtomic = AtomicFile(currentFile)
+        val recoveryAtomic = AtomicFile(context.getFileStreamPath(RECOVERY_SCHEDULE_FILE))
+        val output = runCatching { recoveryAtomic.startWrite() }.getOrNull() ?: return
+
+        runCatching {
+            currentAtomic.openRead().buffered().use { input ->
+                input.copyTo(output, bufferSize = SNAPSHOT_COPY_BUFFER_BYTES)
+            }
+            output.flush()
+            recoveryAtomic.finishWrite(output)
+        }.onFailure {
+            runCatching { recoveryAtomic.failWrite(output) }
+        }
     }
 
     private fun applyArchiveRevisions(
@@ -1545,6 +1552,7 @@ class ScheduleStore(private val context: Context) {
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 1
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L
+        private const val SNAPSHOT_COPY_BUFFER_BYTES = 64 * 1024
         private const val CURRENT_SCHEDULE_FILE = "takto_schedule_current.json"
         private const val RECOVERY_SCHEDULE_FILE = "takto_schedule_recovery.json"
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"

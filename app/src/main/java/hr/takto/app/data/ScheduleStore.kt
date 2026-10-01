@@ -1369,7 +1369,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_WORK_TIME_PRESETS = 40
         private const val MAX_SAVED_PATTERNS = 20
         private const val MAX_IMPORT_ROWS = 100_000
-        private const val MAX_IMPORT_CHARS = 20_000_000
+        const val MAX_IMPORT_CHARS = 20_000_000
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
         private const val SUGGESTION_LOOKBACK_DAYS = 90L

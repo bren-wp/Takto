@@ -498,3 +498,237 @@ class ScheduleStore(context: Context) {
         val safe = minutes.coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
         standardDailyMinutes.value = safe
         prefs.edit().putInt(KEY_STANDARD_DAILY_MINUTES, safe).apply()
+    }
+
+    fun automaticMonthlyTargetMinutes(month: YearMonth): Int =
+        ScheduleLogic.automaticMonthlyTargetMinutes(month, standardDailyMinutes.value)
+
+    fun monthlyTargetMinutes(month: YearMonth): Int =
+        monthlyTargetOverrides[month.toString()] ?: automaticMonthlyTargetMinutes(month)
+
+    fun hasMonthlyTargetOverride(month: YearMonth): Boolean = monthlyTargetOverrides.containsKey(month.toString())
+
+    fun setMonthlyTargetOverride(month: YearMonth, minutes: Int?) {
+        val key = month.toString()
+        if (minutes == null) monthlyTargetOverrides.remove(key)
+        else monthlyTargetOverrides[key] = minutes.coerceIn(0, ScheduleLogic.MAX_MONTHLY_TARGET_MINUTES)
+        persistMonthlyTargetOverrides()
+    }
+
+    fun totalWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { it.workMinutes ?: 0 }
+
+    fun totalNightWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        ScheduleLogic.nightWorkMinutes(entry.startMinute, entry.endMinute, entry.breakMinutes)
+    }
+
+    fun totalWeekendWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        ScheduleLogic.weekendWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
+    }
+
+    fun totalSundayWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        ScheduleLogic.sundayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
+    }
+
+    fun totalOvertimeMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        val minutes = entry.workMinutes ?: return@sumOf 0
+        ScheduleLogic.overtimeMinutes(minutes, standardDailyMinutes.value)
+    }
+
+    fun undoLastChange(): Int {
+        val state = undoState ?: return 0
+        state.entries.forEach { (date, previous) ->
+            if (previous == null) entries.remove(date) else entries[date] = previous
+        }
+        persistEntries()
+        val restored = state.entries.size
+        undoState = null
+        canUndo.value = false
+        undoLabel.value = ""
+        return restored
+    }
+
+    fun clearAll() {
+        if (entries.isEmpty()) return
+        val before = captureUndo(entries.keys.take(MAX_UNDO_DAYS), "Brisanje svih unosa")
+        val fullyCaptured = entries.size <= MAX_UNDO_DAYS
+        entries.clear()
+        persistEntries()
+        if (fullyCaptured) commitUndo(before) else clearUndoState()
+    }
+
+    fun applyPattern(
+        startDate: LocalDate,
+        codes: List<String?>,
+        numberOfDays: Int,
+        overwriteExisting: Boolean
+    ): PatternApplyResult {
+        if (codes.isEmpty() || numberOfDays <= 0) return PatternApplyResult(0, 0, 0)
+
+        var changed = 0
+        var freeDays = 0
+        var skipped = 0
+        val safeDays = numberOfDays.coerceAtMost(MAX_PATTERN_DAYS)
+        val affectedDates = List(safeDays) { index -> startDate.plusDays(index.toLong()) }
+        val before = captureUndo(affectedDates, "Primjena uzorka")
+
+        repeat(safeDays) { index ->
+            val date = startDate.plusDays(index.toLong())
+            val code = codes[index % codes.size]
+            val alreadyExists = entries.containsKey(date)
+            if (alreadyExists && !overwriteExisting) {
+                skipped++
+                return@repeat
+            }
+
+            if (code.isNullOrBlank()) {
+                if (entries.remove(date) != null) changed++
+                freeDays++
+            } else {
+                val preset = shiftType(code)
+                val next = if (preset != null) {
+                    entryFromType(date, preset, note = "", preserveExistingTime = false)
+                } else {
+                    val cleanCode = sanitizeCustomText(code)
+                    ShiftEntry(
+                        date = date,
+                        code = cleanCode,
+                        label = cleanCode,
+                        colorArgb = DEFAULT_CUSTOM_COLOR,
+                        note = ""
+                    )
+                }
+                if (entries[date] != next) {
+                    entries[date] = next
+                    changed++
+                }
+            }
+        }
+        if (changed > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return PatternApplyResult(changed, skipped, freeDays)
+    }
+
+    fun exportICalendar(): String = ICalendarExporter.export(entries.values)
+
+    fun exportCsv(): String {
+        val sb = StringBuilder("datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min\n")
+        entries.values.sortedBy { it.date }.forEach { item ->
+            sb.append(csv(item.date.toString())).append(',')
+                .append(csv(item.code)).append(',')
+                .append(csv(item.label)).append(',')
+                .append(csv(item.note)).append(',')
+                .append(csv(formatColorArgb(item.colorArgb))).append(',')
+                .append(csv(item.startMinute?.let(ScheduleLogic::formatClock).orEmpty())).append(',')
+                .append(csv(item.endMinute?.let(ScheduleLogic::formatClock).orEmpty())).append(',')
+                .append(csv(item.breakMinutes.takeIf { item.hasWorkTime }?.toString().orEmpty())).append('\n')
+        }
+        return sb.toString()
+    }
+
+    fun importCsv(content: String, overwriteExisting: Boolean = true): ImportResult {
+        if (content.length > MAX_IMPORT_CHARS || content.count { it == '"' } % 2 != 0) {
+            return ImportResult(0, 0, 0, valid = false)
+        }
+        var imported = 0
+        var skipped = 0
+        var freeDays = 0
+        val normalized = content.removePrefix("\uFEFF")
+        val firstLine = normalized.lineSequence().firstOrNull { it.isNotBlank() } ?: return ImportResult(0, 0, 0)
+        val delimiter = detectDelimiter(firstLine)
+        val rows = parseCsv(normalized, delimiter).filter { row -> row.any { it.isNotBlank() } }
+        if (rows.size > MAX_IMPORT_ROWS) return ImportResult(0, 0, 0, valid = false)
+        if (rows.isEmpty()) return ImportResult(0, 0, 0)
+
+        rows.forEachIndexed { index, parts ->
+            if (index == 0 && isHeader(parts)) return@forEachIndexed
+            if (parts.size < 2) {
+                skipped++
+                return@forEachIndexed
+            }
+
+            val date = parseDate(parts[0])
+            if (date == null) {
+                skipped++
+                return@forEachIndexed
+            }
+            if (!overwriteExisting && entries.containsKey(date)) {
+                skipped++
+                return@forEachIndexed
+            }
+
+            val code = parts[1].trim()
+            if (code.isBlank()) {
+                entries.remove(date)
+                imported++
+                freeDays++
+                return@forEachIndexed
+            }
+
+            val preset = shiftType(code)
+            val note = parts.getOrNull(3).orEmpty().trim().take(MAX_NOTE_LENGTH)
+            val startMinute = parts.getOrNull(5)?.takeIf { it.isNotBlank() }?.let(ScheduleLogic::parseClock)
+            val endMinute = parts.getOrNull(6)?.takeIf { it.isNotBlank() }?.let(ScheduleLogic::parseClock)
+            val breakMinutes = parts.getOrNull(7)?.trim()?.toIntOrNull()?.coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES) ?: 0
+            val hasValidTime = startMinute != null && endMinute != null &&
+                ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)?.let { it > 0 } == true
+            if (preset != null) {
+                entries[date] = ShiftEntry(
+                    date = date,
+                    code = preset.code,
+                    label = preset.name,
+                    colorArgb = preset.color.toArgb().toLong() and 0xFFFFFFFFL,
+                    note = note,
+                    startMinute = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) startMinute else null,
+                    endMinute = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) endMinute else null,
+                    breakMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) breakMinutes else 0
+                )
+            } else {
+                val cleanCode = sanitizeCustomText(code)
+                if (cleanCode.isBlank()) {
+                    skipped++
+                    return@forEachIndexed
+                }
+                val label = parts.getOrNull(2)?.trim()?.takeIf { it.isNotBlank() }?.take(MAX_CUSTOM_LENGTH) ?: cleanCode
+                val color = parseColorArgb(parts.getOrNull(4)) ?: DEFAULT_CUSTOM_COLOR
+                entries[date] = ShiftEntry(
+                    date, cleanCode, label, color, note,
+                    startMinute = if (hasValidTime) startMinute else null,
+                    endMinute = if (hasValidTime) endMinute else null,
+                    breakMinutes = if (hasValidTime) breakMinutes else 0
+                )
+            }
+            imported++
+        }
+        persistEntries()
+        clearUndoState()
+        return ImportResult(imported, skipped, freeDays)
+    }
+
+    fun exportBackupJson(): String = JSONObject().apply {
+        put("schema", DATA_SCHEMA_VERSION)
+        put("exportedAt", java.time.Instant.now().toString())
+        put("entries", entriesToJson())
+        put("settings", JSONObject().apply {
+            put("remindersEnabled", remindersEnabled.value)
+            put("reminderHour", reminderHour.value)
+            put("reminderMinute", reminderMinute.value)
+            put("shiftRemindersEnabled", shiftRemindersEnabled.value)
+            put("shiftReminderLeadMinutes", shiftReminderLeadMinutes.value)
+            put("standardDailyMinutes", standardDailyMinutes.value)
+            put("monthlyTargetOverrides", JSONObject().apply {
+                monthlyTargetOverrides.forEach { (month, minutes) -> put(month, minutes) }
+            })
+            put("workTimePresets", workTimePresetsToJson())
+            put("shiftColors", JSONObject().apply {
+                shiftColors.forEach { (code, argb) -> put(code, argb) }
+            })
+            put("customShiftPresets", customShiftPresetsToJson())
+            put("savedPatterns", savedPatternsToJson())
+        })
+    }.toString(2)
+
+    fun importBackupJson(content: String, replaceExisting: Boolean = false): ImportResult {
+        if (content.length > MAX_IMPORT_CHARS) return ImportResult(0, 0, 0, valid = false)
+        val root = runCatching { JSONObject(content) }.getOrElse { return ImportResult(0, 0, 0, valid = false) }

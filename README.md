@@ -223,6 +223,7 @@ Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName
 - prije zamjene glavne snimke zadržava se pričuvna recovery kopija
 - svaka promjena rasporeda ulazi u append-only lokalnu arhivu
 - revizije nose checkpoint pa se pri pokretanju obrađuje samo dio arhive noviji od spremljene snimke
+- broj revizija i duljina arhive cacheiraju se pa veliki journal ne zahtijeva puni scan pri svakom pokretanju
 - konfliktni stariji zapis iz arhive ne prepisuje divergentno novije lokalno stanje
 - stari i budući rasporedi ne brišu se automatski
 - notification permission traži se samo na Androidu 13+

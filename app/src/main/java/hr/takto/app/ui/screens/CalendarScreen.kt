@@ -82,6 +82,7 @@ fun CalendarScreen(
     var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
     var customDialog by remember { mutableStateOf(false) }
     var searchDialog by remember { mutableStateOf(false) }
+    var jumpDialog by remember { mutableStateOf(false) }
     var customDate by remember { mutableStateOf<LocalDate?>(null) }
     var customPendingNote by remember { mutableStateOf("") }
 
@@ -179,7 +180,9 @@ fun CalendarScreen(
                 Text(
                     monthTitle(month),
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { jumpDialog = true },
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 IconButton(onClick = {
@@ -669,6 +672,20 @@ fun CalendarScreen(
         )
     }
 
+    if (jumpDialog) {
+        JumpToMonthDialog(
+            current = month,
+            onDismiss = { jumpDialog = false },
+            onSelect = { target ->
+                month = target
+                selectedDate = target.atDay(1)
+                selectedDates = emptySet()
+                multiSelect = false
+                jumpDialog = false
+            }
+        )
+    }
+
     if (customDialog) {
         val date = customDate
         CustomEntryDialog(
@@ -940,6 +957,71 @@ private fun CustomEntryDialog(
                 enabled = text.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
+    )
+}
+
+
+@Composable
+private fun JumpToMonthDialog(
+    current: YearMonth,
+    onDismiss: () -> Unit,
+    onSelect: (YearMonth) -> Unit
+) {
+    val thisYear = LocalDate.now().year
+    val minYear = thisYear - 100
+    val maxYear = thisYear + 100
+    var monthText by remember(current) { mutableStateOf(current.monthValue.toString()) }
+    var yearText by remember(current) { mutableStateOf(current.year.toString()) }
+
+    val monthValue = monthText.toIntOrNull()
+    val yearValue = yearText.toIntOrNull()
+    val valid = monthValue in 1..12 && yearValue != null && yearValue in minYear..maxYear
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Idi na mjesec") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    "Brzi skok do bilo kojeg mjeseca u rasponu od 100 godina unatrag do 100 godina unaprijed.",
+                    color = TaktoMuted,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = monthText,
+                        onValueChange = { monthText = it.filter(Char::isDigit).take(2) },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Mjesec") },
+                        placeholder = { Text("1–12") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = yearText,
+                        onValueChange = { yearText = it.filter { ch -> ch.isDigit() || ch == '-' }.take(5) },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Godina") },
+                        placeholder = { Text("$minYear–$maxYear") },
+                        singleLine = true
+                    )
+                }
+                if (!valid && (monthText.isNotBlank() || yearText.isNotBlank())) {
+                    Text(
+                        "Dopušten je mjesec 1–12 i godina $minYear–$maxYear.",
+                        color = Color(0xFFFF6570),
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSelect(YearMonth.of(yearValue!!, monthValue!!)) },
+                enabled = valid,
+                colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
+            ) { Text("Otvori") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
     )

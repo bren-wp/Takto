@@ -136,7 +136,7 @@ Takto 0.1.0 koristi stabilni Android toolchain:
 - **AndroidX Core 1.19.1**
 - **Activity Compose 1.13.0**
 - **Lifecycle 2.11.0**
-- **compileSdk / targetSdk 36 — Android 16**
+- **compileSdk 37 — Android 17 SDK**\n- **targetSdk 36 — Android 16**
 - **minSdk 26 — Android 8.0**
 - **Java 17**
 
@@ -168,7 +168,7 @@ Nakon uspješnog workflowa dostupni su Actions artefakti:
 
 ### Lokalna provjera
 
-Potrebni su Java 17, Android SDK 36 i Gradle 9.8.0.
+Potrebni su Java 17, Android SDK Platform 37 i Gradle 9.8.0.
 
 ```bash
 gradle --no-daemon testDebugUnitTest lintDebug lintRelease assembleDebug assembleRelease bundleRelease

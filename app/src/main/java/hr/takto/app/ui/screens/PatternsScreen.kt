@@ -93,7 +93,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Uzorci rasporeda", style = MaterialTheme.typography.headlineLarge)
-            Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju slobodni dani.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Popuni više tjedana odjednom. Prazna mjesta u uzorku ostaju bez unosa.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = { customPatternDialog = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -212,7 +212,7 @@ private fun CustomPatternDialog(
                     value = sequence,
                     onValueChange = { sequence = it.take(240) },
                     label = { Text("Koraci odvojeni zarezom") },
-                    supportingText = { Text("Primjer: D, D, N, N, -, -, -, -  ·  '-' znači slobodan dan") },
+                    supportingText = { Text("Primjer: D, D, N, N, -, -, -, -  ·  '-' znači bez unosa") },
                     minLines = 2,
                     maxLines = 4,
                     modifier = Modifier.fillMaxWidth()
@@ -236,7 +236,7 @@ private fun CustomPatternDialog(
                     if (codes.size > 8) Text("+ još ${codes.size - 8} koraka", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
-                    "Možeš koristiti D, N, GO, BO, PD, spremljene vlastite oznake ili bilo koju novu kratku oznaku.",
+                    "Možeš koristiti bilo koju spremljenu oznaku ili novu kratku oznaku. Znak '-' ostavlja dan bez unosa.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

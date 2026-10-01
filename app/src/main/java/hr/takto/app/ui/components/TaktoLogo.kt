@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,7 +21,6 @@ import androidx.compose.ui.unit.sp
 import hr.takto.app.ui.theme.TaktoCyan
 import hr.takto.app.ui.theme.TaktoGreen
 import hr.takto.app.ui.theme.TaktoPurple
-import hr.takto.app.ui.theme.TaktoText
 
 @Composable
 fun TaktoLogo(
@@ -37,7 +37,7 @@ fun TaktoLogo(
         if (showWordmark) {
             Text(
                 text = "akto",
-                color = TaktoText,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontSize = (iconSize.value * 0.76f).sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = (-0.7).sp

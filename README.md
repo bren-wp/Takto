@@ -65,6 +65,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - kopiranje i lijepljenje cijelog tjedna
 - Undo / Vrati zadnju promjenu
 - pretraga po oznaci, nazivu, napomeni i datumu
+- sistemska tipka Back iz sekundarnih odjeljaka prvo vraća na Početnu
 
 ### Radni sati i fond
 
@@ -91,7 +92,7 @@ Takto može spremiti ponavljajuće cikluse, primjerice:
 D, D, N, N, -, -, -, -
 ```
 
-`-` znači da taj dan ostaje bez unosa. Uzorci podržavaju ugrađene i vlastite oznake te se mogu primijeniti na veći raspon dana uz izbor hoće li postojeći unosi biti sačuvani ili prepisani.
+`-` znači da taj dan ostaje bez unosa. Vizualni graditelj nudi najrelevantnije korisničke oznake kao brze korake, a početni prijedlozi uzoraka dinamički se grade iz stvarne uporabe umjesto fiksnih D/N rotacija. Uzorci se mogu primijeniti na veći raspon dana uz izbor hoće li postojeći unosi biti sačuvani ili prepisani.
 
 ### Radni profil
 
@@ -210,7 +211,9 @@ Nakon uspješnog workflowa dostupni su Actions artefakti:
 - stari i budući rasporedi ne brišu se automatski
 - notification permission traži se samo na Androidu 13+
 - datoteke se izvoze kroz Androidov sustav za datoteke/dijeljenje
-- uvoz ima ograničenja veličine i broja redaka
+- CSV i backup uvoz imaju strogo ograničenje veličine prije potpune alokacije sadržaja
+- CSV redci obrađuju se sekvencijalno radi manje vršne potrošnje memorije
+- trajna arhiva izvozi se streaming načinom izravno u odabranu datoteku
 - JSON backup koristi verzioniranu shemu
 - neispravni zapisi ne smiju srušiti aplikaciju
 - produkcijski ključ za potpisivanje nikad ne smije biti u Git repozitoriju

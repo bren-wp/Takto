@@ -225,7 +225,7 @@ fun HomeScreen(
                     }
                 } else {
                     Text(
-                        "Još nema unosa za danas. Najčešću oznaku možeš dodati jednim dodirom.",
+                        "Još nema unosa za danas. Najrelevantnije oznake možeš dodati jednim dodirom.",
                         color = colors.onSurfaceVariant
                     )
                     if (todayQuickTypes.isNotEmpty()) {

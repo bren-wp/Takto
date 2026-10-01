@@ -18,6 +18,8 @@ enum class ScheduleSearchFilter {
 object ScheduleSearch {
     private val croatianNumericDate: DateTimeFormatter =
         DateTimeFormatter.ofPattern("d.M.uuuu", Locale.forLanguageTag("hr"))
+    private val croatianPaddedDate: DateTimeFormatter =
+        DateTimeFormatter.ofPattern("dd.MM.uuuu", Locale.forLanguageTag("hr"))
 
     fun search(
         entries: Collection<ShiftEntry>,
@@ -69,7 +71,17 @@ object ScheduleSearch {
         val note = normalize(entry.note)
         val isoDate = entry.date.toString()
         val numericDate = entry.date.format(croatianNumericDate)
-        val searchable = listOf(code, label, note, isoDate, numericDate)
+        val paddedDate = entry.date.format(croatianPaddedDate)
+        val searchable = listOf(
+            code,
+            label,
+            note,
+            isoDate,
+            numericDate,
+            "$numericDate.",
+            paddedDate,
+            "$paddedDate."
+        )
             .filter { it.isNotBlank() }
             .joinToString(" ")
 
@@ -85,8 +97,21 @@ object ScheduleSearch {
             label.contains(query) -> score += 100
         }
         if (note.contains(query) && note.isNotBlank()) score += 70
-        if (isoDate == query || numericDate == query) score += 210
-        else if (isoDate.contains(query) || numericDate.contains(query)) score += 90
+        if (
+            isoDate == query ||
+            numericDate == query ||
+            "$numericDate." == query ||
+            paddedDate == query ||
+            "$paddedDate." == query
+        ) {
+            score += 210
+        } else if (
+            isoDate.contains(query) ||
+            numericDate.contains(query) ||
+            paddedDate.contains(query)
+        ) {
+            score += 90
+        }
         if (searchable.contains(query)) score += 35
 
         val terms = query.split(Regex("\\s+")).filter { it.isNotBlank() }

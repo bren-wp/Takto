@@ -5,13 +5,13 @@ import org.junit.Test
 
 class AppThemeModeTest {
     @Test
-    fun missingValueDefaultsToDark() {
-        assertEquals(AppThemeMode.DARK, AppThemeMode.fromPersisted(null))
+    fun missingValueDefaultsToSystem() {
+        assertEquals(AppThemeMode.SYSTEM, AppThemeMode.fromPersisted(null))
     }
 
     @Test
-    fun invalidValueDefaultsToDark() {
-        assertEquals(AppThemeMode.DARK, AppThemeMode.fromPersisted("unknown"))
+    fun invalidValueDefaultsToSystem() {
+        assertEquals(AppThemeMode.SYSTEM, AppThemeMode.fromPersisted("unknown"))
     }
 
     @Test

@@ -29,6 +29,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -83,6 +84,7 @@ fun ScheduleScannerDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf<ScheduleScanParseResult?>(null) }
     var overwrite by remember { mutableStateOf(true) }
+    var personHint by remember { mutableStateOf(store.userProfile.value.fullName) }
 
     fun processImageUri(uri: android.net.Uri) {
         scanning = true
@@ -98,10 +100,18 @@ fun ScheduleScannerDialog(
         recognizer.process(input)
             .addOnSuccessListener { recognized ->
                 scanning = false
-                val parsed = RosterScanParser.parse(recognized.text, LocalDate.now())
+                val parsed = if (personHint.isNotBlank()) {
+                    RosterScanParser.parseForPerson(recognized.text, personHint, LocalDate.now())
+                } else {
+                    RosterScanParser.parse(recognized.text, LocalDate.now())
+                }
                 result = parsed
                 if (parsed.items.isEmpty()) {
-                    error = "Tekst je prepoznat, ali nisu pronađeni sigurni parovi datum + oznaka."
+                    error = if (personHint.isNotBlank()) {
+                        "Nisam pronašao dovoljno siguran raspored za upisanu osobu. Izreži samo njezin red ili provjeri ime."
+                    } else {
+                        "Nisu pronađeni sigurni parovi datum + oznaka. Izreži samo svoj red i pokušaj ponovno."
+                    }
                 }
             }
             .addOnFailureListener {
@@ -139,9 +149,20 @@ fun ScheduleScannerDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Prije prepoznavanja izreži samo svoj red ili svoju osobu. U skeneru možeš pomicati rubove, povećati prikaz i zakrenuti sliku. OCR se zatim obrađuje lokalno na uređaju.",
+                    "Prije prepoznavanja izreži samo svoj red ili svoju osobu. U skeneru možeš pomicati rubove, povećati prikaz i zakrenuti sliku.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
+                )
+
+                OutlinedTextField(
+                    value = personHint,
+                    onValueChange = { personHint = it.take(80) },
+                    label = { Text("Osoba u rasporedu") },
+                    supportingText = {
+                        Text("Ako je raspored za više osoba, Takto će pokušati izdvojiti samo ovaj red.")
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Button(
@@ -172,7 +193,7 @@ fun ScheduleScannerDialog(
                 }
 
                 Text(
-                    "U istom skeneru možeš fotografirati raspored ili otvoriti sliku iz galerije. Prije potvrde obavezno izreži samo svoj dio rasporeda.",
+                    "Možeš fotografirati raspored ili otvoriti sliku iz galerije. Prije potvrde namjesti izrez i zakretanje tako da ostane samo relevantni dio.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )

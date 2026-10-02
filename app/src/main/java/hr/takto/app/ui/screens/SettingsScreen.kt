@@ -31,13 +31,13 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Euro
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
@@ -87,7 +87,7 @@ import java.nio.charset.StandardCharsets
 fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     var profileDialog by remember { mutableStateOf(false) }
-    var payrollDialog by remember { mutableStateOf(false) }
+    var salaryDialog by remember { mutableStateOf(false) }
     var appearanceDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
@@ -179,7 +179,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         if (uri != null) {
             runCatching {
                 val stream = context.contentResolver.openOutputStream(uri)
-                    ?: error("Nije moguće otvoriti odredišnu datoteku sigurnosne kopije.")
+                    ?: error("Nije moguće otvoriti odredišnu backup datoteku.")
                 stream.use { it.write(store.exportBackupJson().toByteArray(StandardCharsets.UTF_8)) }
             }.onSuccess {
                 Toast.makeText(context, "Sigurnosna kopija je spremljena.", Toast.LENGTH_SHORT).show()
@@ -310,24 +310,42 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         SettingsSectionTitle("Plaća i obračun")
 
-        SettingsRow(
-            icon = Icons.Default.Payments,
-            title = "Obračun plaće",
-            subtitle = if (!store.payrollProfile.value.enabled) {
-                "Postavi koeficijent, staž, porezne stope i osobni odbitak"
-            } else {
-                buildString {
-                    append(store.payrollProfile.value.system.label)
-                    if (store.payrollProfile.value.coefficient > 0.0) {
-                        append(" · koeficijent ")
-                        append(store.payrollProfile.value.coefficient)
-                    }
+        GlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { salaryDialog = true }
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(52.dp)
+                        .background(TaktoBlue.copy(alpha = 0.14f), RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Euro, contentDescription = null, tint = TaktoBlue)
                 }
-            },
-            onClick = { payrollDialog = true }
-        )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text("Obračun plaće", fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        if (store.salaryProfile.value.isConfigured) {
+                            "Koeficijent ${store.salaryProfile.value.coefficient} · staž ${store.salaryProfile.value.completedYearsOfService} g."
+                        } else {
+                            "Postavi koeficijent, staž i porezne podatke za mjesečni obračun."
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+                Icon(Icons.Default.Edit, contentDescription = "Uredi podatke za obračun plaće", tint = TaktoBlue)
+            }
+        }
 
-        SettingsSectionTitle("Raspored i oznake")
+        SettingsSectionTitle("Profil i raspored")
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -529,7 +547,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Share,
             title = "Podijeli raspored",
-            subtitle = "Podijeli raspored putem aplikacije po izboru",
+            subtitle = "Podijeli raspored kroz aplikaciju po izboru",
             onClick = {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/csv"
@@ -543,27 +561,27 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Sigurnosna kopija",
-            subtitle = "Spremi sigurnosnu kopiju rasporeda i postavki",
-            onClick = { exportBackupLauncher.launch("Takto-sigurnosna-kopija.json") }
+            subtitle = "Spremi potpunu sigurnosnu kopiju rasporeda i postavki",
+            onClick = { exportBackupLauncher.launch("Takto-backup.json") }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Vrati sigurnosnu kopiju",
-            subtitle = "Vrati podatke iz sigurnosne kopije bez brisanja drugih spremljenih datuma",
+            subtitle = "Spoji sigurnosnu kopiju s postojećim podacima bez brisanja drugih datuma",
             onClick = { importBackupLauncher.launch(arrayOf("application/json", "text/plain")) }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Zaštita lokalnih podataka",
-            subtitle = "${store.entries.size} unosa · automatska pričuvna kopija i povijest promjena"
+            subtitle = "${store.entries.size} unosa · glavna snimka + pričuvna kopija + trajna revizijska arhiva"
         )
 
         SettingsRow(
             icon = Icons.Default.History,
-            title = "Povijest promjena",
-            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena",
+            title = "Povijest promjena rasporeda",
+            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · stari i budući rasporedi ostaju sačuvani",
             onClick = { exportArchiveLauncher.launch("Takto-trajna-arhiva.jsonl") }
         )
 
@@ -599,7 +617,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Slideshow,
             title = "Ponovno prikaži uvod",
-            subtitle = "Ponovno prikaži početne upute bez brisanja rasporeda",
+            subtitle = "Vrati onboarding bez brisanja rasporeda",
             onClick = store::resetOnboarding
         )
 
@@ -659,6 +677,18 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
     }
 
+    if (salaryDialog) {
+        SalarySettingsDialog(
+            current = store.salaryProfile.value,
+            onDismiss = { salaryDialog = false },
+            onSave = { profile ->
+                store.saveSalaryProfile(profile)
+                salaryDialog = false
+                Toast.makeText(context, "Podaci za obračun plaće su spremljeni.", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
     if (profileDialog) {
         UserProfileDialog(
             initial = store.userProfile.value,
@@ -667,18 +697,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 store.saveUserProfile(profile)
                 profileDialog = false
                 Toast.makeText(context, "Radni profil je spremljen.", Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
-
-    if (payrollDialog) {
-        PayrollSettingsDialog(
-            initial = store.payrollProfile.value,
-            onDismiss = { payrollDialog = false },
-            onSave = { profile ->
-                store.savePayrollProfile(profile)
-                payrollDialog = false
-                Toast.makeText(context, "Postavke obračuna su spremljene.", Toast.LENGTH_SHORT).show()
             }
         )
     }

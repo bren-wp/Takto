@@ -37,7 +37,12 @@ data class PayrollProfile(
     val personalAllowanceEur: Double = 600.0,
     val pensionMode: PensionMode = PensionMode.PILLAR_I_AND_II,
     val additionalGrossEur: Double = 0.0,
-    val nonTaxableEur: Double = 0.0
+    val nonTaxableEur: Double = 0.0,
+    val overtimePercent: Double = 0.0,
+    val nightPercent: Double = 0.0,
+    val saturdayPercent: Double = 0.0,
+    val sundayPercent: Double = 0.0,
+    val holidayPercent: Double = 0.0
 )
 
 data class PayrollInputs(
@@ -142,6 +147,24 @@ object PayrollCalculator {
         ) missing += "porezne stope nisu valjane"
         if (profile.personalAllowanceEur < 0.0) missing += "osobni odbitak"
 
+        if (profile.system == PayrollSystem.OTHER) {
+            if (input.overtimeMinutes > 0 && profile.overtimePercent <= 0.0) {
+                missing += "postotak dodatka za prekovremeni rad"
+            }
+            if (input.nightMinutes > 0 && profile.nightPercent <= 0.0) {
+                missing += "postotak dodatka za noćni rad"
+            }
+            if (input.saturdayMinutes > 0 && profile.saturdayPercent <= 0.0) {
+                missing += "postotak dodatka za subotu"
+            }
+            if (input.sundayMinutes > 0 && profile.sundayPercent <= 0.0) {
+                missing += "postotak dodatka za nedjelju"
+            }
+            if (input.holidayMinutes > 0 && profile.holidayPercent <= 0.0) {
+                missing += "postotak dodatka za blagdan"
+            }
+        }
+
         if (missing.isNotEmpty()) {
             return PayrollBreakdown(
                 complete = false,
@@ -185,11 +208,37 @@ object PayrollCalculator {
 
         // Osnovna mjesečna plaća pokriva redovni fond. Za prekovremene sate iznad
         // fonda dodaje se puna cijena dodatnog sata + 50 % uvećanja.
-        val overtimePay = hourly * hours(input.overtimeMinutes) * bd(1.0 + CroatianPayrollRules2026.OVERTIME_PERCENT / 100.0)
-        val night = supplement(input.nightMinutes, CroatianPayrollRules2026.NIGHT_PERCENT)
-        val saturday = supplement(input.saturdayMinutes, CroatianPayrollRules2026.SATURDAY_PERCENT)
-        val sunday = supplement(input.sundayMinutes, CroatianPayrollRules2026.SUNDAY_PERCENT)
-        val holiday = supplement(input.holidayMinutes, CroatianPayrollRules2026.HOLIDAY_PERCENT)
+        val overtimePercent = if (profile.system == PayrollSystem.OTHER) {
+            profile.overtimePercent
+        } else {
+            CroatianPayrollRules2026.OVERTIME_PERCENT
+        }
+        val nightPercent = if (profile.system == PayrollSystem.OTHER) {
+            profile.nightPercent
+        } else {
+            CroatianPayrollRules2026.NIGHT_PERCENT
+        }
+        val saturdayPercent = if (profile.system == PayrollSystem.OTHER) {
+            profile.saturdayPercent
+        } else {
+            CroatianPayrollRules2026.SATURDAY_PERCENT
+        }
+        val sundayPercent = if (profile.system == PayrollSystem.OTHER) {
+            profile.sundayPercent
+        } else {
+            CroatianPayrollRules2026.SUNDAY_PERCENT
+        }
+        val holidayPercent = if (profile.system == PayrollSystem.OTHER) {
+            profile.holidayPercent
+        } else {
+            CroatianPayrollRules2026.HOLIDAY_PERCENT
+        }
+
+        val overtimePay = hourly * hours(input.overtimeMinutes) * bd(1.0 + overtimePercent / 100.0)
+        val night = supplement(input.nightMinutes, nightPercent)
+        val saturday = supplement(input.saturdayMinutes, saturdayPercent)
+        val sunday = supplement(input.sundayMinutes, sundayPercent)
+        val holiday = supplement(input.holidayMinutes, holidayPercent)
         val extraGross = bd(profile.additionalGrossEur.coerceAtLeast(0.0))
 
         val gross = baseWithSeniority + overtimePay + night + saturday + sunday + holiday + extraGross

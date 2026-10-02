@@ -49,6 +49,7 @@ import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -1179,19 +1180,24 @@ private fun WorkTimePresetDialog(
 ) {
     var startText by remember(code, preset) { mutableStateOf(preset?.startMinute?.let(ScheduleLogic::formatClock) ?: "07:00") }
     var endText by remember(code, preset) { mutableStateOf(preset?.endMinute?.let(ScheduleLogic::formatClock) ?: "15:00") }
-    var breakText by remember(code, preset) { mutableStateOf((preset?.breakMinutes ?: 0).toString()) }
+    var breakText by remember(code, preset) { mutableStateOf((preset?.breakMinutes ?: 0).takeIf { it > 0 }?.toString().orEmpty()) }
     val start = ScheduleLogic.parseClock(startText)
     val end = ScheduleLogic.parseClock(endText)
-    val pause = breakText.trim().toIntOrNull()
-    val duration = if (start != null && end != null && pause != null) ScheduleLogic.workDurationMinutes(start, end, pause) else null
-    val valid = start != null && end != null && pause != null && pause in 0..ScheduleLogic.MAX_BREAK_MINUTES && (duration ?: 0) > 0
+    val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
+    val grossDuration = ScheduleLogic.grossWorkDurationMinutes(start, end)
+    val valid = pause != null && ScheduleLogic.isValidWorkTime(start, end, pause)
+    val duration = if (valid) ScheduleLogic.workDurationMinutes(start, end, pause ?: 0) else null
+    val overnight = valid && ScheduleLogic.isOvernightWork(start, end)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Zadano vrijeme · $code") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("$name · novo dodijeljeni dani mogu automatski dobiti ovo radno vrijeme.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "$name · novo dodijeljeni dani mogu automatski dobiti ovo radno vrijeme. Vrijeme možeš upisati i kao 730 ili 7.30.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = startText,
@@ -1217,10 +1223,49 @@ private fun WorkTimePresetDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
-                if (valid) {
-                    Text("Neto trajanje: ${ScheduleLogic.formatDuration(duration ?: 0)}", color = TaktoBlue, fontWeight = FontWeight.Bold)
-                } else {
-                    Text("Provjeri početak, kraj i pauzu. Rad može završiti sljedeći dan.", color = Color(0xFFFFB21D), fontSize = 12.sp)
+                Text("Brza pauza", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
+                listOf(0, 15, 30, 45, 60).chunked(3).forEach { row ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        row.forEach { minutes ->
+                            FilterChip(
+                                selected = pause == minutes,
+                                onClick = { breakText = if (minutes == 0) "" else minutes.toString() },
+                                label = { Text(if (minutes == 0) "Bez pauze" else "$minutes min") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+                when {
+                    valid -> Text(
+                        buildString {
+                            append("Neto trajanje: ").append(ScheduleLogic.formatDuration(duration ?: 0))
+                            if (overnight) append(" · završetak sljedeći dan")
+                        },
+                        color = TaktoBlue,
+                        fontWeight = FontWeight.Bold
+                    )
+                    start == null || end == null -> Text(
+                        "Vrijeme nije valjano. Primjeri: 07:30, 7.30 ili 730.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                    pause == null || pause !in 0..ScheduleLogic.MAX_BREAK_MINUTES -> Text(
+                        "Pauza mora biti između 0 i ${ScheduleLogic.MAX_BREAK_MINUTES} minuta.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                    grossDuration != null && pause >= grossDuration -> Text(
+                        "Pauza mora biti kraća od ukupnog raspona rada (${ScheduleLogic.formatDuration(grossDuration)}).",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                    else -> Text(
+                        "Početak i kraj ne mogu označavati rad u trajanju 0 minuta.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
                 }
             }
         },
@@ -1239,7 +1284,6 @@ private fun WorkTimePresetDialog(
         }
     )
 }
-
 @Composable
 private fun StandardDayDialog(
     initialMinutes: Int,

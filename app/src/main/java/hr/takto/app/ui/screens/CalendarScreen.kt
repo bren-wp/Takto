@@ -347,6 +347,21 @@ fun CalendarScreen(
                                             fontSize = 12.sp
                                         )
                                         if (current.breakMinutes > 0) Text("Pauza: ${current.breakMinutes} min", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                        val dailyOvertime = ScheduleLogic.overtimeMinutes(
+                                            current.workMinutes ?: 0,
+                                            store.standardDailyMinutes.value
+                                        )
+                                        Text(
+                                            if (dailyOvertime > 0) {
+                                                "Prekovremeno po dnevnom fondu: ${ScheduleLogic.formatDuration(dailyOvertime)}"
+                                            } else {
+                                                "Prekovremeno po dnevnom fondu: 0 min"
+                                            },
+                                            color = if (dailyOvertime > 0) MaterialTheme.colorScheme.error
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 11.sp,
+                                            fontWeight = if (dailyOvertime > 0) FontWeight.SemiBold else FontWeight.Normal
+                                        )
                                     }
                                     else -> Text("Vrijeme još nije upisano.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 }

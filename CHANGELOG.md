@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.9
+
+Pouzdaniji i brži unos radnog vremena s centraliziranom validacijom početka, kraja i pauze.
+
+### Poboljšano
+
+- vrijeme se može upisati kao `07:30`, `7.30`, `18,45`, `730` ili `0730`
+- uvedena je zajednička validacija radnog vremena u `ScheduleLogic`
+- pojedinačno, bulk i zadano radno vrijeme po oznaci koriste ista pravila
+- prevelika pauza više se ne ograničava tiho na drugu vrijednost
+- pauza mora biti kraća od bruto raspona rada i unutar dopuštenog maksimuma
+- jednak početak i kraj više se jasno prijavljuju kao nevaljan rad od 0 minuta
+- rad preko ponoći jasno prikazuje da završetak pripada sljedećem danu
+- dijalozi nude brze pauze 0, 15, 30, 45 i 60 minuta
+- prikazuje se neto trajanje prije spremanja
+- zadana vremena po oznakama koriste isti UX i validacijska pravila kao kalendar
+- dodani unit testovi za kompaktni unos vremena, prelazak ponoći, bruto trajanje i nevaljane pauze
+- postojeći spremljeni podaci ostaju kompatibilni bez destruktivne migracije
+- CI artefakti nose točnu oznaku verzije 0.1.9
+
+### Verzija
+
+- `versionName`: `0.1.9`
+- `versionCode`: `10`
+
+
 ## 0.1.8
 
 Pametnija lokalna pretraga rasporeda s boljim hrvatskim datumskim kontekstom, radnim vremenom i semantičkim upitima.

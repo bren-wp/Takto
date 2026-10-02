@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.8-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.9-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -84,9 +84,10 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - redovni odrađeni sati
 - prekovremeni sati prema mjesečnom fondu
 - dodatni dnevni obračun prekovremenog rada
-- početak i kraj radnog unosa
-- pauza u minutama
-- radni unosi preko ponoći
+- početak i kraj radnog unosa uz unos poput **07:30**, **7.30** ili **730**
+- pauza u minutama s brzim izborom 0 / 15 / 30 / 45 / 60
+- stroga provjera da pauza ne može biti dulja od samog radnog raspona
+- radni unosi preko ponoći uz jasnu oznaku završetka sljedeći dan
 - standardni dnevni fond
 - automatski mjesečni fond pon–pet
 - ručni fond po mjesecu
@@ -173,7 +174,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.8 koristi aktualni stabilni Android toolchain:
+Takto 0.1.9 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -207,10 +208,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.8-debug-apk** — instalabilni debug APK
-- **Takto-0.1.8-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.8-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.8-SHA256** — checksum datoteka
+- **Takto-0.1.9-debug-apk** — instalabilni debug APK
+- **Takto-0.1.9-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.9-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.9-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
@@ -240,9 +241,9 @@ Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName
 
 ---
 
-## Verzija 0.1.8
+## Verzija 0.1.9
 
-Verzija **0.1.8** proširuje lokalnu pretragu bez slanja podataka izvan uređaja. Uz oznake, nazive, napomene i datume sada se mogu tražiti hrvatski mjeseci i dani u tjednu, početak ili kraj radnog vremena te semantički izrazi poput **buduće**, **s vremenom** i **s napomenom**. Rangiranje i dalje daje prednost točnoj kratici pred slabijim tekstualnim podudaranjem.
+Verzija **0.1.9** poboljšava unos radnog vremena. Kalendar, bulk uređivanje i zadana vremena po oznakama sada koriste istu centralnu validaciju. Kompaktni unosi poput **730** pretvaraju se u 07:30, rad preko ponoći jasno je označen, a nevaljana pauza više se ne prilagođava potajno nego se korisniku prikazuje konkretna poruka prije spremanja.
 
 ## Licenca
 

@@ -61,8 +61,13 @@ class ScheduleLogicTest {
         assertEquals(7 * 60 + 30, ScheduleLogic.parseClock("07:30"))
         assertEquals(19 * 60, ScheduleLogic.parseClock("19"))
         assertEquals(6 * 60 + 5, ScheduleLogic.parseClock("6.05"))
+        assertEquals(7 * 60 + 30, ScheduleLogic.parseClock("730"))
+        assertEquals(7 * 60 + 30, ScheduleLogic.parseClock("0730"))
+        assertEquals(18 * 60 + 45, ScheduleLogic.parseClock("18,45"))
+        assertEquals(6 * 60 + 5, ScheduleLogic.parseClock("6 05"))
         assertNull(ScheduleLogic.parseClock("25:00"))
         assertNull(ScheduleLogic.parseClock("12:99"))
+        assertNull(ScheduleLogic.parseClock("2360"))
     }
 
     @Test
@@ -100,6 +105,29 @@ class ScheduleLogicTest {
         val friday = LocalDate.of(2026, 10, 2)
         assertEquals(4 * 60, ScheduleLogic.weekendWorkMinutes(friday, 20 * 60, 4 * 60, 0))
         assertEquals(0, ScheduleLogic.sundayWorkMinutes(friday, 20 * 60, 4 * 60, 0))
+    }
+
+    @Test
+    fun workTimeValidation_rejectsInvalidBreakInsteadOfSilentlyClamping() {
+        val start = 7 * 60
+        val end = 15 * 60
+        assertTrue(ScheduleLogic.isValidWorkTime(start, end, 30))
+        assertTrue(!ScheduleLogic.isValidWorkTime(start, end, 8 * 60))
+        assertTrue(!ScheduleLogic.isValidWorkTime(start, end, ScheduleLogic.MAX_BREAK_MINUTES + 1))
+    }
+
+    @Test
+    fun overnightDetection_distinguishesCrossMidnightWork() {
+        assertTrue(ScheduleLogic.isOvernightWork(22 * 60, 6 * 60))
+        assertTrue(!ScheduleLogic.isOvernightWork(7 * 60, 15 * 60))
+        assertTrue(!ScheduleLogic.isOvernightWork(8 * 60, 8 * 60))
+    }
+
+    @Test
+    fun grossDuration_isAvailableForClearValidationMessages() {
+        assertEquals(8 * 60, ScheduleLogic.grossWorkDurationMinutes(7 * 60, 15 * 60))
+        assertEquals(8 * 60, ScheduleLogic.grossWorkDurationMinutes(22 * 60, 6 * 60))
+        assertNull(ScheduleLogic.grossWorkDurationMinutes(null, 15 * 60))
     }
 
 }

@@ -251,7 +251,7 @@ fun ScheduleScannerDialog(
                     }
 
                     Text(
-                        "Ako OCR nije pronašao početak i kraj rada, Takto koristi spremljeno zadano radno vrijeme te oznake. Bez zadanog vremena unos se sprema bez sati.",
+                        "Ako početak i kraj rada nisu prepoznati, Takto koristi spremljeno zadano radno vrijeme te oznake. Bez zadanog vremena unos se sprema bez sati.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )

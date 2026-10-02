@@ -179,7 +179,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         if (uri != null) {
             runCatching {
                 val stream = context.contentResolver.openOutputStream(uri)
-                    ?: error("Nije moguće otvoriti odredišnu backup datoteku.")
+                    ?: error("Nije moguće otvoriti odredišnu datoteku sigurnosne kopije.")
                 stream.use { it.write(store.exportBackupJson().toByteArray(StandardCharsets.UTF_8)) }
             }.onSuccess {
                 Toast.makeText(context, "Sigurnosna kopija je spremljena.", Toast.LENGTH_SHORT).show()
@@ -544,7 +544,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             icon = Icons.Default.Backup,
             title = "Sigurnosna kopija",
             subtitle = "Spremi sigurnosnu kopiju rasporeda i postavki",
-            onClick = { exportBackupLauncher.launch("Takto-backup.json") }
+            onClick = { exportBackupLauncher.launch("Takto-sigurnosna-kopija.json") }
         )
 
         SettingsRow(

@@ -406,18 +406,11 @@ fun ScheduleScannerDialog(
                         }
                     }
 
-                    parsed.items.take(18).forEach { item ->
+                    parsed.items.forEach { item ->
                         ScanPreviewRow(
                             store = store,
                             item = item,
                             onEdit = { editingItem = item }
-                        )
-                    }
-                    if (parsed.items.size > 18) {
-                        Text(
-                            "Još ${parsed.items.size - 18} unosa bit će uključeno nakon potvrde.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall
                         )
                     }
 

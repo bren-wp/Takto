@@ -547,7 +547,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Share,
             title = "Podijeli raspored",
-            subtitle = "Pošalji CSV tekst kroz aplikaciju po izboru, bez mrežnih dozvola u Taktu",
+            subtitle = "Podijeli raspored kroz aplikaciju po izboru",
             onClick = {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/csv"
@@ -561,14 +561,14 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Sigurnosna kopija",
-            subtitle = "Izvezi puni Takto backup u JSON",
+            subtitle = "Spremi potpunu sigurnosnu kopiju rasporeda i postavki",
             onClick = { exportBackupLauncher.launch("Takto-backup.json") }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Vrati sigurnosnu kopiju",
-            subtitle = "Spoji backup s postojećim podacima; Takto ne briše datume koji nisu u backupu",
+            subtitle = "Spoji sigurnosnu kopiju s postojećim podacima bez brisanja drugih datuma",
             onClick = { importBackupLauncher.launch(arrayOf("application/json", "text/plain")) }
         )
 
@@ -580,8 +580,8 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         SettingsRow(
             icon = Icons.Default.History,
-            title = "Trajna arhiva rasporeda",
-            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · nema automatskog brisanja starih ni budućih rasporeda",
+            title = "Povijest promjena rasporeda",
+            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · stari i budući rasporedi ostaju sačuvani",
             onClick = { exportArchiveLauncher.launch("Takto-trajna-arhiva.jsonl") }
         )
 

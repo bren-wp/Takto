@@ -12,6 +12,9 @@ import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.SavedPattern
+import hr.takto.app.model.SalaryProfile
+import hr.takto.app.model.SalaryRegime
+import hr.takto.app.model.WorkOrganization
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.SchedulePersistencePolicy
 import hr.takto.app.model.ScheduleRecovery
@@ -55,6 +58,7 @@ class ScheduleStore(private val context: Context) {
     val workTimePresets = mutableStateMapOf<String, WorkTimePreset>()
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
+    val salaryProfile = mutableStateOf(loadSalaryProfile())
     val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
@@ -592,6 +596,20 @@ class ScheduleStore(private val context: Context) {
         }.toString()).apply()
     }
 
+    fun saveSalaryProfile(profile: SalaryProfile) {
+        val sanitized = profile.copy(
+            coefficient = profile.coefficient.coerceIn(0.0, 20.0),
+            completedYearsOfService = profile.completedYearsOfService.coerceIn(0, 70),
+            lowerTaxRatePercent = profile.lowerTaxRatePercent.coerceIn(0.0, 60.0),
+            higherTaxRatePercent = profile.higherTaxRatePercent.coerceIn(0.0, 60.0),
+            personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 20_000.0),
+            regularShiftMinutes = profile.regularShiftMinutes.coerceIn(60, 24 * 60),
+            otherGrossAdditionsEur = profile.otherGrossAdditionsEur.coerceIn(0.0, 100_000.0)
+        )
+        salaryProfile.value = sanitized
+        prefs.edit().putString(KEY_SALARY_PROFILE, salaryProfileToJson(sanitized).toString()).apply()
+    }
+
     fun exportArchiveJsonLines(): String =
         runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
             .getOrDefault("")
@@ -884,6 +902,7 @@ class ScheduleStore(private val context: Context) {
             put("organizationName", userProfile.value.organizationName)
             put("position", userProfile.value.position)
         })
+        put("salaryProfile", salaryProfileToJson(salaryProfile.value))
         put("settings", JSONObject().apply {
             put("remindersEnabled", remindersEnabled.value)
             put("reminderHour", reminderHour.value)
@@ -936,6 +955,10 @@ class ScheduleStore(private val context: Context) {
                     position = profile.optString("position", userProfile.value.position)
                 )
             )
+        }
+
+        root.optJSONObject("salaryProfile")?.let { salary ->
+            saveSalaryProfile(parseSalaryProfile(salary))
         }
 
         root.optJSONObject("settings")?.let { settings ->
@@ -1594,6 +1617,37 @@ class ScheduleStore(private val context: Context) {
             .apply()
     }
 
+    private fun loadSalaryProfile(): SalaryProfile {
+        val raw = prefs.getString(KEY_SALARY_PROFILE, null) ?: return SalaryProfile()
+        return runCatching { parseSalaryProfile(JSONObject(raw)) }.getOrDefault(SalaryProfile())
+    }
+
+    private fun parseSalaryProfile(obj: JSONObject): SalaryProfile = SalaryProfile(
+        regime = SalaryRegime.fromPersisted(obj.optString("regime", null)),
+        workOrganization = WorkOrganization.fromPersisted(obj.optString("workOrganization", null)),
+        coefficient = obj.optDouble("coefficient", 0.0),
+        completedYearsOfService = obj.optInt("completedYearsOfService", 0),
+        lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0),
+        higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0),
+        personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0),
+        regularShiftMinutes = obj.optInt("regularShiftMinutes", 8 * 60),
+        secondShiftEligible = obj.optBoolean("secondShiftEligible", false),
+        otherGrossAdditionsEur = obj.optDouble("otherGrossAdditionsEur", 0.0)
+    )
+
+    private fun salaryProfileToJson(profile: SalaryProfile): JSONObject = JSONObject().apply {
+        put("regime", profile.regime.persistedValue)
+        put("workOrganization", profile.workOrganization.persistedValue)
+        put("coefficient", profile.coefficient)
+        put("completedYearsOfService", profile.completedYearsOfService)
+        put("lowerTaxRatePercent", profile.lowerTaxRatePercent)
+        put("higherTaxRatePercent", profile.higherTaxRatePercent)
+        put("personalAllowanceEur", profile.personalAllowanceEur)
+        put("regularShiftMinutes", profile.regularShiftMinutes)
+        put("secondShiftEligible", profile.secondShiftEligible)
+        put("otherGrossAdditionsEur", profile.otherGrossAdditionsEur)
+    }
+
     private fun loadUserProfile(): UserProfile {
         val raw = prefs.getString(KEY_USER_PROFILE, null) ?: return UserProfile()
         return runCatching {
@@ -1774,6 +1828,7 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
+        private const val KEY_SALARY_PROFILE = "salary_profile_json"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
         private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"

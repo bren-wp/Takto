@@ -72,9 +72,10 @@ object RosterScanParser {
         if (matchedIndex < 0) return ScheduleScanParseResult(emptyList(), null, false)
 
         val row = lines[matchedIndex]
-        val cleanedRow = hintTokens.fold(row) { value, token ->
-            value.replace(Regex("(?i)\\b" + Regex.escape(token) + "\\b"), " ")
-        }.replace(Regex("\\s+"), " ").trim()
+        val cleanedRow = tokenize(row)
+            .filterNot { token -> normalizeSearch(token) in hintTokens }
+            .joinToString(" ")
+            .trim()
 
         val header = lines
             .take(matchedIndex)

@@ -101,14 +101,20 @@ object RosterScanParser {
         val best = candidates.filter { it.score == bestScore }
         if (best.size != 1) {
             val full = parse(text, referenceDate)
-            if (best.isEmpty() && full.items.isNotEmpty() && full.ambiguousDateCount == 0) {
+            val potentialRows = countPotentialHorizontalScheduleRows(lines, referenceDate.year)
+            if (
+                best.isEmpty() &&
+                potentialRows <= 1 &&
+                full.items.isNotEmpty() &&
+                full.ambiguousDateCount == 0
+            ) {
                 return full
             }
             return ScheduleScanParseResult(
                 items = emptyList(),
                 detectedMonth = full.detectedMonth,
                 usedReferenceMonth = full.usedReferenceMonth,
-                ambiguousDateCount = full.ambiguousDateCount
+                ambiguousDateCount = maxOf(full.ambiguousDateCount, if (potentialRows > 1) 1 else 0)
             )
         }
 
@@ -278,6 +284,32 @@ object RosterScanParser {
             usedReferenceMonth = usedReferenceMonth,
             ambiguousDateCount = ambiguousDates.size
         )
+    }
+
+    private fun countPotentialHorizontalScheduleRows(
+        lines: List<String>,
+        fallbackYear: Int
+    ): Int {
+        val headerIndex = lines.indexOfFirst { line ->
+            val tokens = tokenize(line)
+            tokens.count { token ->
+                dayRegex.matchEntire(token) != null ||
+                    parseFullDateToken(token, fallbackYear) != null
+            } >= 3
+        }
+        if (headerIndex < 0) return 0
+
+        val expectedDayCount = tokenize(lines[headerIndex]).count { token ->
+            dayRegex.matchEntire(token) != null ||
+                parseFullDateToken(token, fallbackYear) != null
+        }
+        if (expectedDayCount < 3) return 0
+
+        return lines
+            .drop(headerIndex + 1)
+            .count { line ->
+                tokenize(line).count { normalizeScheduleToken(it) != null } >= expectedDayCount
+            }
     }
 
     private fun removePersonTokens(line: String, hintTokens: List<String>): String =

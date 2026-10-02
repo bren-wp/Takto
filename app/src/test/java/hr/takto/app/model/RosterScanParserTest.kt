@@ -151,6 +151,25 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun selectedPersonUsesExplicitFallbackMonthWhenHeaderIsMissing() {
+        val result = RosterScanParser.parseForPerson(
+            "1 2 3\nANA HORVAT J N GO\nMARKO MARIC N D BO",
+            "Ana Horvat",
+            LocalDate.of(2026, 12, 1)
+        )
+
+        assertTrue(result.usedReferenceMonth)
+        assertEquals(
+            listOf(
+                LocalDate.of(2026, 12, 1),
+                LocalDate.of(2026, 12, 2),
+                LocalDate.of(2026, 12, 3)
+            ),
+            result.items.map { it.date }
+        )
+    }
+
+    @Test
     fun reportsReferenceMonthFallback() {
         val result = RosterScanParser.parse("2 D\n3 N", LocalDate.of(2026, 11, 10))
         assertTrue(result.usedReferenceMonth)

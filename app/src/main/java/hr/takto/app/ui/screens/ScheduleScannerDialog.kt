@@ -323,7 +323,13 @@ fun ScheduleScannerDialog(
                     val imported = store.importScannedSchedule(items, overwrite)
                     Toast.makeText(
                         context,
-                        "Uvezeno ${imported.imported} · preskočeno ${imported.skipped}",
+                        buildString {
+                            append("Uvezeno ").append(imported.imported)
+                            if (imported.freeDays > 0) {
+                                append(" · slobodno ").append(imported.freeDays)
+                            }
+                            append(" · preskočeno ").append(imported.skipped)
+                        },
                         Toast.LENGTH_LONG
                     ).show()
                     onDismiss()
@@ -350,8 +356,9 @@ private fun ScanPreviewRow(
     item: ScannedScheduleItem
 ) {
     val colors = MaterialTheme.colorScheme
-    val type = store.shiftType(item.code)
-    val preset = store.workTimePreset(item.code)
+    val freeDay = item.code == RosterScanParser.FREE_DAY_CODE
+    val type = if (freeDay) null else store.shiftType(item.code)
+    val preset = if (freeDay) null else store.workTimePreset(item.code)
     val start = item.startMinute ?: preset?.startMinute
     val end = item.endMinute ?: preset?.endMinute
     val pause = if (item.startMinute != null && item.endMinute != null) item.breakMinutes
@@ -367,12 +374,15 @@ private fun ScanPreviewRow(
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .background(type?.color ?: TaktoBlue, RoundedCornerShape(11.dp)),
+                .background(
+                    if (freeDay) colors.surfaceContainerHighest else type?.color ?: TaktoBlue,
+                    RoundedCornerShape(11.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                item.code,
-                color = Color.White,
+                if (freeDay) "—" else item.code,
+                color = if (freeDay) colors.onSurfaceVariant else Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1
             )
@@ -383,7 +393,14 @@ private fun ScanPreviewRow(
                 .padding(start = 10.dp)
         ) {
             Text(croatianDate(item.date), fontWeight = FontWeight.SemiBold)
-            Text(
+            if (freeDay) {
+                Text(
+                    "Slobodno",
+                    color = colors.onSurfaceVariant,
+                    fontSize = 11.sp
+                )
+            } else {
+                Text(
                 if (ScheduleLogic.isValidWorkTime(start, end, pause)) {
                     ScheduleLogic.formatClock(start) + " – " +
                         ScheduleLogic.formatClock(end) + " · " +
@@ -395,7 +412,8 @@ private fun ScanPreviewRow(
                 },
                 color = colors.onSurfaceVariant,
                 fontSize = 11.sp
-            )
+                )
+            }
         }
     }
 }

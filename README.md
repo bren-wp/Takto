@@ -89,7 +89,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 - mjesečni fond sati
 - redovni odrađeni sati
-- potvrđeni prekovremeni sati po pojedinom radnom danu
+- potvrđeni prekovremeni sati po pojedinom radnom danu, odvojeni od redovnih sati
 - brzi unos potvrđenih prekovremenih: 0 / 30 / 60 / 120 min
 - zasebna kontrolna metrika rada iznad standardnog dana i mjesečnog fonda
 - početak i kraj radnog unosa uz unos poput **07:30**, **7.30** ili **730**
@@ -149,6 +149,7 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 - prekovremeni sati
 - noćni, subotnji, nedjeljni i blagdanski sati
 - mjesečni i godišnji pregled
+- procjena isplate na Početnoj kada su podaci za obračun potpuni
 - raspodjela po vlastitim oznakama
 
 ### Skeniranje, uvoz, izvoz i sigurnosna kopija
@@ -159,7 +160,7 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 - ručni odabir i obavezna potvrda mjeseca kada mjesec nije pronađen na slici
 - uvoz fotografije rasporeda iz galerije uz veću rezoluciju za sitniji tekst u tablicama
 - lokalno prepoznavanje datuma, oznaka i radnog vremena uz blokiranje dvosmislenih rezultata
-- uređivanje ili uklanjanje svakog pronađenog unosa prije konačnog uvoza
+- pregled svih pronađenih dana te uređivanje ili uklanjanje svakog unosa prije konačnog uvoza
 - automatski unos potvrđenog rasporeda u Kalendar
 - CSV izvoz
 - CSV uvoz sa zarezom ili točka-zarezom

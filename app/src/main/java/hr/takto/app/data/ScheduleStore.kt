@@ -16,6 +16,7 @@ import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.SchedulePersistencePolicy
 import hr.takto.app.model.ScheduleRecovery
 import hr.takto.app.model.ScannedScheduleItem
+import hr.takto.app.model.RosterScanParser
 import hr.takto.app.model.ScheduleSuggestions
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
@@ -470,11 +471,21 @@ class ScheduleStore(private val context: Context) {
         val before = captureUndo(normalized.map { it.date }, "Uvoz skeniranog rasporeda")
         var imported = 0
         var skipped = 0
+        var freeDays = 0
 
         normalized.forEach { scanned ->
             val current = entries[scanned.date]
             if (!overwriteExisting && current != null) {
                 skipped++
+                return@forEach
+            }
+
+            if (scanned.code == RosterScanParser.FREE_DAY_CODE) {
+                freeDays++
+                imported++
+                if (overwriteExisting) {
+                    entries.remove(scanned.date)
+                }
                 return@forEach
             }
 
@@ -525,7 +536,7 @@ class ScheduleStore(private val context: Context) {
             persistEntries()
             commitUndo(before)
         }
-        return ImportResult(imported, skipped, 0)
+        return ImportResult(imported, skipped, freeDays)
     }
 
     /** Postavlja odabrane datume kao slobodne dane. */

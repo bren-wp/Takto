@@ -152,7 +152,8 @@ object ScheduleLogic {
         (workMinutes - standardDailyMinutes.coerceAtLeast(0)).coerceAtLeast(0)
 
     fun automaticMonthlyTargetMinutes(month: YearMonth, standardDailyMinutes: Int): Int =
-        monthWeekdays(month).size * standardDailyMinutes.coerceAtLeast(0)
+        monthWeekdays(month)
+            .count { !CroatianHolidays.isHoliday(it) } * standardDailyMinutes.coerceAtLeast(0)
 
     fun nightWorkMinutes(
         startMinute: Int?,
@@ -177,8 +178,8 @@ object ScheduleLogic {
         startMinute: Int?,
         endMinute: Int?,
         breakMinutes: Int = 0
-    ): Int = dayCategoryWorkMinutes(date, startMinute, endMinute, breakMinutes) { day ->
-        day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY
+    ): Int = dateCategoryWorkMinutes(date, startMinute, endMinute, breakMinutes) { day ->
+        day.dayOfWeek == DayOfWeek.SATURDAY || day.dayOfWeek == DayOfWeek.SUNDAY
     }
 
     fun sundayWorkMinutes(
@@ -186,14 +187,23 @@ object ScheduleLogic {
         startMinute: Int?,
         endMinute: Int?,
         breakMinutes: Int = 0
-    ): Int = dayCategoryWorkMinutes(date, startMinute, endMinute, breakMinutes) { it == DayOfWeek.SUNDAY }
+    ): Int = dateCategoryWorkMinutes(date, startMinute, endMinute, breakMinutes) {
+        it.dayOfWeek == DayOfWeek.SUNDAY
+    }
 
-    private fun dayCategoryWorkMinutes(
+    fun holidayWorkMinutes(
+        date: LocalDate,
+        startMinute: Int?,
+        endMinute: Int?,
+        breakMinutes: Int = 0
+    ): Int = dateCategoryWorkMinutes(date, startMinute, endMinute, breakMinutes, CroatianHolidays::isHoliday)
+
+    private fun dateCategoryWorkMinutes(
         date: LocalDate,
         startMinute: Int?,
         endMinute: Int?,
         breakMinutes: Int,
-        predicate: (DayOfWeek) -> Boolean
+        predicate: (LocalDate) -> Boolean
     ): Int {
         val span = absoluteShiftSpan(startMinute, endMinute) ?: return 0
         val gross = span.second - span.first
@@ -202,7 +212,7 @@ object ScheduleLogic {
         for (dayOffset in 0..1) {
             val segmentStart = dayOffset * MINUTES_PER_DAY
             val segmentEnd = segmentStart + MINUTES_PER_DAY
-            if (predicate(date.plusDays(dayOffset.toLong()).dayOfWeek)) {
+            if (predicate(date.plusDays(dayOffset.toLong()))) {
                 overlap += overlapMinutes(span.first, span.second, segmentStart, segmentEnd)
             }
         }

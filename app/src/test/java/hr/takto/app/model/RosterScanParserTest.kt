@@ -66,6 +66,39 @@ class RosterScanParserTest {
         assertEquals(listOf(3), result.items.map { it.date.dayOfMonth })
     }
 
+
+    @Test
+    fun horizontalTableIgnoresLeadingPersonNameAndPreservesFreeDay() {
+        val result = RosterScanParser.parse(
+            "LISTOPAD 2026\n1 2 3 4 5\nBRANKO HORVAT J J - N GO",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(5, result.items.size)
+        assertEquals(
+            listOf(
+                "J",
+                "J",
+                RosterScanParser.FREE_DAY_CODE,
+                "N",
+                "GO"
+            ),
+            result.items.map { it.code }
+        )
+        assertEquals(listOf(1, 2, 3, 4, 5), result.items.map { it.date.dayOfMonth })
+    }
+
+    @Test
+    fun lineBasedFreeDayIsRecognized() {
+        val result = RosterScanParser.parse(
+            "LISTOPAD 2026\n2 -\n3 D",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(RosterScanParser.FREE_DAY_CODE, result.items.first { it.date.dayOfMonth == 2 }.code)
+        assertEquals("D", result.items.first { it.date.dayOfMonth == 3 }.code)
+    }
+
     @Test
     fun reportsReferenceMonthFallback() {
         val result = RosterScanParser.parse("2 D\n3 N", LocalDate.of(2026, 11, 10))

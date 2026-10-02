@@ -624,7 +624,12 @@ class ScheduleStore(private val context: Context) {
             higherTaxRatePercent = profile.higherTaxRatePercent.coerceIn(0.0, 60.0),
             personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 50_000.0),
             additionalGrossEur = profile.additionalGrossEur.coerceIn(0.0, 100_000.0),
-            nonTaxableEur = profile.nonTaxableEur.coerceIn(0.0, 100_000.0)
+            nonTaxableEur = profile.nonTaxableEur.coerceIn(0.0, 100_000.0),
+            overtimePercent = profile.overtimePercent.coerceIn(0.0, 300.0),
+            nightPercent = profile.nightPercent.coerceIn(0.0, 300.0),
+            saturdayPercent = profile.saturdayPercent.coerceIn(0.0, 300.0),
+            sundayPercent = profile.sundayPercent.coerceIn(0.0, 300.0),
+            holidayPercent = profile.holidayPercent.coerceIn(0.0, 300.0)
         )
         payrollProfile.value = sanitized
         prefs.edit().putString(KEY_PAYROLL_PROFILE, payrollProfileToJson(sanitized).toString()).apply()
@@ -1688,7 +1693,12 @@ class ScheduleStore(private val context: Context) {
         personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0).coerceIn(0.0, 50_000.0),
         pensionMode = PensionMode.fromPersisted(obj.optString("pensionMode", null)),
         additionalGrossEur = obj.optDouble("additionalGrossEur", 0.0).coerceIn(0.0, 100_000.0),
-        nonTaxableEur = obj.optDouble("nonTaxableEur", 0.0).coerceIn(0.0, 100_000.0)
+        nonTaxableEur = obj.optDouble("nonTaxableEur", 0.0).coerceIn(0.0, 100_000.0),
+        overtimePercent = obj.optDouble("overtimePercent", 0.0).coerceIn(0.0, 300.0),
+        nightPercent = obj.optDouble("nightPercent", 0.0).coerceIn(0.0, 300.0),
+        saturdayPercent = obj.optDouble("saturdayPercent", 0.0).coerceIn(0.0, 300.0),
+        sundayPercent = obj.optDouble("sundayPercent", 0.0).coerceIn(0.0, 300.0),
+        holidayPercent = obj.optDouble("holidayPercent", 0.0).coerceIn(0.0, 300.0)
     )
 
     private fun payrollProfileToJson(profile: PayrollProfile): JSONObject = JSONObject().apply {
@@ -1703,6 +1713,11 @@ class ScheduleStore(private val context: Context) {
         put("pensionMode", profile.pensionMode.persistedValue)
         put("additionalGrossEur", profile.additionalGrossEur)
         put("nonTaxableEur", profile.nonTaxableEur)
+        put("overtimePercent", profile.overtimePercent)
+        put("nightPercent", profile.nightPercent)
+        put("saturdayPercent", profile.saturdayPercent)
+        put("sundayPercent", profile.sundayPercent)
+        put("holidayPercent", profile.holidayPercent)
     }
 
     private fun entryToJsonObject(item: ShiftEntry): JSONObject = JSONObject().apply {

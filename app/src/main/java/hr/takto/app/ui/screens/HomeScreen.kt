@@ -66,7 +66,7 @@ fun HomeScreen(
     val monthWorkMinutes = store.totalWorkMinutes(timedEntries)
     val monthTargetMinutes = store.monthlyTargetMinutes(currentMonth)
     val confirmedOvertimeMinutes = store.totalConfirmedOvertimeMinutes(timedEntries)
-    val monthRegularMinutes = (monthWorkMinutes - confirmedOvertimeMinutes).coerceAtLeast(0)
+    val monthRegularMinutes = ScheduleLogic.regularWorkMinutes(monthWorkMinutes, confirmedOvertimeMinutes)
     val monthBalanceMinutes = monthWorkMinutes - monthTargetMinutes
     val untimedWorkEntryCount = monthEntries.count {
         !ScheduleLogic.isLeaveCode(it.code) && !it.hasWorkTime

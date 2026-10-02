@@ -44,4 +44,47 @@ class SchedulePersistencePolicyTest {
             )
         )
     }
+    @Test
+    fun validArchiveCursorCanResumeWithoutScanningOldRevisions() {
+        assertTrue(
+            SchedulePersistencePolicy.canResumeArchiveFromByteOffset(
+                fileLength = 8_000L,
+                currentRevisionCount = 200,
+                checkpointRevisionCount = 192,
+                checkpointByteOffset = 7_500L,
+                boundaryIsValid = true
+            )
+        )
+    }
+
+    @Test
+    fun invalidArchiveCursorFallsBackSafely() {
+        assertFalse(
+            SchedulePersistencePolicy.canResumeArchiveFromByteOffset(
+                fileLength = 8_000L,
+                currentRevisionCount = 200,
+                checkpointRevisionCount = 201,
+                checkpointByteOffset = 7_500L,
+                boundaryIsValid = true
+            )
+        )
+        assertFalse(
+            SchedulePersistencePolicy.canResumeArchiveFromByteOffset(
+                fileLength = 8_000L,
+                currentRevisionCount = 200,
+                checkpointRevisionCount = 192,
+                checkpointByteOffset = 8_001L,
+                boundaryIsValid = true
+            )
+        )
+        assertFalse(
+            SchedulePersistencePolicy.canResumeArchiveFromByteOffset(
+                fileLength = 8_000L,
+                currentRevisionCount = 200,
+                checkpointRevisionCount = 192,
+                checkpointByteOffset = 7_500L,
+                boundaryIsValid = false
+            )
+        )
+    }
 }

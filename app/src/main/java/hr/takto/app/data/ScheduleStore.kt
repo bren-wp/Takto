@@ -1375,7 +1375,8 @@ class ScheduleStore(private val context: Context) {
 
         val revisionsSinceCheckpoint =
             (archiveRevisionCount.value - lastCheckpointRevisionCount).coerceAtLeast(0)
-        val shouldCheckpoint = !archive.appended || SchedulePersistencePolicy.shouldCheckpoint(
+        val emergencyActive = prefs.getBoolean(KEY_ENTRIES_EMERGENCY, false)
+        val shouldCheckpoint = emergencyActive || !archive.appended || SchedulePersistencePolicy.shouldCheckpoint(
             currentSnapshotExists = context.getFileStreamPath(CURRENT_SCHEDULE_FILE).exists(),
             revisionsSinceCheckpoint = revisionsSinceCheckpoint,
             changedEntries = archive.changedCount
@@ -1394,11 +1395,11 @@ class ScheduleStore(private val context: Context) {
                     .remove(KEY_ENTRIES_EMERGENCY)
                     .apply()
                 durable = true
-            } else if (!archive.appended) {
-                // Krajnji fallback samo ako ni journal ni atomska snimka nisu
-                // mogli biti trajno zapisani. Poseban marker osigurava da se
-                // emergency kopija na sljedećem pokretanju ne zanemari zbog
-                // starijeg, ali još uvijek valjanog checkpointa.
+            } else if (emergencyActive || !archive.appended) {
+                // Krajnji fallback ako je emergency stanje već aktivno ili ni
+                // journal nije mogao biti trajno zapisan. Dok marker postoji,
+                // kopija se osvježava pri svakoj promjeni kako nikad ne bi
+                // zaostala za novijim journal revizijama.
                 durable = prefs.edit()
                     .putString(KEY_ENTRIES, entriesToJson().toString())
                     .putBoolean(KEY_ENTRIES_EMERGENCY, true)

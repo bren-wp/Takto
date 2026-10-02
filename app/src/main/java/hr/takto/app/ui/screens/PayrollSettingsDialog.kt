@@ -106,6 +106,11 @@ fun PayrollSettingsDialog(
                     onValueChange = { coefficient = sanitizeDecimal(it) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Koeficijent radnog mjesta") },
+                    supportingText = {
+                        if (system == PayrollSystem.STATE_SERVICE || system == PayrollSystem.PUBLIC_SERVICE) {
+                            Text("Službena platna ljestvica koristi raspon 1,00–8,00.")
+                        }
+                    },
                     singleLine = true
                 )
                 OutlinedTextField(
@@ -174,6 +179,11 @@ fun PayrollSettingsDialog(
                     style = MaterialTheme.typography.bodySmall
                 )
                 if (system == PayrollSystem.STATE_SERVICE || system == PayrollSystem.PUBLIC_SERVICE) {
+                    Text(
+                        "Posebni granski dodaci, turnus, pripravnost ili druge naknade nisu isti u svim službama. Ako se primjenjuju, upiši ih u ostale bruto dodatke.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Text(
                         CroatianPayrollRules2026.SOURCE_LABEL,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,

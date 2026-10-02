@@ -109,6 +109,7 @@ fun ScheduleScannerDialog(
     var recognizedText by remember { mutableStateOf<String?>(null) }
     var scanReferenceMonth by remember { mutableStateOf(YearMonth.now()) }
     var referenceMonthConfirmed by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<ScannedScheduleItem?>(null) }
 
     fun applyRecognizedText(text: String, referenceMonth: YearMonth = scanReferenceMonth) {
         val referenceDate = referenceMonth.atDay(1)
@@ -144,6 +145,18 @@ fun ScheduleScannerDialog(
                 scanning = false
                 error = "Prepoznavanje nije uspjelo. Pokušaj ponovno s jasnijom fotografijom."
             }
+    }
+
+    fun replaceScannedItem(original: ScannedScheduleItem, replacement: ScannedScheduleItem?) {
+        val current = result ?: return
+        val updated = current.items
+            .mapNotNull { item ->
+                if (item.date == original.date) replacement else item
+            }
+            .distinctBy { it.date }
+            .sortedBy { it.date }
+        result = current.copy(items = updated)
+        editingItem = null
     }
 
     fun prepareImage(uri: Uri) {
@@ -395,7 +408,11 @@ fun ScheduleScannerDialog(
                     }
 
                     parsed.items.take(18).forEach { item ->
-                        ScanPreviewRow(store = store, item = item)
+                        ScanPreviewRow(
+                            store = store,
+                            item = item,
+                            onEdit = { editingItem = item }
+                        )
                     }
                     if (parsed.items.size > 18) {
                         Text(
@@ -458,13 +475,21 @@ fun ScheduleScannerDialog(
                 Text("Odustani")
             }
         }
-    )
+    editingItem?.let { item ->
+        ScanItemEditDialog(
+            item = item,
+            onDismiss = { editingItem = null },
+            onSave = { replacement -> replaceScannedItem(item, replacement) },
+            onRemove = { replaceScannedItem(item, null) }
+        )
+    }
 }
 
 @Composable
 private fun ScanPreviewRow(
     store: ScheduleStore,
-    item: ScannedScheduleItem
+    item: ScannedScheduleItem,
+    onEdit: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
     val freeDay = item.code == RosterScanParser.FREE_DAY_CODE
@@ -526,7 +551,159 @@ private fun ScanPreviewRow(
                 )
             }
         }
+        TextButton(onClick = onEdit) {
+            Text("Uredi", color = TaktoBlue, fontWeight = FontWeight.SemiBold)
+        }
     }
+}
+
+@Composable
+private fun ScanItemEditDialog(
+    item: ScannedScheduleItem,
+    onDismiss: () -> Unit,
+    onSave: (ScannedScheduleItem) -> Unit,
+    onRemove: () -> Unit
+) {
+    var freeDay by remember(item) { mutableStateOf(item.code == RosterScanParser.FREE_DAY_CODE) }
+    var codeText by remember(item) {
+        mutableStateOf(if (item.code == RosterScanParser.FREE_DAY_CODE) "" else item.code)
+    }
+    var startText by remember(item) {
+        mutableStateOf(item.startMinute?.let(ScheduleLogic::formatClock).orEmpty())
+    }
+    var endText by remember(item) {
+        mutableStateOf(item.endMinute?.let(ScheduleLogic::formatClock).orEmpty())
+    }
+    var breakText by remember(item) {
+        mutableStateOf(item.breakMinutes.takeIf { it > 0 }?.toString().orEmpty())
+    }
+
+    val cleanCode = ScheduleLogic.normalizeReusableCode(codeText)
+    val start = ScheduleLogic.parseClock(startText)
+    val end = ScheduleLogic.parseClock(endText)
+    val pause = breakText.ifBlank { "0" }.toIntOrNull()
+    val hasAnyTime = startText.isNotBlank() || endText.isNotBlank()
+    val validTime = !hasAnyTime || (
+        start != null &&
+            end != null &&
+            pause != null &&
+            ScheduleLogic.isValidWorkTime(start, end, pause)
+        )
+    val valid = freeDay || (cleanCode.isNotBlank() && validTime)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Provjeri skenirani unos") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    croatianDate(item.date),
+                    fontWeight = FontWeight.ExtraBold
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Slobodan dan", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Uključi ako za ovaj datum nema radne smjene.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(
+                        checked = freeDay,
+                        onCheckedChange = { freeDay = it }
+                    )
+                }
+
+                if (!freeDay) {
+                    OutlinedTextField(
+                        value = codeText,
+                        onValueChange = { codeText = it.take(ScheduleLogic.MAX_REUSABLE_CODE_LENGTH) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Oznaka smjene") },
+                        supportingText = { Text("Primjer: J, N, D, GO, SD") },
+                        singleLine = true
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = startText,
+                            onValueChange = { startText = it.take(5) },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Početak") },
+                            placeholder = { Text("07:00") },
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = endText,
+                            onValueChange = { endText = it.take(5) },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Kraj") },
+                            placeholder = { Text("15:00") },
+                            singleLine = true
+                        )
+                    }
+                    OutlinedTextField(
+                        value = breakText,
+                        onValueChange = { breakText = it.filter(Char::isDigit).take(3) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Pauza (min)") },
+                        placeholder = { Text("0") },
+                        singleLine = true
+                    )
+
+                    if (hasAnyTime && !validTime) {
+                        Text(
+                            "Početak, kraj ili pauza nisu valjani. Ostavi oba vremena prazna ili unesi cijelo radno vrijeme.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = valid,
+                onClick = {
+                    if (freeDay) {
+                        onSave(
+                            ScannedScheduleItem(
+                                date = item.date,
+                                code = RosterScanParser.FREE_DAY_CODE
+                            )
+                        )
+                    } else {
+                        onSave(
+                            ScannedScheduleItem(
+                                date = item.date,
+                                code = cleanCode,
+                                startMinute = if (hasAnyTime) start else null,
+                                endMinute = if (hasAnyTime) end else null,
+                                breakMinutes = if (hasAnyTime) pause ?: 0 else 0
+                            )
+                        )
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
+            ) {
+                Text("Spremi")
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onRemove) {
+                    Text("Ukloni", color = MaterialTheme.colorScheme.error)
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Odustani")
+                }
+            }
+        }
+    )
 }
 
 private fun decodeRosterBitmap(context: Context, uri: Uri): Bitmap? = runCatching {
@@ -558,4 +735,4 @@ private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (
     else -> null
 }
 
-private const val MAX_SCAN_IMAGE_DIMENSION = 2400
+private const val MAX_SCAN_IMAGE_DIMENSION = 3200

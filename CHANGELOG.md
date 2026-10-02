@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.1.4
+
+Pouzdanija dugoročna pohrana, automatski oporavak i zaštita velikih rasporeda.
+
+### Poboljšano
+
+- raspored više ne ovisi o jednom velikom JSON stringu u SharedPreferences
+- uvedena je atomska glavna snimka `takto_schedule_current.json`
+- uvedena je pričuvna snimka `takto_schedule_recovery.json`
+- prije zamjene glavne snimke prethodno potvrđeno stanje kopira se streaming načinom u recovery datoteku
+- glavna snimka koristi Android `AtomicFile` kako prekid procesa tijekom pisanja ne bi ostavio napola zapisanu datoteku
+- postojeće instalacije automatski migriraju stari `entries_json` raspored u novi format
+- legacy SharedPreferences raspored briše se tek nakon uspješnog zapisa glavne i recovery snimke
+- append-only revizijska arhiva ostaje dodatni sloj zaštite
+- snimke pamte broj već ugrađenih revizija pa se pri pokretanju obrađuju samo novije promjene
+- ako je proces prekinut nakon zapisa revizije, ali prije završetka snimke, zadnja promjena automatski se vraća pri sljedećem pokretanju
+- oporavak koristi `before/after` provjeru i ne prepisuje divergentno novije lokalno stanje starijom revizijom
+- provjerava se deklarirani broj zapisa u snimci prije prihvaćanja datoteke
+- veličina lokalne snimke strogo je ograničena prije učitavanja
+- Android cloud backup i device transfer uključuju glavnu snimku, recovery snimku i revizijsku arhivu
+- Postavke sada jasno prikazuju zaštitu lokalnih podataka i broj rasporednih unosa
+- uklonjene su preostale formulacije koje nepotrebno pretpostavljaju noćne smjene
+- dodani unit testovi za nedestruktivno rješavanje revizijskih konflikata
+- broj revizija i duljina arhive spremaju se kao metadata cache pa veliki journal ne mora biti ponovno potpuno prebrojan pri svakom pokretanju
+
+### Verzija
+
+- `versionName`: `0.1.4`
+- `versionCode`: `5`
+
 ## 0.1.3
 
 Brži dnevni unos, pametnija pretraga i preciznije adaptivne preporuke.

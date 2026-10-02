@@ -533,6 +533,12 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
 
         SettingsRow(
+            icon = Icons.Default.Backup,
+            title = "Zaštita lokalnih podataka",
+            subtitle = "${store.entries.size} unosa · glavna snimka + pričuvna kopija + trajna revizijska arhiva"
+        )
+
+        SettingsRow(
             icon = Icons.Default.History,
             title = "Trajna arhiva rasporeda",
             subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · nema automatskog brisanja starih ni budućih rasporeda",
@@ -1214,7 +1220,7 @@ private fun WorkTimePresetDialog(
                 if (valid) {
                     Text("Neto trajanje: ${ScheduleLogic.formatDuration(duration ?: 0)}", color = TaktoBlue, fontWeight = FontWeight.Bold)
                 } else {
-                    Text("Provjeri početak, kraj i pauzu. Noćna smjena može završiti sljedeći dan.", color = Color(0xFFFFB21D), fontSize = 12.sp)
+                    Text("Provjeri početak, kraj i pauzu. Rad može završiti sljedeći dan.", color = Color(0xFFFFB21D), fontSize = 12.sp)
                 }
             }
         },
@@ -1253,7 +1259,7 @@ private fun StandardDayDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "Takto prekovremeno računa po danu kao vrijeme iznad ove vrijednosti. Ne mijenja spremljene smjene.",
+                    "Takto prekovremeno računa po danu kao vrijeme iznad ove vrijednosti. Ne mijenja spremljene unose.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

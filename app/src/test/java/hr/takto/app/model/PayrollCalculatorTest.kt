@@ -129,6 +129,31 @@ class PayrollCalculatorTest {
     }
 
     @Test
+    fun stateAndPublicServiceCoefficientMustBeInsideOfficialScale() {
+        val result = PayrollCalculator.calculate(
+            PayrollProfile(
+                enabled = true,
+                system = PayrollSystem.PUBLIC_SERVICE,
+                coefficient = 8.5,
+                lowerTaxRatePercent = 20.0,
+                higherTaxRatePercent = 30.0
+            ),
+            PayrollInputs(
+                month = YearMonth.of(2026, 10),
+                monthlyFundMinutes = 176 * 60,
+                workedMinutes = 176 * 60,
+                overtimeMinutes = 0,
+                nightMinutes = 0,
+                saturdayMinutes = 0,
+                sundayMinutes = 0,
+                holidayMinutes = 0
+            )
+        )
+        assertFalse(result.complete)
+        assertTrue(result.missing.any { it.contains("1,00–8,00") })
+    }
+
+    @Test
     fun otherSystemRequiresManualBase() {
         val result = PayrollCalculator.calculate(
             PayrollProfile(

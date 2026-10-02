@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.10-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.11-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -43,6 +43,8 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 ### Kalendar koji radi jednim dodirom
 
 - početna kartica **Danas** omogućuje dodavanje najrelevantnije oznake jednim dodirom
+- brze akcije kartice **Danas** automatski prelaze u jedan stupac na vrlo uskim ekranima i pri velikom fontu
+- cijeli spremljeni današnji unos ima objedinjeni TalkBack opis s datumom, oznakom, radnim vremenom, trajanjem i napomenom
 - preporuke oznaka uzimaju u obzir i učestalost i svježinu stvarnog korištenja
 - veliki mjesečni pregled 6 × 7
 - prilagodljivi brzi odabir koji prioritizira nedavno korištene oznake
@@ -176,7 +178,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.10 koristi aktualni stabilni Android toolchain:
+Takto 0.1.11 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -210,10 +212,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.10-debug-apk** — instalabilni debug APK
-- **Takto-0.1.10-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.10-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.10-SHA256** — checksum datoteka
+- **Takto-0.1.11-debug-apk** — instalabilni debug APK
+- **Takto-0.1.11-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.11-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.11-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 

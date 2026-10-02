@@ -529,7 +529,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Share,
             title = "Podijeli raspored",
-            subtitle = "Pošalji CSV tekst kroz aplikaciju po izboru, bez mrežnih dozvola u Taktu",
+            subtitle = "Podijeli raspored putem aplikacije po izboru",
             onClick = {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/csv"
@@ -543,27 +543,27 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Sigurnosna kopija",
-            subtitle = "Izvezi puni Takto backup u JSON",
+            subtitle = "Spremi sigurnosnu kopiju rasporeda i postavki",
             onClick = { exportBackupLauncher.launch("Takto-backup.json") }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Vrati sigurnosnu kopiju",
-            subtitle = "Spoji backup s postojećim podacima; Takto ne briše datume koji nisu u backupu",
+            subtitle = "Vrati podatke iz sigurnosne kopije bez brisanja drugih spremljenih datuma",
             onClick = { importBackupLauncher.launch(arrayOf("application/json", "text/plain")) }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Zaštita lokalnih podataka",
-            subtitle = "${store.entries.size} unosa · glavna snimka + pričuvna kopija + trajna revizijska arhiva"
+            subtitle = "${store.entries.size} unosa · automatska pričuvna kopija i povijest promjena"
         )
 
         SettingsRow(
             icon = Icons.Default.History,
-            title = "Trajna arhiva rasporeda",
-            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · nema automatskog brisanja starih ni budućih rasporeda",
+            title = "Povijest promjena",
+            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena",
             onClick = { exportArchiveLauncher.launch("Takto-trajna-arhiva.jsonl") }
         )
 
@@ -599,7 +599,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Slideshow,
             title = "Ponovno prikaži uvod",
-            subtitle = "Vrati onboarding bez brisanja rasporeda",
+            subtitle = "Ponovno prikaži početne upute bez brisanja rasporeda",
             onClick = store::resetOnboarding
         )
 

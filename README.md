@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.13-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.14-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -89,7 +89,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 - mjesečni fond sati
 - redovni odrađeni sati
-- prekovremeni sati prema mjesečnom fondu
+- potvrđeni prekovremeni sati po pojedinom radnom danu prema mjesečnom fondu
 - dodatni dnevni obračun prekovremenog rada
 - početak i kraj radnog unosa uz unos poput **07:30**, **7.30** ili **730**
 - pauza u minutama s brzim izborom 0 / 15 / 30 / 45 / 60
@@ -152,9 +152,10 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 
 ### Skeniranje, uvoz, izvoz i sigurnosna kopija
 
-- skeniranje rasporeda kamerom uz pregled prije potvrde
+- skeniranje rasporeda kamerom uz ručno označavanje samo svojeg retka prije prepoznavanja
+- precizno pomicanje područja gore/dolje/lijevo/desno i rotacija u oba smjera
 - uvoz fotografije rasporeda iz galerije
-- lokalno OCR prepoznavanje datuma, oznaka i radnog vremena
+- lokalno prepoznavanje datuma, oznaka i radnog vremena uz blokiranje dvosmislenih rezultata
 - automatski unos prepoznatog rasporeda u Kalendar
 - CSV izvoz
 - CSV uvoz sa zarezom ili točka-zarezom
@@ -187,7 +188,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.13 koristi aktualni stabilni Android toolchain:
+Takto 0.1.14 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -221,10 +222,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.13-debug-apk** — instalabilni debug APK
-- **Takto-0.1.13-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.13-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.13-SHA256** — checksum datoteka
+- **Takto-0.1.14-debug-apk** — instalabilni debug APK
+- **Takto-0.1.14-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.14-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.14-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 

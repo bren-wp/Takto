@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.12-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.13-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -30,7 +30,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 **Vidi cijeli mjesec odjednom.** Kalendar koristi velike obojene ćelije i dosljedan sustav boja: plava, ljubičasta, zelena, jantarna i crvena. Prazna ćelija znači da za taj dan nema spremljenog unosa.
 
-**Prati stvarno radno vrijeme.** Za svaki radni unos moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, redovne i prekovremene sate, noćni rad, vikend i nedjelju.
+**Prati stvarno radno vrijeme.** Za svaki radni unos moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, redovne i prekovremene sate, noćni rad, vikend, nedjelju i rad na hrvatske blagdane.
 
 **Prilagodi aplikaciju svom poslu.** Oznake, boje, vlastite brze oznake, predlošci radnog vremena i ponavljajući uzorci mogu se prilagoditi korisniku.
 
@@ -42,6 +42,8 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 ### Kalendar koji radi jednim dodirom
 
+- Početna je sažeti dashboard za današnji unos i mjesečni fond bez dugog vertikalnog feeda
+- puni Kalendar, Statistika, Uzorci i Postavke ostaju u zasebnim donjim karticama
 - početna kartica **Danas** omogućuje dodavanje najrelevantnije oznake jednim dodirom
 - brze akcije kartice **Danas** automatski prelaze u jedan stupac na vrlo uskim ekranima i pri velikom fontu
 - cijeli spremljeni današnji unos ima objedinjeni TalkBack opis s datumom, oznakom, radnim vremenom, trajanjem i napomenom
@@ -94,11 +96,11 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - stroga provjera da pauza ne može biti dulja od samog radnog raspona
 - radni unosi preko ponoći uz jasnu oznaku završetka sljedeći dan
 - standardni dnevni fond
-- automatski mjesečni fond pon–pet
+- automatski mjesečni fond pon–pet uz automatsko izuzimanje hrvatskih blagdana
 - ručni fond po mjesecu
 - prekovremeni sati
 - noćni rad 22:00–06:00
-- vikend i nedjelja
+- vikend, nedjelja i rad na blagdan
 - prosječno trajanje evidentiranog radnog unosa
 
 ### Uzorci
@@ -124,7 +126,7 @@ U postavkama se može spremiti osobni radni profil koji ostaje na uređaju:
 - prijedlozi za javni sektor, državni sektor, javne i državne ustanove, zdravstvo, obrazovanje, policiju, pravosuđe, vatrogastvo, komunalne službe i druga područja
 - potpuno slobodan unos za ustanove i radna mjesta koja nisu na popisu
 
-Početna stranica koristi ime iz profila za osobni pozdrav, dok backup čuva i profil zajedno s rasporedom i postavkama.
+Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-kalendara i dugog feeda, dok backup čuva i profil zajedno s rasporedom i postavkama.
 
 ### Podsjetnici
 
@@ -144,12 +146,16 @@ Početna stranica koristi ime iz profila za osobni pozdrav, dok backup čuva i p
 - radni sati
 - fond i razlika
 - prekovremeni sati
-- noćni, vikend i nedjeljni sati
+- noćni, vikend, nedjeljni i blagdanski sati
 - mjesečni i godišnji pregled
 - raspodjela po vlastitim oznakama
 
-### Uvoz, izvoz i sigurnosna kopija
+### Skeniranje, uvoz, izvoz i sigurnosna kopija
 
+- skeniranje rasporeda kamerom uz pregled prije potvrde
+- uvoz fotografije rasporeda iz galerije
+- lokalno OCR prepoznavanje datuma, oznaka i radnog vremena
+- automatski unos prepoznatog rasporeda u Kalendar
 - CSV izvoz
 - CSV uvoz sa zarezom ili točka-zarezom
 - hrvatski i ISO datumi
@@ -166,8 +172,8 @@ Takto koristi prepoznatljiv premium sustav boja s poboljšanim kontrastom. Koris
 
 | Element | Boja |
 | --- | --- |
-| Tamna pozadina | `#0D1726` |
-| Tamna površina | `#152238` |
+| Tamna pozadina | `#17263A` |
+| Tamna površina | `#203249` |
 | D / primarna plava | `#2488FF` |
 | N / ljubičasta | `#8B46F6` |
 | GO / zelena | `#13D7A0` |
@@ -181,7 +187,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.12 koristi aktualni stabilni Android toolchain:
+Takto 0.1.13 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -215,10 +221,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.12-debug-apk** — instalabilni debug APK
-- **Takto-0.1.12-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.12-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.12-SHA256** — checksum datoteka
+- **Takto-0.1.13-debug-apk** — instalabilni debug APK
+- **Takto-0.1.13-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.13-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.13-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 

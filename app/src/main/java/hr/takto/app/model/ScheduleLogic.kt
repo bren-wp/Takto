@@ -182,6 +182,15 @@ object ScheduleLogic {
         day.dayOfWeek == DayOfWeek.SATURDAY || day.dayOfWeek == DayOfWeek.SUNDAY
     }
 
+    fun saturdayWorkMinutes(
+        date: LocalDate,
+        startMinute: Int?,
+        endMinute: Int?,
+        breakMinutes: Int = 0
+    ): Int = dateCategoryWorkMinutes(date, startMinute, endMinute, breakMinutes) {
+        it.dayOfWeek == DayOfWeek.SATURDAY
+    }
+
     fun sundayWorkMinutes(
         date: LocalDate,
         startMinute: Int?,

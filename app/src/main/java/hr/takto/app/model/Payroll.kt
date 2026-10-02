@@ -42,7 +42,9 @@ data class PayrollProfile(
     val nightPercent: Double = 0.0,
     val saturdayPercent: Double = 0.0,
     val sundayPercent: Double = 0.0,
-    val holidayPercent: Double = 0.0
+    val holidayPercent: Double = 0.0,
+    val otherEmployersGrossEur: Double = 0.0,
+    val allAdjustmentsConfirmed: Boolean = false
 )
 
 data class PayrollInputs(
@@ -146,6 +148,9 @@ object PayrollCalculator {
             profile.higherTaxRatePercent < profile.lowerTaxRatePercent
         ) missing += "porezne stope nisu valjane"
         if (profile.personalAllowanceEur < 0.0) missing += "osobni odbitak"
+        if (!profile.allAdjustmentsConfirmed) {
+            missing += "potvrda svih dodataka i naknada"
+        }
 
         if (profile.system == PayrollSystem.OTHER) {
             if (input.overtimeMinutes > 0 && profile.overtimePercent <= 0.0) {
@@ -243,7 +248,10 @@ object PayrollCalculator {
 
         val gross = baseWithSeniority + overtimePay + night + saturday + sunday + holiday + extraGross
 
-        val pensionBaseReduction = pensionBaseReduction(gross)
+        val pensionBaseReduction = pensionBaseReduction(
+            gross = gross,
+            otherEmployersGross = bd(profile.otherEmployersGrossEur.coerceAtLeast(0.0))
+        )
         val pensionContributionBase = (gross - pensionBaseReduction).max(BigDecimal.ZERO)
         val pillarI = if (profile.pensionMode == PensionMode.PILLAR_I_AND_II) {
             pensionContributionBase * bd(0.15)
@@ -292,19 +300,30 @@ object PayrollCalculator {
         )
     }
 
-    private fun pensionBaseReduction(gross: BigDecimal): BigDecimal {
-        val grossValue = gross.toDouble()
-        return when {
-            grossValue <= 0.0 -> BigDecimal.ZERO
-            grossValue <= CroatianPayrollRules2026.FULL_PENSION_BASE_REDUCTION_LIMIT_EUR ->
+    private fun pensionBaseReduction(
+        gross: BigDecimal,
+        otherEmployersGross: BigDecimal
+    ): BigDecimal {
+        val totalGross = (gross + otherEmployersGross).max(BigDecimal.ZERO)
+        val totalGrossValue = totalGross.toDouble()
+        val totalReduction = when {
+            totalGrossValue <= 0.0 -> BigDecimal.ZERO
+            totalGrossValue <= CroatianPayrollRules2026.FULL_PENSION_BASE_REDUCTION_LIMIT_EUR ->
                 bd(CroatianPayrollRules2026.FULL_PENSION_BASE_REDUCTION_EUR)
-                    .min(gross)
-            grossValue <= CroatianPayrollRules2026.PENSION_BASE_REDUCTION_END_EUR ->
+                    .min(totalGross)
+            totalGrossValue <= CroatianPayrollRules2026.PENSION_BASE_REDUCTION_END_EUR ->
                 bd(0.5) * (
-                    bd(CroatianPayrollRules2026.PENSION_BASE_REDUCTION_END_EUR) - gross
+                    bd(CroatianPayrollRules2026.PENSION_BASE_REDUCTION_END_EUR) - totalGross
                 )
             else -> BigDecimal.ZERO
         }.max(BigDecimal.ZERO)
+
+        if (totalReduction.signum() <= 0 || otherEmployersGross.signum() <= 0) {
+            return totalReduction.min(gross)
+        }
+        if (totalGross.signum() <= 0) return BigDecimal.ZERO
+        val ownShare = gross.divide(totalGross, 12, RoundingMode.HALF_UP)
+        return (totalReduction * ownShare).min(gross).max(BigDecimal.ZERO)
     }
 
     private fun bd(value: Int): BigDecimal = BigDecimal.valueOf(value.toLong())

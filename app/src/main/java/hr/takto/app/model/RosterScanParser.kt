@@ -48,6 +48,53 @@ object RosterScanParser {
         "SAT", "SATI", "VRIJEME", "PAUZA"
     )
 
+    fun parseForPerson(
+        text: String,
+        personHint: String,
+        referenceDate: LocalDate = LocalDate.now()
+    ): ScheduleScanParseResult {
+        val hint = normalizeSearch(personHint).trim()
+        if (hint.isBlank()) return parse(text, referenceDate)
+
+        val lines = text
+            .replace('|', ' ')
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .toList()
+        if (lines.isEmpty()) return ScheduleScanParseResult(emptyList(), null, false)
+
+        val hintTokens = hint.split(Regex("\\s+")).filter { it.length >= 2 }
+        val matchedIndex = lines.indexOfFirst { line ->
+            val normalized = normalizeSearch(line)
+            hintTokens.isNotEmpty() && hintTokens.all { token -> normalized.contains(token) }
+        }
+        if (matchedIndex < 0) return ScheduleScanParseResult(emptyList(), null, false)
+
+        val row = lines[matchedIndex]
+        val cleanedRow = hintTokens.fold(row) { value, token ->
+            value.replace(Regex("(?i)\\b" + Regex.escape(token) + "\\b"), " ")
+        }.replace(Regex("\\s+"), " ").trim()
+
+        val header = lines
+            .take(matchedIndex)
+            .asReversed()
+            .firstOrNull { candidate ->
+                tokenize(candidate).count { dayRegex.matchEntire(it) != null } >= 3
+            }
+        val monthLine = lines.firstOrNull { line ->
+            numericMonthYearRegex.containsMatchIn(line) ||
+                monthNames.keys.any { name ->
+                    Regex("\\b" + Regex.escape(name) + "\\b").containsMatchIn(normalizeSearch(line))
+                }
+        }
+
+        val selectedText = listOfNotNull(monthLine, header, cleanedRow)
+            .distinct()
+            .joinToString("\n")
+        return parse(selectedText, referenceDate)
+    }
+
     fun parse(text: String, referenceDate: LocalDate = LocalDate.now()): ScheduleScanParseResult {
         if (text.isBlank()) return ScheduleScanParseResult(emptyList(), null, false)
 

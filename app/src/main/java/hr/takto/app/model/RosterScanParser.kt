@@ -165,7 +165,15 @@ object RosterScanParser {
             .distinct()
             .joinToString("\n")
 
-        return parse(selectedText, referenceDate)
+        val selectedResult = parse(selectedText, referenceDate)
+        if (selectedResult.items.isNotEmpty()) return selectedResult
+
+        val potentialRows = countPotentialHorizontalScheduleRows(lines, referenceDate.year)
+        if (potentialRows <= 1) {
+            val full = parse(text, referenceDate)
+            if (full.items.isNotEmpty() && full.ambiguousDateCount == 0) return full
+        }
+        return selectedResult
     }
 
     fun parse(text: String, referenceDate: LocalDate = LocalDate.now()): ScheduleScanParseResult {

@@ -557,7 +557,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             title = "Izgled",
             subtitle = when (store.themeMode.value) {
                 AppThemeMode.LIGHT -> "Svijetli način"
-                AppThemeMode.DARK -> "Tamni način · poboljšan kontrast"
+                AppThemeMode.DARK -> "Tamni način"
                 AppThemeMode.SYSTEM -> "Prema postavci uređaja"
             },
             onClick = { appearanceDialog = true }
@@ -1391,9 +1391,9 @@ private fun AppearanceDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 listOf(
-                    Triple(AppThemeMode.DARK, "Tamni način", "Primarni Takto izgled s podignutom tamnom paletom i jasnim kontrastom"),
-                    Triple(AppThemeMode.LIGHT, "Svijetli način", "Svijetle površine i tamni tekst za dnevni rad"),
-                    Triple(AppThemeMode.SYSTEM, "Prema uređaju", "Takto automatski prati svijetli ili tamni način uređaja")
+                    Triple(AppThemeMode.SYSTEM, "Prema uređaju", "Automatski prati svijetli ili tamni način uređaja"),
+                    Triple(AppThemeMode.LIGHT, "Svijetli način", "Neutralna svijetla pozadina, jasne kartice i tamni tekst"),
+                    Triple(AppThemeMode.DARK, "Tamni način", "Svjetlija navy pozadina bez gotovo crnih površina")
                 ).forEach { (mode, title, subtitle) ->
                     Row(
                         modifier = Modifier

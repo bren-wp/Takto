@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
@@ -86,6 +87,7 @@ import java.nio.charset.StandardCharsets
 fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     var profileDialog by remember { mutableStateOf(false) }
+    var payrollDialog by remember { mutableStateOf(false) }
     var appearanceDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
@@ -306,7 +308,26 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             }
         }
 
-        SettingsSectionTitle("Profil i raspored")
+        SettingsSectionTitle("Plaća i obračun")
+
+        SettingsRow(
+            icon = Icons.Default.Payments,
+            title = "Obračun plaće",
+            subtitle = if (!store.payrollProfile.value.enabled) {
+                "Postavi koeficijent, staž, porezne stope i osobni odbitak"
+            } else {
+                buildString {
+                    append(store.payrollProfile.value.system.label)
+                    if (store.payrollProfile.value.coefficient > 0.0) {
+                        append(" · koeficijent ")
+                        append(store.payrollProfile.value.coefficient)
+                    }
+                }
+            },
+            onClick = { payrollDialog = true }
+        )
+
+        SettingsSectionTitle("Raspored i oznake")
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -646,6 +667,18 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 store.saveUserProfile(profile)
                 profileDialog = false
                 Toast.makeText(context, "Radni profil je spremljen.", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    if (payrollDialog) {
+        PayrollSettingsDialog(
+            initial = store.payrollProfile.value,
+            onDismiss = { payrollDialog = false },
+            onSave = { profile ->
+                store.savePayrollProfile(profile)
+                payrollDialog = false
+                Toast.makeText(context, "Postavke obračuna su spremljene.", Toast.LENGTH_SHORT).show()
             }
         )
     }

@@ -266,7 +266,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Vizualni uvid", style = MaterialTheme.typography.titleLarge)
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
-                        val chart = @Composable {
+                        val chart: @Composable () -> Unit = {
                             DonutChart(
                                 counts = buildList {
                                     chartPrimary.forEach { add(it.count to it.color) }
@@ -275,7 +275,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                                 modifier = Modifier.size(170.dp)
                             )
                         }
-                        val legend = @Composable {
+                        val legend: @Composable () -> Unit = {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)

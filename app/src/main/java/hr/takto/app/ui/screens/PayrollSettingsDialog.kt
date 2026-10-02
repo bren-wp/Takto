@@ -48,6 +48,11 @@ fun PayrollSettingsDialog(
     var pensionMode by remember(initial) { mutableStateOf(initial.pensionMode) }
     var extraGross by remember(initial) { mutableStateOf(decimalText(initial.additionalGrossEur)) }
     var nonTaxable by remember(initial) { mutableStateOf(decimalText(initial.nonTaxableEur)) }
+    var overtimePercent by remember(initial) { mutableStateOf(decimalText(initial.overtimePercent)) }
+    var nightPercent by remember(initial) { mutableStateOf(decimalText(initial.nightPercent)) }
+    var saturdayPercent by remember(initial) { mutableStateOf(decimalText(initial.saturdayPercent)) }
+    var sundayPercent by remember(initial) { mutableStateOf(decimalText(initial.sundayPercent)) }
+    var holidayPercent by remember(initial) { mutableStateOf(decimalText(initial.holidayPercent)) }
 
     val currentMonth = YearMonth.now()
     val officialBase = CroatianPayrollRules2026.officialBase(currentMonth, system)
@@ -120,6 +125,50 @@ fun PayrollSettingsDialog(
                     label = { Text("Navršene godine radnog staža") },
                     singleLine = true
                 )
+
+                if (system == PayrollSystem.OTHER) {
+                    Text("Dodaci na satnicu", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Upiši postotke koji stvarno vrijede prema tvojem kolektivnom ugovoru, pravilniku ili ugovoru o radu.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = overtimePercent,
+                        onValueChange = { overtimePercent = sanitizeDecimal(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Prekovremeni rad (%)") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = nightPercent,
+                        onValueChange = { nightPercent = sanitizeDecimal(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Noćni rad (%)") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = saturdayPercent,
+                        onValueChange = { saturdayPercent = sanitizeDecimal(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Subota (%)") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = sundayPercent,
+                        onValueChange = { sundayPercent = sanitizeDecimal(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nedjelja (%)") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = holidayPercent,
+                        onValueChange = { holidayPercent = sanitizeDecimal(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Blagdan / neradni dan (%)") },
+                        singleLine = true
+                    )
+                }
 
                 Text("Porez i doprinosi", fontWeight = FontWeight.SemiBold)
                 OutlinedTextField(
@@ -207,7 +256,12 @@ fun PayrollSettingsDialog(
                             personalAllowanceEur = parseDecimal(allowance),
                             pensionMode = pensionMode,
                             additionalGrossEur = parseDecimal(extraGross),
-                            nonTaxableEur = parseDecimal(nonTaxable)
+                            nonTaxableEur = parseDecimal(nonTaxable),
+                            overtimePercent = parseDecimal(overtimePercent),
+                            nightPercent = parseDecimal(nightPercent),
+                            saturdayPercent = parseDecimal(saturdayPercent),
+                            sundayPercent = parseDecimal(sundayPercent),
+                            holidayPercent = parseDecimal(holidayPercent)
                         )
                     )
                 },

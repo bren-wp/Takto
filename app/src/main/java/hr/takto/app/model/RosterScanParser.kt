@@ -51,6 +51,104 @@ object RosterScanParser {
         "SAT", "SATI", "VRIJEME", "PAUZA"
     )
 
+    fun parseForPerson(
+        text: String,
+        personHint: String,
+        referenceDate: LocalDate = LocalDate.now()
+    ): ScheduleScanParseResult {
+        val hintTokens = normalizeSearch(personHint)
+            .split(Regex("\\s+"))
+            .map(String::trim)
+            .filter { it.length >= 2 }
+        if (hintTokens.isEmpty()) return parse(text, referenceDate)
+
+        val lines = text
+            .replace('|', ' ')
+            .lineSequence()
+            .map(String::trim)
+            .filter(String::isNotBlank)
+            .toList()
+        if (lines.isEmpty()) return ScheduleScanParseResult(emptyList(), null, false)
+
+        data class PersonCandidate(
+            val index: Int,
+            val line: String,
+            val matchedTokens: Int,
+            val surnameMatched: Boolean
+        ) {
+            val score: Int
+                get() = matchedTokens + if (surnameMatched) 3 else 0
+        }
+
+        val surname = hintTokens.last()
+        val candidates = lines.mapIndexedNotNull { index, line ->
+            val normalized = normalizeSearch(line)
+            val words = normalized.split(Regex("\\s+")).filter(String::isNotBlank)
+            val matched = hintTokens.count { token -> token in words }
+            val surnameMatched = surname in words
+            val enoughNameEvidence =
+                matched == hintTokens.size ||
+                    surnameMatched ||
+                    (hintTokens.size >= 3 && matched >= hintTokens.size - 1)
+            if (enoughNameEvidence) {
+                PersonCandidate(index, line, matched, surnameMatched)
+            } else {
+                null
+            }
+        }
+
+        val bestScore = candidates.maxOfOrNull(PersonCandidate::score)
+        val best = candidates.filter { it.score == bestScore }
+        if (best.size != 1) {
+            val full = parse(text, referenceDate)
+            return ScheduleScanParseResult(
+                items = emptyList(),
+                detectedMonth = full.detectedMonth,
+                usedReferenceMonth = full.usedReferenceMonth,
+                ambiguousDateCount = 0
+            )
+        }
+
+        val selected = best.single()
+        val header = lines
+            .take(selected.index)
+            .asReversed()
+            .firstOrNull { candidate ->
+                val tokens = tokenize(candidate)
+                tokens.count { dayRegex.matchEntire(it) != null } >= 3 ||
+                    tokens.count { parseFullDateToken(it, referenceDate.year) != null } >= 3
+            }
+
+        val monthLine = lines.firstOrNull { line ->
+            numericMonthYearRegex.containsMatchIn(line) ||
+                monthNames.keys.any { name ->
+                    Regex("\\b" + Regex.escape(name) + "\\b")
+                        .containsMatchIn(normalizeSearch(line))
+                }
+        }
+
+        val cleanedCurrent = removePersonTokens(selected.line, hintTokens)
+        val currentScheduleCount = tokenize(cleanedCurrent).count { normalizeScheduleToken(it) != null }
+        val continuation = if (currentScheduleCount < 3) {
+            lines.getOrNull(selected.index + 1)
+                ?.takeIf { line ->
+                    tokenize(line).count { normalizeScheduleToken(it) != null } >= 2
+                }
+        } else {
+            null
+        }
+
+        val selectedRow = listOfNotNull(cleanedCurrent, continuation)
+            .joinToString(" ")
+            .trim()
+
+        val selectedText = listOfNotNull(monthLine, header, selectedRow.takeIf(String::isNotBlank))
+            .distinct()
+            .joinToString("\n")
+
+        return parse(selectedText, referenceDate)
+    }
+
     fun parse(text: String, referenceDate: LocalDate = LocalDate.now()): ScheduleScanParseResult {
         if (text.isBlank()) return ScheduleScanParseResult(emptyList(), null, false)
 
@@ -168,6 +266,11 @@ object RosterScanParser {
             ambiguousDateCount = ambiguousDates.size
         )
     }
+
+    private fun removePersonTokens(line: String, hintTokens: List<String>): String =
+        tokenize(line)
+            .filterNot { token -> normalizeSearch(token) in hintTokens }
+            .joinToString(" ")
 
     private fun tokenize(line: String): List<String> =
         line.split(Regex("\\s+"))

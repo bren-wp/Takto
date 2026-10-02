@@ -346,7 +346,17 @@ fun CalendarScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             fontSize = 12.sp
                                         )
-                                        if (current.breakMinutes > 0) Text("Pauza: ${current.breakMinutes} min", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                        if (current.breakMinutes > 0) {
+                                            Text("Pauza: ${current.breakMinutes} min", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                        }
+                                        if (current.overtimeMinutes > 0) {
+                                            Text(
+                                                "Priznati prekovremeni: ${ScheduleLogic.formatDuration(current.overtimeMinutes)}",
+                                                color = Color(0xFFFFB21D),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 11.sp
+                                            )
+                                        }
                                     }
                                     else -> Text("Vrijeme još nije upisano.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                                 }
@@ -621,6 +631,7 @@ fun CalendarScreen(
                 initialStartMinute = entry.startMinute,
                 initialEndMinute = entry.endMinute,
                 initialBreakMinutes = entry.breakMinutes,
+                initialOvertimeMinutes = entry.overtimeMinutes,
                 preset = store.workTimePreset(entry.code),
                 showClear = entry.hasWorkTime,
                 onDismiss = { workTimeDate = null },
@@ -629,8 +640,8 @@ fun CalendarScreen(
                     workTimeDate = null
                     Toast.makeText(context, "Radno vrijeme je uklonjeno.", Toast.LENGTH_SHORT).show()
                 },
-                onSave = { start, end, pause ->
-                    if (store.updateWorkTime(date, start, end, pause)) {
+                onSave = { start, end, pause, overtime ->
+                    if (store.updateWorkTime(date, start, end, pause, overtime)) {
                         workTimeDate = null
                         Toast.makeText(context, "Radno vrijeme je spremljeno.", Toast.LENGTH_SHORT).show()
                     }
@@ -645,11 +656,12 @@ fun CalendarScreen(
             initialStartMinute = null,
             initialEndMinute = null,
             initialBreakMinutes = 0,
+            initialOvertimeMinutes = 0,
             showClear = false,
             onDismiss = { bulkWorkTimeDialog = false },
             onClear = {},
-            onSave = { start, end, pause ->
-                val result = store.updateWorkTime(selectedDates, start, end, pause)
+            onSave = { start, end, pause, overtime ->
+                val result = store.updateWorkTime(selectedDates, start, end, pause, overtime)
                 bulkWorkTimeDialog = false
                 showBulkResult(result)
             }
@@ -869,6 +881,14 @@ private fun ScheduleSearchDialog(
                                             maxLines = 1
                                         )
                                     }
+                                    if (entry.overtimeMinutes > 0) {
+                                        Text(
+                                            "Prekovremeni: ${ScheduleLogic.formatDuration(entry.overtimeMinutes)}",
+                                            color = Color(0xFFFFB21D),
+                                            fontSize = 11.sp,
+                                            maxLines = 1
+                                        )
+                                    }
                                     if (entry.note.isNotBlank()) {
                                         Text(
                                             entry.note,
@@ -916,11 +936,12 @@ private fun WorkTimeDialog(
     initialStartMinute: Int?,
     initialEndMinute: Int?,
     initialBreakMinutes: Int,
+    initialOvertimeMinutes: Int,
     preset: hr.takto.app.model.WorkTimePreset? = null,
     showClear: Boolean,
     onDismiss: () -> Unit,
     onClear: () -> Unit,
-    onSave: (Int, Int, Int) -> Unit
+    onSave: (Int, Int, Int, Int) -> Unit
 ) {
     var startText by remember(initialStartMinute) {
         mutableStateOf(initialStartMinute?.let(ScheduleLogic::formatClock).orEmpty())
@@ -931,13 +952,19 @@ private fun WorkTimeDialog(
     var breakText by remember(initialBreakMinutes) {
         mutableStateOf(initialBreakMinutes.takeIf { it > 0 }?.toString().orEmpty())
     }
+    var overtimeText by remember(initialOvertimeMinutes) {
+        mutableStateOf(initialOvertimeMinutes.takeIf { it > 0 }?.toString().orEmpty())
+    }
     val start = ScheduleLogic.parseClock(startText)
     val end = ScheduleLogic.parseClock(endText)
     val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
+    val overtime = overtimeText.trim().ifBlank { "0" }.toIntOrNull()
     val grossDuration = ScheduleLogic.grossWorkDurationMinutes(start, end)
-    val valid = pause != null && ScheduleLogic.isValidWorkTime(start, end, pause)
-    val duration = if (valid) ScheduleLogic.workDurationMinutes(start, end, pause ?: 0) else null
-    val overnight = valid && ScheduleLogic.isOvernightWork(start, end)
+    val validTime = pause != null && ScheduleLogic.isValidWorkTime(start, end, pause)
+    val duration = if (validTime) ScheduleLogic.workDurationMinutes(start, end, pause ?: 0) else null
+    val validOvertime = overtime != null && duration != null && overtime in 0..duration
+    val valid = validTime && validOvertime
+    val overnight = validTime && ScheduleLogic.isOvernightWork(start, end)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1043,11 +1070,25 @@ private fun WorkTimeDialog(
                         repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
+                OutlinedTextField(
+                    value = overtimeText,
+                    onValueChange = { overtimeText = it.filter(Char::isDigit).take(4) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Priznati prekovremeni (min)") },
+                    supportingText = {
+                        Text("Upiši samo prekovremene koji se stvarno priznaju za obračun plaće.")
+                    },
+                    placeholder = { Text("0") },
+                    singleLine = true
+                )
                 when {
                     valid -> {
                         Text(
                             buildString {
                                 append("Neto: ").append(ScheduleLogic.formatDuration(duration ?: 0))
+                                if ((overtime ?: 0) > 0) {
+                                    append(" · prekovremeni ").append(ScheduleLogic.formatDuration(overtime ?: 0))
+                                }
                                 if (overnight) append(" · završetak sljedeći dan")
                             },
                             color = TaktoBlue,
@@ -1066,6 +1107,16 @@ private fun WorkTimeDialog(
                     )
                     pause == null || pause !in 0..ScheduleLogic.MAX_BREAK_MINUTES -> Text(
                         "Pauza mora biti između 0 i ${ScheduleLogic.MAX_BREAK_MINUTES} minuta.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                    overtime == null || overtime < 0 -> Text(
+                        "Prekovremeni moraju biti upisani kao broj minuta.",
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 12.sp
+                    )
+                    duration != null && overtime > duration -> Text(
+                        "Prekovremeni ne mogu biti dulji od ukupnog evidentiranog rada.",
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp
                     )
@@ -1089,7 +1140,7 @@ private fun WorkTimeDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(start!!, end!!, pause!!) },
+                onClick = { if (valid) onSave(start!!, end!!, pause!!, overtime!!) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }

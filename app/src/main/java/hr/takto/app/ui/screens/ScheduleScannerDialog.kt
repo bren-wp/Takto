@@ -71,7 +71,6 @@ import hr.takto.app.model.ScannedScheduleItem
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.theme.TaktoBlue
-import java.time.LocalDate
 import java.time.YearMonth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -475,6 +474,8 @@ fun ScheduleScannerDialog(
                 Text("Odustani")
             }
         }
+    )
+
     editingItem?.let { item ->
         ScanItemEditDialog(
             item = item,

@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.11
+
+Pristupačnija i stabilnija kartica **Danas** na malim Android ekranima i pri većem fontu.
+
+### Poboljšano
+
+- brze akcije za današnji unos prelaze iz dva stupca u jedan kada je raspoloživa širina manja od 360 dp
+- isti jednokolonski raspored aktivira se pri font scaleu 1.30 ili većem kako tekst i touch targeti ne bi bili stisnuti
+- brzi gumbi više nemaju fiksnu visinu nego minimalnu visinu, pa se mogu proširiti bez rezanja sadržaja
+- svaka brza akcija dobila je eksplicitni TalkBack opis koji navodi radnju, naziv i oznaku
+- spremljeni današnji unos dobio je objedinjeni TalkBack opis s datumom, oznakom, radnim vremenom, trajanjem i napomenom
+- responzivna i accessibility pravila izdvojena su u testabilni `HomeTodayUiLogic`
+- dodani unit testovi za širinu zaslona, veliki font, fallback nevaljanih mjerenja i semantičke opise
+- postojeći lokalni storage, backup format i podaci ostaju nepromijenjeni
+- aplikacija i dalje nema INTERNET dopuštenje
+- CI artefakti nose točnu oznaku verzije 0.1.11
+
+### Verzija
+
+- `versionName`: `0.1.11`
+- `versionCode`: `12`
+
+
 ## 0.1.10
 
 Točnija i čitljivija Statistika, posebno na praznim godinama i uskim Android ekranima.

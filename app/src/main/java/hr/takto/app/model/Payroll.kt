@@ -99,7 +99,7 @@ object CroatianPayrollRules2026 {
     const val FULL_PENSION_BASE_REDUCTION_EUR = 300.0
 
     const val SOURCE_LABEL =
-        "Zakon o plaćama NN 155/2023 · TKU javne službe NN 29/2024 · KU državna služba NN 29/2024 · osnovica 2026 NN 11/2026"
+        "Zakon o plaćama NN 155/2023 · TKU javne službe NN 29/2024 · državna služba NN 29/2024, 11/2026 i 84/2026"
 
     fun officialBase(month: YearMonth, system: PayrollSystem): Double? {
         if (system !in setOf(PayrollSystem.STATE_SERVICE, PayrollSystem.PUBLIC_SERVICE)) return null
@@ -211,8 +211,8 @@ object PayrollCalculator {
         fun supplement(minutes: Int, percent: Double): BigDecimal =
             hourly * hours(minutes) * bd(percent / 100.0)
 
-        // Osnovna mjesečna plaća pokriva redovni fond. Za prekovremene sate iznad
-        // fonda dodaje se puna cijena dodatnog sata + 50 % uvećanja.
+        // Osnovna mjesečna plaća pokriva redovni fond. Za potvrđene prekovremene
+        // sate dodaje se puna cijena dodatnog sata i primjenjivo uvećanje.
         val overtimePercent = if (profile.system == PayrollSystem.OTHER) {
             profile.overtimePercent
         } else {

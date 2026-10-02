@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.10
+
+Točnija i čitljivija Statistika, posebno na praznim godinama i uskim Android ekranima.
+
+### Poboljšano
+
+- godišnji graf više ne crta minimalni obojeni stupac za mjesece s vrijednošću 0
+- godina bez ijednog unosa prikazuje jasno prazno stanje umjesto grafikona bez podataka
+- godina bez evidentiranih radnih sati prikazuje zasebno prazno stanje
+- mjesečni radni sati više ne gube minute zbog cjelobrojnog prikaza u satima
+- kompaktne oznake prikazuju npr. `30m`, `1h` i `1h30`
+- logika visine grafikona izdvojena je u testabilni `StatsChartLogic`
+- samo pozitivne vrijednosti dobivaju minimalnu vidljivu visinu stupca
+- ključne kartice fonda i posebnih radnih sati prelaze u vertikalni raspored na uskim ekranima
+- donut graf i legenda prelaze u čitljiv vertikalni raspored na uskim ekranima
+- godišnji stupci dobili su TalkBack opise s mjesecom i stvarnom vrijednošću
+- dodani unit testovi za nulte vrijednosti, skaliranje i preciznost minuta
+- CI artefakti nose točnu oznaku verzije 0.1.10
+
+### Verzija
+
+- `versionName`: `0.1.10`
+- `versionCode`: `11`
+
+
 ## 0.1.9
 
 Pouzdaniji i brži unos radnog vremena s centraliziranom validacijom početka, kraja i pauze.

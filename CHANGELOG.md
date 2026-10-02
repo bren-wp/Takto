@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.5
+
+Brža i jednako trajna pohrana velikih rasporeda bez prepisivanja cijele snimke pri svakoj maloj izmjeni.
+
+### Poboljšano
+
+- append-only revizijska arhiva sada je primarni trajni zapis između checkpointa
+- pojedinačna uređivanja više ne serijaliziraju cijeli višegodišnji raspored nakon svakog dodira
+- puna atomska snimka konsolidira se nakon 64 revizije
+- veliki bulk zahvati od 32 ili više promijenjenih datuma odmah rade checkpoint
+- journal se prije potvrde trajnosti eksplicitno sinkronizira na disk
+- pri pokretanju se uspoređuju glavna i recovery snimka te se bira ona s novijim checkpointom
+- postojeći replay revizija i nedestruktivni recovery ostaju kompatibilni
+- legacy SharedPreferences migracija i stari backup format ostaju podržani
+- emergency SharedPreferences fallback sada ima eksplicitni marker i ne može biti zasjenjen starijim checkpointom nakon rijetkog I/O kvara
+- dodani unit testovi za checkpoint politiku
+- CI artefakti nose točnu oznaku verzije 0.1.5
+
+### Verzija
+
+- `versionName`: `0.1.5`
+- `versionCode`: `6`
+
 ## 0.1.4
 
 Pouzdanija dugoročna pohrana, automatski oporavak i zaštita velikih rasporeda.

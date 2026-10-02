@@ -13,6 +13,7 @@ import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.SavedPattern
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.SchedulePersistencePolicy
 import hr.takto.app.model.ScheduleRecovery
 import hr.takto.app.model.ScheduleSuggestions
 import hr.takto.app.model.ShiftEntry
@@ -54,6 +55,7 @@ class ScheduleStore(private val context: Context) {
     val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
+    private var lastCheckpointRevisionCount = 0
     private data class StoredScheduleSnapshot(
         val entries: Map<LocalDate, ShiftEntry>,
         val archiveRevisionCount: Int
@@ -1154,21 +1156,24 @@ class ScheduleStore(private val context: Context) {
     }
 
     private fun loadEntries() {
-        val currentSnapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE)
-        val recoverySnapshot = if (currentSnapshot == null) {
-            readSnapshotFile(RECOVERY_SCHEDULE_FILE)
+        val emergencySnapshot = if (prefs.getBoolean(KEY_ENTRIES_EMERGENCY, false)) {
+            readLegacyPreferenceEntries()
         } else {
             null
         }
-        val legacySnapshot = if (currentSnapshot == null && recoverySnapshot == null) {
+        val currentSnapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE)
+        val recoverySnapshot = readSnapshotFile(RECOVERY_SCHEDULE_FILE)
+        val newestFileSnapshot = listOfNotNull(currentSnapshot, recoverySnapshot)
+            .maxByOrNull { it.archiveRevisionCount }
+        val legacySnapshot = if (emergencySnapshot == null && newestFileSnapshot == null) {
             readLegacyPreferenceEntries()
         } else {
             null
         }
 
         val base = when {
-            currentSnapshot != null -> currentSnapshot
-            recoverySnapshot != null -> recoverySnapshot
+            emergencySnapshot != null -> StoredScheduleSnapshot(emergencySnapshot, archiveRevisionCount.value)
+            newestFileSnapshot != null -> newestFileSnapshot
             legacySnapshot != null -> StoredScheduleSnapshot(legacySnapshot, 0)
             else -> StoredScheduleSnapshot(emptyMap(), 0)
         }
@@ -1191,8 +1196,16 @@ class ScheduleStore(private val context: Context) {
         // snimke sigurno zapisane.
         val currentWritten = writeSnapshotFile(CURRENT_SCHEDULE_FILE, entries.values)
         val recoveryWritten = writeSnapshotFile(RECOVERY_SCHEDULE_FILE, entries.values)
+        if (currentWritten) {
+            lastCheckpointRevisionCount = archiveRevisionCount.value
+        } else {
+            lastCheckpointRevisionCount = base.archiveRevisionCount
+        }
         if (currentWritten && recoveryWritten) {
-            prefs.edit().remove(KEY_ENTRIES).apply()
+            prefs.edit()
+                .remove(KEY_ENTRIES)
+                .remove(KEY_ENTRIES_EMERGENCY)
+                .apply()
         }
     }
 
@@ -1357,30 +1370,56 @@ class ScheduleStore(private val context: Context) {
     }
 
     private fun persistEntries() {
-        appendArchiveDiff()
+        val archive = appendArchiveDiff()
+        if (archive.changedCount == 0) return
 
-        // Recovery zadržava posljednju potvrđenu snimku prije zamjene glavne.
-        copyCurrentSnapshotToRecovery()
-        val snapshotWritten = writeSnapshotFile(CURRENT_SCHEDULE_FILE, entries.values)
+        val revisionsSinceCheckpoint =
+            (archiveRevisionCount.value - lastCheckpointRevisionCount).coerceAtLeast(0)
+        val emergencyActive = prefs.getBoolean(KEY_ENTRIES_EMERGENCY, false)
+        val shouldCheckpoint = emergencyActive || !archive.appended || SchedulePersistencePolicy.shouldCheckpoint(
+            currentSnapshotExists = context.getFileStreamPath(CURRENT_SCHEDULE_FILE).exists(),
+            revisionsSinceCheckpoint = revisionsSinceCheckpoint,
+            changedEntries = archive.changedCount
+        )
 
-        if (snapshotWritten) {
-            prefs.edit().remove(KEY_ENTRIES).apply()
-        } else {
-            // Krajnji fallback za neuobičajene I/O kvarove. Arhiva je već
-            // zapisana pa se sljedeći start može oporaviti i iz recovery kopije.
-            prefs.edit().putString(KEY_ENTRIES, entriesToJson().toString()).commit()
+        var durable = archive.appended
+        if (shouldCheckpoint) {
+            // Recovery zadržava prethodni potvrđeni checkpoint. Glavna snimka
+            // zatim konsolidira journal i ponovno postaje najnoviji checkpoint.
+            copyCurrentSnapshotToRecovery()
+            val snapshotWritten = writeSnapshotFile(CURRENT_SCHEDULE_FILE, entries.values)
+            if (snapshotWritten) {
+                lastCheckpointRevisionCount = archiveRevisionCount.value
+                prefs.edit()
+                    .remove(KEY_ENTRIES)
+                    .remove(KEY_ENTRIES_EMERGENCY)
+                    .apply()
+                durable = true
+            } else if (emergencyActive || !archive.appended) {
+                // Krajnji fallback ako je emergency stanje već aktivno ili ni
+                // journal nije mogao biti trajno zapisan. Dok marker postoji,
+                // kopija se osvježava pri svakoj promjeni kako nikad ne bi
+                // zaostala za novijim journal revizijama.
+                durable = prefs.edit()
+                    .putString(KEY_ENTRIES, entriesToJson().toString())
+                    .putBoolean(KEY_ENTRIES_EMERGENCY, true)
+                    .commit()
+            }
         }
 
-        persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
+        if (durable) {
+            persistedSnapshot = entries.mapValues { (_, entry) -> entry.copy() }
+        }
     }
 
-    private fun appendArchiveDiff() {
+    private fun appendArchiveDiff(): ArchiveAppendResult {
         val dates = (persistedSnapshot.keys + entries.keys).toSortedSet()
         val changed = dates.filter { date -> persistedSnapshot[date] != entries[date] }
-        if (changed.isEmpty()) return
+        if (changed.isEmpty()) return ArchiveAppendResult(0, appended = true)
 
-        runCatching {
-            context.openFileOutput(HISTORY_FILE, Context.MODE_APPEND).bufferedWriter().use { writer ->
+        val appended = runCatching {
+            val output = context.openFileOutput(HISTORY_FILE, Context.MODE_APPEND)
+            output.bufferedWriter(StandardCharsets.UTF_8).use { writer ->
                 changed.forEach { date ->
                     val before = persistedSnapshot[date]
                     val after = entries[date]
@@ -1393,10 +1432,17 @@ class ScheduleStore(private val context: Context) {
                     }
                     writer.append(revision.toString()).append('\n')
                 }
+                writer.flush()
+                output.fd.sync()
             }
+            true
+        }.getOrDefault(false)
+
+        if (appended) {
             archiveRevisionCount.value += changed.size
             persistArchiveRevisionMetadata()
         }
+        return ArchiveAppendResult(changed.size, appended)
     }
 
     private fun loadArchiveRevisionCount(): Int {
@@ -1561,6 +1607,7 @@ class ScheduleStore(private val context: Context) {
     }
 
     private data class UndoState(val label: String, val entries: Map<LocalDate, ShiftEntry?>)
+    private data class ArchiveAppendResult(val changedCount: Int, val appended: Boolean)
 
     data class ImportResult(
         val imported: Int,
@@ -1600,6 +1647,7 @@ class ScheduleStore(private val context: Context) {
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"
         private const val PREFS_NAME = "takto_schedule"
         private const val KEY_ENTRIES = "entries_json"
+        private const val KEY_ENTRIES_EMERGENCY = "entries_json_emergency"
         private const val KEY_ONBOARDING = "onboarding_done"
         private const val KEY_REMINDERS = "reminders"
         private const val KEY_REMINDER_HOUR = "reminder_hour"

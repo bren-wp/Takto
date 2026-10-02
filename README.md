@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.4-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.5-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -34,7 +34,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 **Prilagodi aplikaciju svom poslu.** Oznake, boje, vlastite brze oznake, predlošci radnog vremena i ponavljajući uzorci mogu se prilagoditi korisniku.
 
-**Podaci ostaju lokalni.** Takto ne deklarira INTERNET dopuštenje. Raspored se sprema na uređaju u atomskoj glavnoj snimci, uz pričuvnu recovery kopiju i append-only revizijsku arhivu, a izvoz se pokreće samo kada korisnik to zatraži.
+**Podaci ostaju lokalni.** Takto ne deklarira INTERNET dopuštenje. Raspored se sprema lokalno kroz trajni append-only journal i periodične atomske checkpoint snimke, uz pričuvnu recovery kopiju. Male izmjene zato ne prepisuju cijeli višegodišnji raspored, a izvoz se pokreće samo kada korisnik to zatraži.
 
 ---
 
@@ -171,7 +171,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.4 koristi aktualni stabilni Android toolchain:
+Takto 0.1.5 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -205,10 +205,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.4-debug-apk** — instalabilni debug APK
-- **Takto-0.1.4-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.4-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.4-SHA256** — checksum datoteka
+- **Takto-0.1.5-debug-apk** — instalabilni debug APK
+- **Takto-0.1.5-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.5-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.5-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
@@ -237,9 +237,9 @@ Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName
 
 ---
 
-## Verzija 0.1.4
+## Verzija 0.1.5
 
-Verzija **0.1.4** fokusirana je na dugoročnu sigurnost rasporeda. Glavni raspored migriran je iz velikog SharedPreferences JSON stringa u atomske datotečne snimke s pričuvnom kopijom, checkpointom revizijske arhive i nedestruktivnim oporavkom. Postavke prikazuju i stanje lokalne zaštite podataka.
+Verzija **0.1.5** dodatno optimizira dugoročnu pohranu: male izmjene trajno se zapisuju u sinkronizirani journal, a puna atomska snimka radi se periodično ili nakon velikih bulk promjena. Time se smanjuje nepotrebno O(n) prepisivanje velikog rasporeda, uz očuvan recovery i kompatibilnost postojećih podataka.
 
 ## Licenca
 

@@ -101,11 +101,14 @@ object RosterScanParser {
         val best = candidates.filter { it.score == bestScore }
         if (best.size != 1) {
             val full = parse(text, referenceDate)
+            if (best.isEmpty() && full.items.isNotEmpty() && full.ambiguousDateCount == 0) {
+                return full
+            }
             return ScheduleScanParseResult(
                 items = emptyList(),
                 detectedMonth = full.detectedMonth,
                 usedReferenceMonth = full.usedReferenceMonth,
-                ambiguousDateCount = 0
+                ambiguousDateCount = full.ambiguousDateCount
             )
         }
 

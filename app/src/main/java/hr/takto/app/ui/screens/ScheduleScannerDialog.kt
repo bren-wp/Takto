@@ -36,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -100,6 +101,26 @@ fun ScheduleScannerDialog(
     var overwrite by remember { mutableStateOf(true) }
     var sourceBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var editingBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var personHint by remember { mutableStateOf(store.userProfile.value.fullName) }
+    var recognizedText by remember { mutableStateOf<String?>(null) }
+
+    fun applyRecognizedText(text: String) {
+        val parsed = if (personHint.isNotBlank()) {
+            RosterScanParser.parseForPerson(text, personHint, LocalDate.now())
+        } else {
+            RosterScanParser.parse(text, LocalDate.now())
+        }
+        result = parsed
+        error = when {
+            parsed.ambiguousDateCount > 0 ->
+                "Pronađeno je više različitih rasporeda za iste datume. Ponovno označi područje tako da obuhvati zaglavlje s datumima i samo svoj red."
+            parsed.items.isEmpty() && personHint.isNotBlank() ->
+                "Nisam pronašao dovoljno siguran red za osobu „${personHint.trim()}”. Provjeri ime ili ponovno označi samo njezin red."
+            parsed.items.isEmpty() ->
+                "Nisu pronađeni sigurni datum i oznaka. Ponovno označi zaglavlje s datumima i svoj red ili pokušaj s jasnijom slikom."
+            else -> null
+        }
+    }
 
     fun processBitmap(bitmap: Bitmap) {
         scanning = true
@@ -108,15 +129,8 @@ fun ScheduleScannerDialog(
         recognizer.process(InputImage.fromBitmap(bitmap, 0))
             .addOnSuccessListener { recognized ->
                 scanning = false
-                val parsed = RosterScanParser.parse(recognized.text, LocalDate.now())
-                result = parsed
-                error = when {
-                    parsed.ambiguousDateCount > 0 ->
-                        "Pronađeno je više različitih rasporeda za iste datume. Ponovno označi područje tako da obuhvati zaglavlje s datumima i samo svoj red."
-                    parsed.items.isEmpty() ->
-                        "Nisu pronađeni sigurni datum i oznaka. Ponovno označi zaglavlje s datumima i svoj red ili pokušaj s jasnijom slikom."
-                    else -> null
-                }
+                recognizedText = recognized.text
+                applyRecognizedText(recognized.text)
             }
             .addOnFailureListener {
                 scanning = false
@@ -128,6 +142,7 @@ fun ScheduleScannerDialog(
         scanning = true
         error = null
         result = null
+        recognizedText = null
         scope.launch {
             val bitmap = withContext(Dispatchers.IO) { decodeRosterBitmap(context, uri) }
             scanning = false
@@ -191,6 +206,33 @@ fun ScheduleScannerDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
+
+                OutlinedTextField(
+                    value = personHint,
+                    onValueChange = { personHint = it.take(80) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Osoba u rasporedu") },
+                    supportingText = {
+                        Text(
+                            if (personHint.isBlank()) {
+                                "Ostavi prazno samo ako si izrezao točno jedan red."
+                            } else {
+                                "Takto će pokušati izdvojiti samo red ove osobe ako su na slici i drugi zaposlenici."
+                            }
+                        )
+                    },
+                    singleLine = true
+                )
+
+                recognizedText?.let { text ->
+                    TextButton(
+                        onClick = { applyRecognizedText(text) },
+                        enabled = !scanning,
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Ponovno provjeri osobu", color = TaktoBlue)
+                    }
+                }
 
                 Button(
                     onClick = {

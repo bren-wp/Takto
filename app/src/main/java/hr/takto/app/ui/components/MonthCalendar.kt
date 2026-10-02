@@ -46,14 +46,14 @@ fun MonthCalendar(
 ) {
     val days = daysForMonthGrid(month)
     val today = LocalDate.now()
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 5.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 3.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
             weekDayShort.forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = if (compact) 9.sp else 11.sp,
+                    fontSize = if (compact) 9.sp else 12.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
@@ -62,7 +62,7 @@ fun MonthCalendar(
         repeat(6) { rowIndex ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(if (compact) 4.dp else 5.dp)
+                horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 3.dp)
             ) {
                 repeat(7) { colIndex ->
                     val date = days[rowIndex * 7 + colIndex]
@@ -94,18 +94,18 @@ private fun CalendarDayCell(
     compact: Boolean,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(if (compact) 8.dp else 11.dp)
+    val shape = RoundedCornerShape(if (compact) 8.dp else 13.dp)
     val colors = MaterialTheme.colorScheme
     val bg = when {
-        !enabled -> colors.surfaceVariant.copy(alpha = 0.36f)
+        !enabled -> colors.surface.copy(alpha = 0.32f)
         entry != null -> entry.color
         else -> colors.surfaceVariant
     }
     val borderColor = when {
         isSelected -> TaktoBlue
         today && enabled -> TaktoCyan.copy(alpha = 0.82f)
-        enabled -> colors.outline.copy(alpha = 0.58f)
-        else -> colors.outlineVariant.copy(alpha = 0.28f)
+        enabled -> colors.outline.copy(alpha = 0.72f)
+        else -> colors.outlineVariant.copy(alpha = 0.20f)
     }
     val borderWidth = if (isSelected) 2.dp else 1.dp
 
@@ -135,7 +135,7 @@ private fun CalendarDayCell(
                 }
             }
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(if (compact) 3.dp else 5.dp)
+            .padding(if (compact) 3.dp else 4.dp)
     ) {
         Text(
             text = date.dayOfMonth.toString(),
@@ -144,7 +144,7 @@ private fun CalendarDayCell(
                 entry != null -> Color.White.copy(alpha = 0.94f)
                 else -> colors.onSurfaceVariant
             },
-            fontSize = if (compact) 8.sp else 10.sp,
+            fontSize = if (compact) 8.sp else 12.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.align(Alignment.TopStart)
         )

@@ -10,21 +10,22 @@ val TaktoAmber = Color(0xFFFFB21D)
 val TaktoRed = Color(0xFFFF4B55)
 val TaktoCyan = Color(0xFF1DE1E8)
 
-// Dark appearance — intentionally lifted from near-black so text, outlines and cards
-// remain readable on lower-brightness and OLED devices.
-val TaktoBackground = Color(0xFF0D1726)
-val TaktoSurface = Color(0xFF152238)
-val TaktoSurface2 = Color(0xFF1D2C44)
-val TaktoSurface3 = Color(0xFF263954)
-val TaktoText = Color(0xFFF8FAFF)
-val TaktoMuted = Color(0xFFB8C4D8)
-val TaktoOutline = Color(0xFF3A4E6C)
+// Dark appearance: elevated navy instead of near-black so cards and controls remain
+// readable without the heavy "black glass" look visible on OLED devices.
+val TaktoBackground = Color(0xFF17263A)
+val TaktoSurface = Color(0xFF203249)
+val TaktoSurface2 = Color(0xFF29415D)
+val TaktoSurface3 = Color(0xFF34516F)
+val TaktoText = Color(0xFFF6F8FB)
+val TaktoMuted = Color(0xFFC4CEDA)
+val TaktoOutline = Color(0xFF58708B)
 
-// Light appearance
-val TaktoLightBackground = Color(0xFFF2F6FC)
+// Light appearance: neutral surfaces with stronger text/outline contrast so cards do not
+// disappear into an overexposed white background.
+val TaktoLightBackground = Color(0xFFF1F4F7)
 val TaktoLightSurface = Color(0xFFFFFFFF)
-val TaktoLightSurface2 = Color(0xFFE8EEF7)
-val TaktoLightSurface3 = Color(0xFFDCE6F3)
-val TaktoLightText = Color(0xFF162236)
-val TaktoLightMuted = Color(0xFF5D6F89)
-val TaktoLightOutline = Color(0xFFC7D3E4)
+val TaktoLightSurface2 = Color(0xFFE4EAF0)
+val TaktoLightSurface3 = Color(0xFFD7E0E9)
+val TaktoLightText = Color(0xFF18222D)
+val TaktoLightMuted = Color(0xFF526273)
+val TaktoLightOutline = Color(0xFFB2BFCC)

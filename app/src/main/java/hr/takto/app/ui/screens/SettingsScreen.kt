@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
@@ -86,6 +87,7 @@ import java.nio.charset.StandardCharsets
 fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     var profileDialog by remember { mutableStateOf(false) }
+    var payrollDialog by remember { mutableStateOf(false) }
     var appearanceDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
@@ -177,7 +179,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         if (uri != null) {
             runCatching {
                 val stream = context.contentResolver.openOutputStream(uri)
-                    ?: error("Nije moguće otvoriti odredišnu backup datoteku.")
+                    ?: error("Nije moguće otvoriti odredišnu datoteku sigurnosne kopije.")
                 stream.use { it.write(store.exportBackupJson().toByteArray(StandardCharsets.UTF_8)) }
             }.onSuccess {
                 Toast.makeText(context, "Sigurnosna kopija je spremljena.", Toast.LENGTH_SHORT).show()
@@ -306,7 +308,26 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             }
         }
 
-        SettingsSectionTitle("Profil i raspored")
+        SettingsSectionTitle("Plaća i obračun")
+
+        SettingsRow(
+            icon = Icons.Default.Payments,
+            title = "Obračun plaće",
+            subtitle = if (!store.payrollProfile.value.enabled) {
+                "Postavi koeficijent, staž, porezne stope i osobni odbitak"
+            } else {
+                buildString {
+                    append(store.payrollProfile.value.system.label)
+                    if (store.payrollProfile.value.coefficient > 0.0) {
+                        append(" · koeficijent ")
+                        append(store.payrollProfile.value.coefficient)
+                    }
+                }
+            },
+            onClick = { payrollDialog = true }
+        )
+
+        SettingsSectionTitle("Raspored i oznake")
 
         GlassCard(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -508,7 +529,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Share,
             title = "Podijeli raspored",
-            subtitle = "Pošalji CSV tekst kroz aplikaciju po izboru, bez mrežnih dozvola u Taktu",
+            subtitle = "Podijeli raspored putem aplikacije po izboru",
             onClick = {
                 val shareIntent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/csv"
@@ -522,27 +543,27 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Sigurnosna kopija",
-            subtitle = "Izvezi puni Takto backup u JSON",
-            onClick = { exportBackupLauncher.launch("Takto-backup.json") }
+            subtitle = "Spremi sigurnosnu kopiju rasporeda i postavki",
+            onClick = { exportBackupLauncher.launch("Takto-sigurnosna-kopija.json") }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Vrati sigurnosnu kopiju",
-            subtitle = "Spoji backup s postojećim podacima; Takto ne briše datume koji nisu u backupu",
+            subtitle = "Vrati podatke iz sigurnosne kopije bez brisanja drugih spremljenih datuma",
             onClick = { importBackupLauncher.launch(arrayOf("application/json", "text/plain")) }
         )
 
         SettingsRow(
             icon = Icons.Default.Backup,
             title = "Zaštita lokalnih podataka",
-            subtitle = "${store.entries.size} unosa · glavna snimka + pričuvna kopija + trajna revizijska arhiva"
+            subtitle = "${store.entries.size} unosa · automatska pričuvna kopija i povijest promjena"
         )
 
         SettingsRow(
             icon = Icons.Default.History,
-            title = "Trajna arhiva rasporeda",
-            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena · nema automatskog brisanja starih ni budućih rasporeda",
+            title = "Povijest promjena",
+            subtitle = "${store.archiveRevisionCount.value} spremljenih promjena",
             onClick = { exportArchiveLauncher.launch("Takto-trajna-arhiva.jsonl") }
         )
 
@@ -578,7 +599,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         SettingsRow(
             icon = Icons.Default.Slideshow,
             title = "Ponovno prikaži uvod",
-            subtitle = "Vrati onboarding bez brisanja rasporeda",
+            subtitle = "Ponovno prikaži početne upute bez brisanja rasporeda",
             onClick = store::resetOnboarding
         )
 
@@ -646,6 +667,18 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 store.saveUserProfile(profile)
                 profileDialog = false
                 Toast.makeText(context, "Radni profil je spremljen.", Toast.LENGTH_SHORT).show()
+            }
+        )
+    }
+
+    if (payrollDialog) {
+        PayrollSettingsDialog(
+            initial = store.payrollProfile.value,
+            onDismiss = { payrollDialog = false },
+            onSave = { profile ->
+                store.savePayrollProfile(profile)
+                payrollDialog = false
+                Toast.makeText(context, "Postavke obračuna su spremljene.", Toast.LENGTH_SHORT).show()
             }
         )
     }

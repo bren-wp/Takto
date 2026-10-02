@@ -15,10 +15,13 @@ data class ScannedScheduleItem(
 data class ScheduleScanParseResult(
     val items: List<ScannedScheduleItem>,
     val detectedMonth: YearMonth?,
-    val usedReferenceMonth: Boolean
+    val usedReferenceMonth: Boolean,
+    val ambiguousDateCount: Int = 0
 )
 
 object RosterScanParser {
+    const val FREE_DAY_CODE = "__TAKTO_FREE_DAY__"
+
     private val yearRegex = Regex("\\b(20\\d{2})\\b")
     private val numericMonthYearRegex = Regex("\\b(0?[1-9]|1[0-2])[./-](20\\d{2})\\b")
     private val fullDateRegex = Regex("\\b(\\d{1,2})[./-](\\d{1,2})(?:[./-](\\d{2,4}))?\\.?\\b")
@@ -81,6 +84,23 @@ object RosterScanParser {
         val usedReferenceMonth = detectedMonth == null
 
         val found = linkedMapOf<LocalDate, ScannedScheduleItem>()
+        val ambiguousDates = mutableSetOf<LocalDate>()
+
+        fun addCandidate(item: ScannedScheduleItem) {
+            if (item.date in ambiguousDates) return
+            val existing = found[item.date]
+            if (existing == null) {
+                found[item.date] = item
+                return
+            }
+            val same = existing.code.equals(item.code, ignoreCase = true) &&
+                existing.startMinute == item.startMinute &&
+                existing.endMinute == item.endMinute
+            if (!same) {
+                found.remove(item.date)
+                ambiguousDates += item.date
+            }
+        }
 
         lines.forEach { line ->
             val time = parseTime(line)
@@ -90,12 +110,14 @@ object RosterScanParser {
                 if (fullDate != null) {
                     val code = nextCode(tokens, index + 1)
                     if (code != null) {
-                        found[fullDate] = ScannedScheduleItem(
-                            date = fullDate,
-                            code = code,
-                            startMinute = time?.first,
-                            endMinute = time?.second,
-                            breakMinutes = parseBreak(line)
+                        addCandidate(
+                            ScannedScheduleItem(
+                                date = fullDate,
+                                code = code,
+                                startMinute = time?.first,
+                                endMinute = time?.second,
+                                breakMinutes = parseBreak(line)
+                            )
                         )
                     }
                     return@forEachIndexed
@@ -106,12 +128,14 @@ object RosterScanParser {
                     val code = nextCode(tokens, index + 1)
                     if (code != null) {
                         val date = fallbackMonth.atDay(day)
-                        found[date] = ScannedScheduleItem(
-                            date = date,
-                            code = code,
-                            startMinute = time?.first,
-                            endMinute = time?.second,
-                            breakMinutes = parseBreak(line)
+                        addCandidate(
+                            ScannedScheduleItem(
+                                date = date,
+                                code = code,
+                                startMinute = time?.first,
+                                endMinute = time?.second,
+                                breakMinutes = parseBreak(line)
+                            )
                         )
                     }
                 }
@@ -122,13 +146,17 @@ object RosterScanParser {
             val days = tokenize(daysLine)
                 .mapNotNull { dayRegex.matchEntire(it)?.groupValues?.getOrNull(1)?.toIntOrNull() }
                 .filter { it in 1..fallbackMonth.lengthOfMonth() }
-            val codes = tokenize(codesLine).mapNotNull(::normalizeCode)
-            if (days.size >= 3 && codes.size >= days.size) {
+            val scheduleTokens = tokenize(codesLine)
+                .mapNotNull(::normalizeScheduleToken)
+            val alignedCodes = if (scheduleTokens.size >= days.size) {
+                scheduleTokens.takeLast(days.size)
+            } else {
+                emptyList()
+            }
+            if (days.size >= 3 && alignedCodes.size == days.size) {
                 days.forEachIndexed { index, day ->
                     val date = fallbackMonth.atDay(day)
-                    if (!found.containsKey(date)) {
-                        found[date] = ScannedScheduleItem(date = date, code = codes[index])
-                    }
+                    addCandidate(ScannedScheduleItem(date = date, code = alignedCodes[index]))
                 }
             }
         }
@@ -136,7 +164,8 @@ object RosterScanParser {
         return ScheduleScanParseResult(
             items = found.values.sortedBy { it.date },
             detectedMonth = detectedMonth,
-            usedReferenceMonth = usedReferenceMonth
+            usedReferenceMonth = usedReferenceMonth,
+            ambiguousDateCount = ambiguousDates.size
         )
     }
 
@@ -148,9 +177,23 @@ object RosterScanParser {
     private fun nextCode(tokens: List<String>, startIndex: Int): String? {
         val end = minOf(tokens.size, startIndex + 4)
         for (index in startIndex until end) {
-            normalizeCode(tokens[index])?.let { return it }
+            normalizeScheduleToken(tokens[index])?.let { return it }
         }
         return null
+    }
+
+    private fun normalizeScheduleToken(value: String): String? {
+        val raw = value.trim().trim(',', ';', ':', '(', ')', '[', ']')
+        val normalized = normalizeSearch(raw)
+            .trim('.', ',', ';', ':', '/', '\\', '(', ')', '[', ']')
+            .uppercase(Locale.ROOT)
+        if (
+            raw == "-" || raw == "–" || raw == "—" ||
+            normalized in setOf("SLOBODNO", "SLOB", "OFF")
+        ) {
+            return FREE_DAY_CODE
+        }
+        return normalizeCode(value)
     }
 
     private fun normalizeCode(value: String): String? {

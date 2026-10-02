@@ -17,29 +17,17 @@ data class UserProfile(
 }
 
 /**
- * Takto ne pokušava zaključati korisnika u konačan popis zanimanja.
- * Katalog nudi česte kategorije za javni, državni i privatni sektor, a sva
- * polja u profilu ostaju slobodno uređiva kako bi podržala svaku ustanovu i
- * svako radno mjesto.
+ * Katalog odvaja državnu službu, javne službe i ostali javni sektor jer
+ * nemaju nužno isti sustav plaća ni kolektivna pravila. Sva polja ostaju
+ * slobodno uređiva kako bi profil odgovarao stvarnoj ustanovi i radnom mjestu.
  */
 object EmploymentCatalog {
     val sectors = listOf(
-        "Javni sektor",
-        "Državni sektor",
-        "Javne ustanove",
-        "Državne ustanove",
-        "Javna poduzeća",
-        "Lokalna i područna samouprava",
-        "Zdravstvo",
-        "Socijalna skrb",
-        "Obrazovanje i znanost",
-        "Policija i sigurnost",
-        "Pravosuđe",
-        "Vatrogastvo i civilna zaštita",
-        "Promet i infrastruktura",
-        "Komunalne službe",
-        "Kultura",
-        "Sport",
+        "Državna služba",
+        "Javne službe",
+        "Lokalna i područna (regionalna) samouprava",
+        "Javna poduzeća i društva u javnom vlasništvu",
+        "Ostali javni sektor",
         "Privatni sektor",
         "Neprofitni sektor",
         "Samozaposlen / obrt",

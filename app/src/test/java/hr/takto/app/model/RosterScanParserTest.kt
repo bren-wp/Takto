@@ -140,6 +140,18 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun nameInDocumentTitleDoesNotBreakSingleRowRoster() {
+        val result = RosterScanParser.parseForPerson(
+            "ANA HORVAT\nLISTOPAD 2026\n1 2 3\nJ N GO",
+            "Ana Horvat",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(3, result.items.size)
+        assertEquals(listOf("J", "N", "GO"), result.items.map { it.code })
+    }
+
+    @Test
     fun croppedSingleRowStillWorksWhenNameIsOutsideCrop() {
         val result = RosterScanParser.parseForPerson(
             "LISTOPAD 2026\n1 2 3 4\nJ J N GO",

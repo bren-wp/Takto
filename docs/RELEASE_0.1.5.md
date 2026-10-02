@@ -12,6 +12,7 @@ Takto 0.1.5 optimizira način na koji se veliki višegodišnji rasporedi trajno 
 - pri pokretanju Takto bira noviju između glavne i recovery snimke
 - postojeći replay revizija oporavlja promjene novije od checkpointa
 - stari backup format i migracija iz SharedPreferences ostaju kompatibilni
+- emergency fallback nakon rijetkog dvostrukog I/O kvara ima marker prioriteta kako ga stariji checkpoint ne bi zasjenio
 
 ## Kvaliteta
 

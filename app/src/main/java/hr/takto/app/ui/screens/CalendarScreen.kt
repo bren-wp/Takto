@@ -740,8 +740,8 @@ private fun ScheduleSearchDialog(
                     value = query,
                     onValueChange = { query = it.take(80) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Oznaka, naziv, napomena ili datum") },
-                    supportingText = { Text("Podržava i: danas, sutra, jučer") },
+                    label = { Text("Oznaka, naziv, napomena, datum ili vrijeme") },
+                    supportingText = { Text("Npr. danas · listopad 2026 · petak · 07:00") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     singleLine = true
                 )
@@ -784,7 +784,7 @@ private fun ScheduleSearchDialog(
 
                 when {
                     !hasSearch -> Text(
-                        "Upiši pojam ili odaberi filtar. Pretraga ignorira dijakritičke znakove pa npr. “godisnji” pronalazi “Godišnji”.",
+                        "Upiši pojam ili odaberi filtar. Pretraga ignorira dijakritiku; podržava i buduće, s vremenom, s napomenom, hrvatske nazive mjeseci i dane u tjednu.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     results.isEmpty() -> Text(

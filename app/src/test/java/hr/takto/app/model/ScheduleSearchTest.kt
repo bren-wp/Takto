@@ -111,4 +111,59 @@ class ScheduleSearchTest {
         )
         assertEquals(setOf("D", "TER", "EDU"), result.map { it.code }.toSet())
     }
+
+    @Test
+    fun search_acceptsCroatianMonthNameAndYear() {
+        val result = ScheduleSearch.search(entries, "listopad 2026", today = today)
+        assertTrue(result.isNotEmpty())
+        assertTrue(result.all { it.date.year == 2026 && it.date.monthValue == 10 })
+    }
+
+    @Test
+    fun search_acceptsCroatianWeekdayName() {
+        val result = ScheduleSearch.search(entries, "petak", today = today)
+        assertEquals(today, result.first().date)
+    }
+
+    @Test
+    fun search_findsExactWorkTime() {
+        val result = ScheduleSearch.search(entries, "07:00", today = today)
+        assertEquals(listOf("D"), result.map { it.code })
+    }
+
+    @Test
+    fun typedSemanticAliasesApplyUsefulLocalFilters() {
+        val future = ScheduleSearch.search(entries, "buduće", today = today)
+        assertTrue(future.isNotEmpty())
+        assertTrue(future.all { !it.date.isBefore(today) })
+
+        val timed = ScheduleSearch.search(entries, "radno vrijeme", today = today)
+        assertEquals(listOf("D"), timed.map { it.code })
+
+        val noted = ScheduleSearch.search(entries, "s napomenom", today = today)
+        assertEquals(setOf("D", "TER", "EDU"), noted.map { it.code }.toSet())
+    }
+
+    @Test
+    fun extendedRelativeDayQueriesAreSupported() {
+        val dayAfterTomorrow = ShiftEntry(
+            date = today.plusDays(2),
+            code = "A",
+            label = "Administracija",
+            colorArgb = 0xFF2488FF
+        )
+        val result = ScheduleSearch.search(entries + dayAfterTomorrow, "prekosutra", today = today)
+        assertEquals(today.plusDays(2), result.single().date)
+
+        val yesterday = ShiftEntry(
+            date = today.minusDays(1),
+            code = "B",
+            label = "Obveza",
+            colorArgb = 0xFF64748B
+        )
+        assertEquals(
+            today.minusDays(1),
+            ScheduleSearch.search(entries + yesterday, "jučer", today = today).single().date
+        )
+    }
 }

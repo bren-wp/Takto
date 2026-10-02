@@ -1086,17 +1086,19 @@ private fun WorkTimeDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    listOf(0, 30, 60, 120).forEach { minutes ->
-                        FilterChip(
-                            selected = overtime == minutes,
-                            onClick = { overtimeText = if (minutes == 0) "" else minutes.toString() },
-                            label = { Text(if (minutes == 0) "0" else "${minutes} min") },
-                            modifier = Modifier.weight(1f)
-                        )
+                listOf(0, 30, 60, 120).chunked(2).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        row.forEach { minutes ->
+                            FilterChip(
+                                selected = overtime == minutes,
+                                onClick = { overtimeText = if (minutes == 0) "" else minutes.toString() },
+                                label = { Text(if (minutes == 0) "0 min" else "${minutes} min") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
                 when {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,6 +31,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -114,28 +117,67 @@ fun HomeScreen(
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            SummaryCard(
-                modifier = Modifier.weight(1f),
-                value = weekEntries.size.toString(),
-                label = "Upisani dani",
-                color = TaktoBlue,
-                icon = { Icon(Icons.Default.CalendarMonth, null, tint = TaktoBlue) }
-            )
-            SummaryCard(
-                modifier = Modifier.weight(1f),
-                value = ScheduleLogic.formatDuration(weekWorkMinutes),
-                label = "Evidentirani sati",
-                color = TaktoPurple,
-                icon = { Icon(Icons.Default.AccessTime, null, tint = TaktoPurple) }
-            )
-            SummaryCard(
-                modifier = Modifier.weight(1f),
-                value = weekEmptyDays.toString(),
-                label = "Bez unosa",
-                color = TaktoGreen,
-                icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
-            )
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            if (maxWidth < 380.dp) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        SummaryCard(
+                            modifier = Modifier.weight(1f),
+                            value = weekEntries.size.toString(),
+                            label = "Upisani dani",
+                            color = TaktoBlue,
+                            icon = { Icon(Icons.Default.CalendarMonth, null, tint = TaktoBlue) }
+                        )
+                        SummaryCard(
+                            modifier = Modifier.weight(1f),
+                            value = ScheduleLogic.formatDuration(weekWorkMinutes),
+                            label = "Evidentirani sati",
+                            color = TaktoPurple,
+                            icon = { Icon(Icons.Default.AccessTime, null, tint = TaktoPurple) }
+                        )
+                    }
+                    SummaryCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = weekEmptyDays.toString(),
+                        label = "Dani bez unosa ovaj tjedan",
+                        color = TaktoGreen,
+                        icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SummaryCard(
+                        modifier = Modifier.weight(1f),
+                        value = weekEntries.size.toString(),
+                        label = "Upisani dani",
+                        color = TaktoBlue,
+                        icon = { Icon(Icons.Default.CalendarMonth, null, tint = TaktoBlue) }
+                    )
+                    SummaryCard(
+                        modifier = Modifier.weight(1f),
+                        value = ScheduleLogic.formatDuration(weekWorkMinutes),
+                        label = "Evidentirani sati",
+                        color = TaktoPurple,
+                        icon = { Icon(Icons.Default.AccessTime, null, tint = TaktoPurple) }
+                    )
+                    SummaryCard(
+                        modifier = Modifier.weight(1f),
+                        value = weekEmptyDays.toString(),
+                        label = "Bez unosa",
+                        color = TaktoGreen,
+                        icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
+                    )
+                }
+            }
         }
 
         GlassCard(
@@ -161,13 +203,33 @@ fun HomeScreen(
                             fontSize = 12.sp
                         )
                     }
-                    if (todayEntry != null) {
-                        Text(
-                            "Dodirni za uređivanje",
-                            color = colors.primary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    if (todayEntry != null) colors.primaryContainer else colors.surfaceVariant,
+                                    RoundedCornerShape(999.dp)
+                                )
+                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                        ) {
+                            Text(
+                                if (todayEntry != null) "Unos spremljen" else "Nema unosa",
+                                color = if (todayEntry != null) colors.onPrimaryContainer else colors.onSurfaceVariant,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        if (todayEntry != null) {
+                            Text(
+                                "Dodirni za uređivanje",
+                                color = colors.primary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
 
@@ -213,7 +275,7 @@ fun HomeScreen(
                                     todayEntry.note,
                                     color = colors.onSurfaceVariant,
                                     fontSize = 11.sp,
-                                    maxLines = 1
+                                    maxLines = 2
                                 )
                             }
                         }
@@ -383,7 +445,7 @@ fun HomeScreen(
                         )
                     }
                     Text(
-                        "Raspored nakon današnjeg dana još je prazan.",
+                        "Raspored nakon današnjeg dana još je prazan. Možeš odmah dodati prvi budući unos za ${croatianDate(today.plusDays(1))}.",
                         color = colors.onSurfaceVariant,
                         fontSize = 12.sp
                     )
@@ -409,38 +471,55 @@ fun HomeScreen(
                     letterSpacing = 2.sp,
                     fontSize = 12.sp
                 )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    repeat(7) { index ->
-                        val date = weekStart.plusDays(index.toLong())
-                        val entry = store.entryFor(date)
-                        val cellColor = entry?.color ?: colors.surfaceVariant
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(86.dp)
-                                .background(cellColor, RoundedCornerShape(13.dp))
-                                .clickable { onOpenCalendar(date) }
-                                .padding(5.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    listOf("Pon", "Uto", "Sri", "Čet", "Pet", "Sub", "Ned")[index],
-                                    fontSize = 10.sp,
-                                    color = if (entry != null) Color.White else colors.onSurfaceVariant
-                                )
-                                Text(
-                                    date.dayOfMonth.toString(),
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (entry != null) Color.White else colors.onSurface
-                                )
-                                Text(
-                                    entry?.code.orEmpty(),
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = if ((entry?.code?.length ?: 0) <= 2) 20.sp else 12.sp,
-                                    color = Color.White,
-                                    maxLines = 1
-                                )
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val compactWeek = maxWidth < 390.dp
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(if (compactWeek) 4.dp else 6.dp)
+                    ) {
+                        repeat(7) { index ->
+                            val date = weekStart.plusDays(index.toLong())
+                            val entry = store.entryFor(date)
+                            val cellColor = entry?.color ?: colors.surfaceVariant
+                            val dayDescription = if (entry == null) {
+                                "${croatianDate(date)}, nema unosa"
+                            } else {
+                                "${croatianDate(date)}, ${entry.code}, ${entry.label}"
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(if (compactWeek) 78.dp else 86.dp)
+                                    .semantics { contentDescription = dayDescription }
+                                    .background(cellColor, RoundedCornerShape(13.dp))
+                                    .clickable { onOpenCalendar(date) }
+                                    .padding(if (compactWeek) 4.dp else 5.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        listOf("Pon", "Uto", "Sri", "Čet", "Pet", "Sub", "Ned")[index],
+                                        fontSize = if (compactWeek) 9.sp else 10.sp,
+                                        color = if (entry != null) Color.White else colors.onSurfaceVariant
+                                    )
+                                    Text(
+                                        date.dayOfMonth.toString(),
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (entry != null) Color.White else colors.onSurface
+                                    )
+                                    Text(
+                                        entry?.code.orEmpty(),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = when {
+                                            (entry?.code?.length ?: 0) <= 2 && compactWeek -> 17.sp
+                                            (entry?.code?.length ?: 0) <= 2 -> 20.sp
+                                            compactWeek -> 10.sp
+                                            else -> 12.sp
+                                        },
+                                        color = Color.White,
+                                        maxLines = 1
+                                    )
+                                }
                             }
                         }
                     }
@@ -470,6 +549,13 @@ fun HomeScreen(
                     )
                     Spacer(Modifier.weight(1f))
                     Text("Prazno = nema unosa", color = colors.onSurfaceVariant, fontSize = 11.sp)
+                }
+                if (monthEntries.isEmpty()) {
+                    Text(
+                        "Ovaj mjesec još nema unosa. Dodirni datum u kalendaru za prvi unos.",
+                        color = colors.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
                 }
                 MonthCalendar(
                     month = currentMonth,

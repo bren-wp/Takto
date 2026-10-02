@@ -48,7 +48,9 @@ data class PayrollInputs(
     val nightMinutes: Int,
     val saturdayMinutes: Int,
     val sundayMinutes: Int,
-    val holidayMinutes: Int
+    val holidayMinutes: Int,
+    val untimedWorkEntryCount: Int = 0,
+    val sickLeaveDayCount: Int = 0
 )
 
 data class PayrollBreakdown(
@@ -125,6 +127,12 @@ object PayrollCalculator {
             missing += "koeficijent izvan dopuštenog raspona 1,00–8,00"
         }
         if (input.monthlyFundMinutes <= 0) missing += "mjesečni fond sati"
+        if (input.untimedWorkEntryCount > 0) {
+            missing += "radno vrijeme za ${input.untimedWorkEntryCount} radnih unosa"
+        }
+        if (input.sickLeaveDayCount > 0) {
+            missing += "obračun naknade za bolovanje"
+        }
         if (profile.lowerTaxRatePercent <= 0.0) missing += "niža stopa poreza"
         if (profile.higherTaxRatePercent <= 0.0) missing += "viša stopa poreza"
         if (

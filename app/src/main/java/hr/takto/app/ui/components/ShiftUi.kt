@@ -5,7 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +28,7 @@ import hr.takto.app.model.ShiftType
 fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
-            .height(84.dp)
+            .heightIn(min = 84.dp)
             .background(type.color, RoundedCornerShape(18.dp))
             .semantics {
                 role = Role.Button

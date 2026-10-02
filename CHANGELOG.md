@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.6
+
+Preglednija Početna, kvalitetnija prazna stanja i bolja pristupačnost na malim Android ekranima.
+
+### Poboljšano
+
+- kartica **Danas** jasno prikazuje stanje **Unos spremljen** ili **Nema unosa**
+- današnja napomena može prikazati dva retka bez nepotrebnog rezanja teksta
+- tjedni sažetak prilagođava raspored kartica uskim ekranima umjesto stiskanja tri metrike u jedan red
+- tjedni pregled koristi kompaktnije dimenzije i tipografiju na uskim ekranima
+- svaki dan u tjednom pregledu ima TalkBack opis s datumom i stvarnim unosom ili informacijom da unosa nema
+- prazno stanje budućeg rasporeda odmah navodi konkretan sljedeći datum koji korisnik može planirati
+- mjesečni pregled jasno objašnjava kada mjesec još nema nijedan unos
+- zadržane su adaptivne brze oznake i neutralna terminologija rasporeda
+- raspored sažetaka eksplicitno koristi punu dostupnu širinu radi stabilnog Compose mjerenja na malim ekranima
+- CI artefakti nose točnu oznaku verzije 0.1.6
+
+### Verzija
+
+- `versionName`: `0.1.6`
+- `versionCode`: `7`
+
 ## 0.1.5
 
 Brža i jednako trajna pohrana velikih rasporeda bez prepisivanja cijele snimke pri svakoj maloj izmjeni.

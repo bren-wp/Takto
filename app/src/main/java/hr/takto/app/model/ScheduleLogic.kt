@@ -76,12 +76,30 @@ object ScheduleLogic {
     }
 
     fun parseClock(value: String): Int? {
-        val clean = value.trim().replace('.', ':')
+        val clean = value
+            .trim()
+            .replace('.', ':')
+            .replace(',', ':')
+            .replace(" ", "")
         if (clean.isBlank()) return null
+
+        if (clean.all(Char::isDigit)) {
+            val (hourText, minuteText) = when (clean.length) {
+                1, 2 -> clean to "0"
+                3 -> clean.take(1) to clean.takeLast(2)
+                4 -> clean.take(2) to clean.takeLast(2)
+                else -> return null
+            }
+            val hour = hourText.toIntOrNull() ?: return null
+            val minute = minuteText.toIntOrNull() ?: return null
+            if (hour !in 0..23 || minute !in 0..59) return null
+            return hour * 60 + minute
+        }
+
         val parts = clean.split(':')
-        if (parts.size !in 1..2) return null
+        if (parts.size != 2 || parts.any { it.isBlank() }) return null
         val hour = parts[0].toIntOrNull() ?: return null
-        val minute = if (parts.size == 2) parts[1].toIntOrNull() ?: return null else 0
+        val minute = parts[1].toIntOrNull() ?: return null
         if (hour !in 0..23 || minute !in 0..59) return null
         return hour * 60 + minute
     }
@@ -91,14 +109,30 @@ object ScheduleLogic {
         return "%02d:%02d".format(Locale.ROOT, minutes / 60, minutes % 60)
     }
 
-    fun workDurationMinutes(startMinute: Int?, endMinute: Int?, breakMinutes: Int = 0): Int? {
+    fun grossWorkDurationMinutes(startMinute: Int?, endMinute: Int?): Int? {
         val start = startMinute?.takeIf { it in 0 until MINUTES_PER_DAY } ?: return null
         val end = endMinute?.takeIf { it in 0 until MINUTES_PER_DAY } ?: return null
-        val gross = when {
+        return when {
             end > start -> end - start
             end < start -> (MINUTES_PER_DAY - start) + end
             else -> 0
         }
+    }
+
+    fun isOvernightWork(startMinute: Int?, endMinute: Int?): Boolean {
+        val start = startMinute?.takeIf { it in 0 until MINUTES_PER_DAY } ?: return false
+        val end = endMinute?.takeIf { it in 0 until MINUTES_PER_DAY } ?: return false
+        return end < start
+    }
+
+    fun isValidWorkTime(startMinute: Int?, endMinute: Int?, breakMinutes: Int = 0): Boolean {
+        if (breakMinutes !in 0..MAX_BREAK_MINUTES) return false
+        val gross = grossWorkDurationMinutes(startMinute, endMinute) ?: return false
+        return gross > 0 && breakMinutes < gross
+    }
+
+    fun workDurationMinutes(startMinute: Int?, endMinute: Int?, breakMinutes: Int = 0): Int? {
+        val gross = grossWorkDurationMinutes(startMinute, endMinute) ?: return null
         val safeBreak = breakMinutes.coerceIn(0, minOf(MAX_BREAK_MINUTES, gross))
         return (gross - safeBreak).coerceAtLeast(0)
     }

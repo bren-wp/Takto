@@ -9,7 +9,7 @@ Ovo izdanje dodatno poboljšava najosjetljiviji dio aplikacije: uvoz stvarnog ra
 - podržani su hrvatski dijakritički znakovi u imenima
 - podržan je raspored u kojem je ime u jednom retku, a smjene u sljedećem
 - kada mjesec nije vidljiv na slici, korisnik mora ručno odabrati i potvrditi mjesec prije uvoza
-- svaki pronađeni datum može se pregledati i ručno ispraviti prije upisa u Kalendar
+- svaki pronađeni datum može se pregledati i ručno ispraviti prije upisa u Kalendar; svi pronađeni dani ostaju vidljivi u pregledu
 - moguće je promijeniti oznaku, početak, kraj, pauzu, označiti slobodan dan ili potpuno ukloniti pogrešan red
 - galerijske slike obrađuju se s većim ograničenjem rezolucije kako bi sitni tekst u širokim tablicama ostao čitljiviji
 
@@ -17,6 +17,9 @@ Ovo izdanje dodatno poboljšava najosjetljiviji dio aplikacije: uvoz stvarnog ra
 
 - potvrđeni prekovremeni i dalje se unose izričito, bez automatskog proglašavanja dugih smjena prekovremenima
 - dodani su brzi izbori 0, 30, 60 i 120 minuta
+- brzi izbori su raspoređeni 2 × 2 radi preglednosti na manjim ekranima
+- redovni sati više ne uključuju potvrđene prekovremene
+- Početna prikazuje potvrđene prekovremene i, kada su svi ulazni podaci potpuni, procjenu isplate, neto i bruto iznosa
 - standardni radni dan sada je jasnije označen kao kontrolna metrika, a ne automatski podatak za isplatu
 
 ## UI/UX

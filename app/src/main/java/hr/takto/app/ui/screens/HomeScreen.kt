@@ -119,8 +119,14 @@ fun HomeScreen(
 
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             if (maxWidth < 380.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         SummaryCard(
                             modifier = Modifier.weight(1f),
                             value = weekEntries.size.toString(),
@@ -145,7 +151,10 @@ fun HomeScreen(
                     )
                 }
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     SummaryCard(
                         modifier = Modifier.weight(1f),
                         value = weekEntries.size.toString(),

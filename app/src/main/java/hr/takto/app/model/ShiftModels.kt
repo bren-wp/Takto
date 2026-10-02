@@ -18,7 +18,8 @@ data class ShiftEntry(
     val note: String = "",
     val startMinute: Int? = null,
     val endMinute: Int? = null,
-    val breakMinutes: Int = 0
+    val breakMinutes: Int = 0,
+    val overtimeMinutes: Int = 0
 ) {
     val color: Color get() = Color(colorArgb)
     val hasWorkTime: Boolean get() = startMinute != null && endMinute != null

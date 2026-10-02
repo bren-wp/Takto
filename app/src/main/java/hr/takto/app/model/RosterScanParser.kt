@@ -58,7 +58,7 @@ object RosterScanParser {
     ): ScheduleScanParseResult {
         val hintTokens = normalizeSearch(personHint)
             .split(Regex("\\s+"))
-            .map(String::trim)
+            .map { it.trim() }
             .filter { it.length >= 2 }
         if (hintTokens.isEmpty()) return parse(text, referenceDate)
 
@@ -66,7 +66,7 @@ object RosterScanParser {
             .replace('|', ' ')
             .lineSequence()
             .map(String::trim)
-            .filter(String::isNotBlank)
+            .filter { it.isNotBlank() }
             .toList()
         if (lines.isEmpty()) return ScheduleScanParseResult(emptyList(), null, false)
 
@@ -97,7 +97,7 @@ object RosterScanParser {
             }
         }
 
-        val bestScore = candidates.maxOfOrNull(PersonCandidate::score)
+        val bestScore = candidates.maxOfOrNull { it.score }
         val best = candidates.filter { it.score == bestScore }
         if (best.size != 1) {
             val full = parse(text, referenceDate)
@@ -152,7 +152,7 @@ object RosterScanParser {
             .joinToString(" ")
             .trim()
 
-        val selectedText = listOfNotNull(monthLine, header, selectedRow.takeIf(String::isNotBlank))
+        val selectedText = listOfNotNull(monthLine, header, selectedRow.takeIf { it.isNotBlank() })
             .distinct()
             .joinToString("\n")
 

@@ -47,6 +47,16 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun infersMonthFromExplicitDatesWithoutHeader() {
+        val result = RosterScanParser.parse(
+            "02.10.2026. D\n03.10.2026. N",
+            LocalDate.of(2026, 1, 1)
+        )
+        assertEquals(YearMonth.of(2026, 10), result.detectedMonth)
+        assertFalse(result.usedReferenceMonth)
+    }
+
+    @Test
     fun reportsReferenceMonthFallback() {
         val result = RosterScanParser.parse("2 D\n3 N", LocalDate.of(2026, 11, 10))
         assertTrue(result.usedReferenceMonth)

@@ -48,13 +48,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.SalaryCalculator
 import hr.takto.app.model.StatsChartLogic
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoBlue
+import java.math.BigDecimal
 import java.time.YearMonth
+import java.text.NumberFormat
 import java.util.Locale
 
 private data class ScheduleCodeStat(
@@ -97,6 +100,9 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val sundayWorkMinutes = store.totalSundayWorkMinutes(timedEntries)
     val holidayWorkMinutes = store.totalHolidayWorkMinutes(timedEntries)
     val targetIsManual = store.hasMonthlyTargetOverride(month)
+    val salaryProfile = store.salaryProfile.value
+    val salaryWork = SalaryCalculator.workSummary(monthEntries, salaryProfile, monthlyTarget)
+    val salaryResult = SalaryCalculator.calculate(month, salaryProfile, salaryWork)
 
     Column(
         modifier = Modifier
@@ -223,6 +229,50 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Plaća za mjesec", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    if (salaryResult != null) {
+                        Text(formatEuro(salaryResult.netEur), color = TaktoBlue, fontWeight = FontWeight.ExtraBold)
+                    }
+                }
+                if (salaryResult == null) {
+                    Text(
+                        "Za obračun otvori Postavke → Plaća i obračun te upiši sustav plaće, koeficijent, staž i svoje porezne podatke.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        "Prekovremeni za obračun: ${ScheduleLogic.formatDuration(salaryWork.overtimeMinutes)}. Obračun koristi stvarni raspored, fond i spremljene porezne podatke.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MoneyMetric(Modifier.weight(1f), "Bruto", salaryResult.grossEur)
+                        MoneyMetric(Modifier.weight(1f), "Neto", salaryResult.netEur)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MoneyMetric(Modifier.weight(1f), "Prekovremeni", salaryResult.overtimeGrossEur)
+                        MoneyMetric(Modifier.weight(1f), "Noćni dodatak", salaryResult.nightAddEur)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MoneyMetric(Modifier.weight(1f), "Subota", salaryResult.saturdayAddEur)
+                        MoneyMetric(Modifier.weight(1f), "Nedjelja", salaryResult.sundayAddEur)
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        MoneyMetric(Modifier.weight(1f), "Blagdan", salaryResult.holidayAddEur)
+                        MoneyMetric(Modifier.weight(1f), "Radni staž", salaryResult.serviceAddEur)
+                    }
+                    Text(
+                        "Osnovica: ${formatEuro(salaryResult.baseAmountEur)} · sat: ${formatEuro(salaryResult.hourlyRateEur)} · porez: ${formatEuro(salaryResult.incomeTaxEur)}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
                 }
             }
         }
@@ -472,6 +522,26 @@ private fun Legend(name: String, count: Int, color: Color) {
         Text(count.toString(), fontWeight = FontWeight.Bold, fontSize = 12.sp)
     }
 }
+
+@Composable
+private fun MoneyMetric(
+    modifier: Modifier,
+    label: String,
+    value: BigDecimal
+) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp))
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(formatEuro(value), fontWeight = FontWeight.ExtraBold, color = TaktoBlue)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+    }
+}
+
+private fun formatEuro(value: BigDecimal): String =
+    NumberFormat.getCurrencyInstance(Locale("hr", "HR")).format(value)
 
 @Composable
 private fun DonutChart(counts: List<Pair<Int, Color>>, modifier: Modifier = Modifier) {

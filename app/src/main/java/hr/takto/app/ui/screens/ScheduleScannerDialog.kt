@@ -30,11 +30,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -69,6 +72,7 @@ import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.LocalDate
+import java.time.YearMonth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -103,14 +107,18 @@ fun ScheduleScannerDialog(
     var editingBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var personHint by remember { mutableStateOf(store.userProfile.value.fullName) }
     var recognizedText by remember { mutableStateOf<String?>(null) }
+    var scanReferenceMonth by remember { mutableStateOf(YearMonth.now()) }
+    var referenceMonthConfirmed by remember { mutableStateOf(false) }
 
-    fun applyRecognizedText(text: String) {
+    fun applyRecognizedText(text: String, referenceMonth: YearMonth = scanReferenceMonth) {
+        val referenceDate = referenceMonth.atDay(1)
         val parsed = if (personHint.isNotBlank()) {
-            RosterScanParser.parseForPerson(text, personHint, LocalDate.now())
+            RosterScanParser.parseForPerson(text, personHint, referenceDate)
         } else {
-            RosterScanParser.parse(text, LocalDate.now())
+            RosterScanParser.parse(text, referenceDate)
         }
         result = parsed
+        if (!parsed.usedReferenceMonth) referenceMonthConfirmed = true
         error = when {
             parsed.ambiguousDateCount > 0 ->
                 "Pronađeno je više različitih rasporeda za iste datume. Ponovno označi područje tako da obuhvati zaglavlje s datumima i samo svoj red."
@@ -143,6 +151,8 @@ fun ScheduleScannerDialog(
         error = null
         result = null
         recognizedText = null
+        scanReferenceMonth = YearMonth.now()
+        referenceMonthConfirmed = false
         scope.launch {
             val bitmap = withContext(Dispatchers.IO) { decodeRosterBitmap(context, uri) }
             scanning = false
@@ -318,13 +328,71 @@ fun ScheduleScannerDialog(
                         "Pronađeno ${parsed.items.size} unosa",
                         fontWeight = FontWeight.ExtraBold
                     )
-                    Text(
-                        parsed.detectedMonth?.let { "Mjesec: ${monthTitle(it)}" }
-                            ?: "Mjesec nije pronađen; koristi se trenutačni mjesec.",
-                        color = if (parsed.usedReferenceMonth) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    if (!parsed.usedReferenceMonth && parsed.detectedMonth != null) {
+                        Text(
+                            "Mjesec: ${monthTitle(parsed.detectedMonth)}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    } else {
+                        Text(
+                            "Mjesec nije prepoznat. Odaberi točan mjesec prije uvoza.",
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.SemiBold,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    val next = scanReferenceMonth.minusMonths(1)
+                                    scanReferenceMonth = next
+                                    referenceMonthConfirmed = false
+                                    recognizedText?.let { applyRecognizedText(it, next) }
+                                }
+                            ) {
+                                Icon(Icons.Default.ChevronLeft, contentDescription = "Prethodni mjesec")
+                            }
+                            Text(
+                                monthTitle(scanReferenceMonth),
+                                modifier = Modifier.weight(1f),
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(
+                                onClick = {
+                                    val next = scanReferenceMonth.plusMonths(1)
+                                    scanReferenceMonth = next
+                                    referenceMonthConfirmed = false
+                                    recognizedText?.let { applyRecognizedText(it, next) }
+                                }
+                            ) {
+                                Icon(Icons.Default.ChevronRight, contentDescription = "Sljedeći mjesec")
+                            }
+                        }
+                        Button(
+                            onClick = { referenceMonthConfirmed = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (referenceMonthConfirmed) {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                } else {
+                                    TaktoBlue
+                                }
+                            )
+                        ) {
+                            Text(
+                                if (referenceMonthConfirmed) {
+                                    "Mjesec potvrđen"
+                                } else {
+                                    "Potvrdi ${monthTitle(scanReferenceMonth)}"
+                                },
+                                color = if (referenceMonthConfirmed) TaktoBlue else Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
 
                     parsed.items.take(18).forEach { item ->
                         ScanPreviewRow(store = store, item = item)
@@ -378,6 +446,7 @@ fun ScheduleScannerDialog(
                 },
                 enabled = items.isNotEmpty() &&
                     (result?.ambiguousDateCount ?: 0) == 0 &&
+                    (result?.usedReferenceMonth != true || referenceMonthConfirmed) &&
                     !scanning,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) {

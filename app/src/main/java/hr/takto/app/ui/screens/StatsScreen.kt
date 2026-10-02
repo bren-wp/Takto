@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -39,12 +40,15 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.StatsChartLogic
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
@@ -146,10 +150,30 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TimeMetric(Modifier.weight(1f), "Evidentirano", totalWorkMinutes, TaktoBlue)
-                    TimeMetric(Modifier.weight(1f), if (targetIsManual) "Fond · ručni" else "Fond · automatski", monthlyTarget, Color(0xFF22B8CF))
-                    SignedTimeMetric(Modifier.weight(1f), "Razlika", monthlyBalance)
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    if (maxWidth < 390.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TimeMetric(Modifier.fillMaxWidth(), "Evidentirano", totalWorkMinutes, TaktoBlue)
+                            TimeMetric(
+                                Modifier.fillMaxWidth(),
+                                if (targetIsManual) "Fond · ručni" else "Fond · automatski",
+                                monthlyTarget,
+                                Color(0xFF22B8CF)
+                            )
+                            SignedTimeMetric(Modifier.fillMaxWidth(), "Razlika", monthlyBalance)
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            TimeMetric(Modifier.weight(1f), "Evidentirano", totalWorkMinutes, TaktoBlue)
+                            TimeMetric(
+                                Modifier.weight(1f),
+                                if (targetIsManual) "Fond · ručni" else "Fond · automatski",
+                                monthlyTarget,
+                                Color(0xFF22B8CF)
+                            )
+                            SignedTimeMetric(Modifier.weight(1f), "Razlika", monthlyBalance)
+                        }
+                    }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TimeMetric(Modifier.weight(1f), "Redovni sati", regularMonthlyMinutes, Color(0xFF13D7A0))
@@ -178,10 +202,20 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TimeMetric(Modifier.weight(1f), "Noćni rad", nightWorkMinutes, Color(0xFF8B46F6))
-                    TimeMetric(Modifier.weight(1f), "Vikend", weekendWorkMinutes, Color(0xFF13D7A0))
-                    TimeMetric(Modifier.weight(1f), "Nedjelja", sundayWorkMinutes, Color(0xFFFFB21D))
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    if (maxWidth < 390.dp) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TimeMetric(Modifier.fillMaxWidth(), "Noćni rad", nightWorkMinutes, Color(0xFF8B46F6))
+                            TimeMetric(Modifier.fillMaxWidth(), "Vikend", weekendWorkMinutes, Color(0xFF13D7A0))
+                            TimeMetric(Modifier.fillMaxWidth(), "Nedjelja", sundayWorkMinutes, Color(0xFFFFB21D))
+                        }
+                    } else {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            TimeMetric(Modifier.weight(1f), "Noćni rad", nightWorkMinutes, Color(0xFF8B46F6))
+                            TimeMetric(Modifier.weight(1f), "Vikend", weekendWorkMinutes, Color(0xFF13D7A0))
+                            TimeMetric(Modifier.weight(1f), "Nedjelja", sundayWorkMinutes, Color(0xFFFFB21D))
+                        }
+                    }
                 }
             }
         }
@@ -231,23 +265,50 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             GlassCard(modifier = Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text("Vizualni uvid", style = MaterialTheme.typography.titleLarge)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        DonutChart(
-                            counts = buildList {
-                                chartPrimary.forEach { add(it.count to it.color) }
-                                if (otherCount > 0) add(otherCount to otherColor)
-                            },
-                            modifier = Modifier.size(170.dp)
-                        )
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            chartPrimary.forEach { stat ->
-                                Legend(
-                                    name = "${stat.code} · ${stat.label}",
-                                    count = stat.count,
-                                    color = stat.color
-                                )
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        val chart: @Composable () -> Unit = {
+                            DonutChart(
+                                counts = buildList {
+                                    chartPrimary.forEach { add(it.count to it.color) }
+                                    if (otherCount > 0) add(otherCount to otherColor)
+                                },
+                                modifier = Modifier.size(170.dp)
+                            )
+                        }
+                        val legend: @Composable () -> Unit = {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                chartPrimary.forEach { stat ->
+                                    Legend(
+                                        name = "${stat.code} · ${stat.label}",
+                                        count = stat.count,
+                                        color = stat.color
+                                    )
+                                }
+                                if (otherCount > 0) Legend("Ostale oznake", otherCount, otherColor)
                             }
-                            if (otherCount > 0) Legend("Ostale oznake", otherCount, otherColor)
+                        }
+
+                        if (maxWidth < 390.dp) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                chart()
+                                legend()
+                            }
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                chart()
+                                Box(Modifier.weight(1f)) { legend() }
+                            }
                         }
                     }
                 }
@@ -440,7 +501,16 @@ private fun MonthlyBars(store: ScheduleStore, year: Int) {
     val values = (1..12).map { month ->
         store.entries.values.count { it.date.year == year && it.date.monthValue == month }
     }
-    val max = (values.maxOrNull() ?: 1).coerceAtLeast(1)
+    if (!StatsChartLogic.hasPositiveData(values)) {
+        Text(
+            "U $year. godini još nema spremljenih unosa.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp
+        )
+        return
+    }
+
+    val max = values.maxOrNull()?.coerceAtLeast(1) ?: 1
     val names = listOf("Sij", "Velj", "Ožu", "Tra", "Svi", "Lip", "Srp", "Kol", "Ruj", "Lis", "Stu", "Pro")
     Row(
         modifier = Modifier.fillMaxWidth().height(180.dp),
@@ -448,16 +518,29 @@ private fun MonthlyBars(store: ScheduleStore, year: Int) {
         verticalAlignment = Alignment.Bottom
     ) {
         values.forEachIndexed { index, value ->
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                if (value > 0) Text(value.toString(), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { contentDescription = "${names[index]}: $value unosa" },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                if (value > 0) {
+                    Text(value.toString(), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height((120f * value / max.toFloat()).coerceAtLeast(4f).dp)
+                        .height(StatsChartLogic.barHeight(value, max).dp)
                         .background(TaktoBlue, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                 )
                 Spacer(Modifier.height(5.dp))
-                Text(names[index], fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Text(
+                    names[index],
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
@@ -470,7 +553,16 @@ private fun MonthlyHoursBars(store: ScheduleStore, year: Int) {
             .filter { it.date.year == year && it.date.monthValue == month }
             .sumOf { it.workMinutes ?: 0 }
     }
-    val max = (values.maxOrNull() ?: 60).coerceAtLeast(60)
+    if (!StatsChartLogic.hasPositiveData(values)) {
+        Text(
+            "U $year. godini još nema evidentiranih radnih sati.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 12.sp
+        )
+        return
+    }
+
+    val max = values.maxOrNull()?.coerceAtLeast(1) ?: 1
     val names = listOf("Sij", "Velj", "Ožu", "Tra", "Svi", "Lip", "Srp", "Kol", "Ruj", "Lis", "Stu", "Pro")
     Row(
         modifier = Modifier.fillMaxWidth().height(180.dp),
@@ -478,18 +570,37 @@ private fun MonthlyHoursBars(store: ScheduleStore, year: Int) {
         verticalAlignment = Alignment.Bottom
     ) {
         values.forEachIndexed { index, value ->
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                if (value > 0) Text("${value / 60}h", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        contentDescription = "${names[index]}: ${ScheduleLogic.formatDuration(value)} evidentiranog rada"
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                if (value > 0) {
+                    Text(
+                        StatsChartLogic.compactDurationLabel(value),
+                        fontSize = 8.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height((120f * value / max.toFloat()).coerceAtLeast(4f).dp)
+                        .height(StatsChartLogic.barHeight(value, max).dp)
                         .background(Color(0xFF22B8CF), RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                 )
                 Spacer(Modifier.height(5.dp))
-                Text(names[index], fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Text(
+                    names[index],
+                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
 }
-

@@ -14,6 +14,7 @@ Brža i jednako trajna pohrana velikih rasporeda bez prepisivanja cijele snimke 
 - pri pokretanju se uspoređuju glavna i recovery snimka te se bira ona s novijim checkpointom
 - postojeći replay revizija i nedestruktivni recovery ostaju kompatibilni
 - legacy SharedPreferences migracija i stari backup format ostaju podržani
+- emergency SharedPreferences fallback sada ima eksplicitni marker i ne može biti zasjenjen starijim checkpointom nakon rijetkog I/O kvara
 - dodani unit testovi za checkpoint politiku
 - CI artefakti nose točnu oznaku verzije 0.1.5
 

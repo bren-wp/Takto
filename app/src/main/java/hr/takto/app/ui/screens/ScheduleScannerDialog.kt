@@ -596,7 +596,13 @@ private fun ScanItemEditDialog(
         onDismissRequest = onDismiss,
         title = { Text("Provjeri skenirani unos") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
                     croatianDate(item.date),
                     fontWeight = FontWeight.ExtraBold
@@ -626,27 +632,22 @@ private fun ScanItemEditDialog(
                         supportingText = { Text("Primjer: J, N, D, GO, SD") },
                         singleLine = true
                     )
-                    Row(
+                    OutlinedTextField(
+                        value = startText,
+                        onValueChange = { startText = it.take(5) },
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = startText,
-                            onValueChange = { startText = it.take(5) },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("Početak") },
-                            placeholder = { Text("07:00") },
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = endText,
-                            onValueChange = { endText = it.take(5) },
-                            modifier = Modifier.weight(1f),
-                            label = { Text("Kraj") },
-                            placeholder = { Text("15:00") },
-                            singleLine = true
-                        )
-                    }
+                        label = { Text("Početak") },
+                        placeholder = { Text("07:00") },
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = endText,
+                        onValueChange = { endText = it.take(5) },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Kraj") },
+                        placeholder = { Text("15:00") },
+                        singleLine = true
+                    )
                     OutlinedTextField(
                         value = breakText,
                         onValueChange = { breakText = it.filter(Char::isDigit).take(3) },

@@ -7,6 +7,6 @@ enum class AppThemeMode(val persistedValue: String) {
 
     companion object {
         fun fromPersisted(value: String?): AppThemeMode =
-            entries.firstOrNull { it.persistedValue == value } ?: DARK
+            entries.firstOrNull { it.persistedValue == value } ?: SYSTEM
     }
 }

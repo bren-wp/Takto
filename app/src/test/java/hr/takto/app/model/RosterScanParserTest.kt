@@ -57,6 +57,17 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun isolatesSelectedPersonFromMultiPersonRoster() {
+        val result = RosterScanParser.parseForPerson(
+            "LISTOPAD 2026\n1 2 3 4 5\nANA HORVAT J J N N GO\nMARKO MARIC N N J J BO",
+            "Ana Horvat",
+            LocalDate.of(2026, 10, 1)
+        )
+        assertEquals(5, result.items.size)
+        assertEquals(listOf("J", "J", "N", "N", "GO"), result.items.map { it.code })
+    }
+
+    @Test
     fun reportsReferenceMonthFallback() {
         val result = RosterScanParser.parse("2 D\n3 N", LocalDate.of(2026, 11, 10))
         assertTrue(result.usedReferenceMonth)

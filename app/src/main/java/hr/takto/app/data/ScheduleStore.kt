@@ -278,15 +278,24 @@ class ScheduleStore(private val context: Context) {
         commitUndo(before)
     }
 
-    fun updateWorkTime(date: LocalDate, startMinute: Int, endMinute: Int, breakMinutes: Int): Boolean {
+    fun updateWorkTime(
+        date: LocalDate,
+        startMinute: Int,
+        endMinute: Int,
+        breakMinutes: Int,
+        overtimeMinutes: Int = 0
+    ): Boolean {
         val current = entries[date] ?: return false
         if (ScheduleLogic.isLeaveCode(current.code)) return false
         if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) return false
+        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes) ?: return false
+        if (overtimeMinutes !in 0..duration) return false
         val safeBreak = breakMinutes
         val next = current.copy(
             startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
             endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
-            breakMinutes = safeBreak
+            breakMinutes = safeBreak,
+            overtimeMinutes = overtimeMinutes
         )
         if (next == current) return true
         val before = captureUndo(listOf(date), "Radno vrijeme ${date}")
@@ -298,9 +307,14 @@ class ScheduleStore(private val context: Context) {
 
     fun clearWorkTime(date: LocalDate): Boolean {
         val current = entries[date] ?: return false
-        if (!current.hasWorkTime && current.breakMinutes == 0) return false
+        if (!current.hasWorkTime && current.breakMinutes == 0 && current.overtimeMinutes == 0) return false
         val before = captureUndo(listOf(date), "Uklanjanje radnog vremena ${date}")
-        entries[date] = current.copy(startMinute = null, endMinute = null, breakMinutes = 0)
+        entries[date] = current.copy(
+            startMinute = null,
+            endMinute = null,
+            breakMinutes = 0,
+            overtimeMinutes = 0
+        )
         persistEntries()
         commitUndo(before)
         return true
@@ -310,11 +324,15 @@ class ScheduleStore(private val context: Context) {
         dates: Collection<LocalDate>,
         startMinute: Int,
         endMinute: Int,
-        breakMinutes: Int
+        breakMinutes: Int,
+        overtimeMinutes: Int = 0
     ): BulkEditResult {
         if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) {
             return BulkEditResult(0, 0, 0)
         }
+        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
+            ?: return BulkEditResult(0, 0, 0)
+        if (overtimeMinutes !in 0..duration) return BulkEditResult(0, 0, 0)
         val unique = dates.distinct().sorted().take(MAX_BULK_DAYS)
         val before = captureUndo(unique, "Radno vrijeme za ${unique.size} dana")
         val safeBreak = breakMinutes
@@ -329,7 +347,8 @@ class ScheduleStore(private val context: Context) {
             val next = current.copy(
                 startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
                 endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
-                breakMinutes = safeBreak
+                breakMinutes = safeBreak,
+                overtimeMinutes = overtimeMinutes
             )
             if (next != current) {
                 entries[date] = next
@@ -703,6 +722,9 @@ class ScheduleStore(private val context: Context) {
         ScheduleLogic.holidayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
     }
 
+    fun totalConfirmedOvertimeMinutes(items: Collection<ShiftEntry>): Int =
+        items.sumOf { it.overtimeMinutes.coerceAtLeast(0) }
+
     fun totalOvertimeMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
         val minutes = entry.workMinutes ?: return@sumOf 0
         ScheduleLogic.overtimeMinutes(minutes, standardDailyMinutes.value)
@@ -787,7 +809,7 @@ class ScheduleStore(private val context: Context) {
     fun exportICalendar(): String = ICalendarExporter.export(entries.values)
 
     fun exportCsv(): String {
-        val sb = StringBuilder("datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min\n")
+        val sb = StringBuilder("datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min,prekovremeno_min\n")
         entries.values.sortedBy { it.date }.forEach { item ->
             sb.append(csv(item.date.toString())).append(',')
                 .append(csv(item.code)).append(',')
@@ -796,7 +818,8 @@ class ScheduleStore(private val context: Context) {
                 .append(csv(formatColorArgb(item.colorArgb))).append(',')
                 .append(csv(item.startMinute?.let(ScheduleLogic::formatClock).orEmpty())).append(',')
                 .append(csv(item.endMinute?.let(ScheduleLogic::formatClock).orEmpty())).append(',')
-                .append(csv(item.breakMinutes.takeIf { item.hasWorkTime }?.toString().orEmpty())).append('\n')
+                .append(csv(item.breakMinutes.takeIf { item.hasWorkTime }?.toString().orEmpty())).append(',')
+                .append(csv(item.overtimeMinutes.takeIf { item.hasWorkTime && it > 0 }?.toString().orEmpty())).append('\n')
         }
         return sb.toString()
     }
@@ -848,8 +871,12 @@ class ScheduleStore(private val context: Context) {
             val startMinute = parts.getOrNull(5)?.takeIf { it.isNotBlank() }?.let(ScheduleLogic::parseClock)
             val endMinute = parts.getOrNull(6)?.takeIf { it.isNotBlank() }?.let(ScheduleLogic::parseClock)
             val breakMinutes = parts.getOrNull(7)?.trim()?.toIntOrNull()?.coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES) ?: 0
+            val workDuration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
             val hasValidTime = startMinute != null && endMinute != null &&
-                ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)?.let { it > 0 } == true
+                workDuration?.let { it > 0 } == true
+            val overtimeMinutes = parts.getOrNull(8)?.trim()?.toIntOrNull()?.coerceAtLeast(0)
+                ?.takeIf { hasValidTime && workDuration != null && it <= workDuration }
+                ?: 0
             if (preset != null) {
                 entries[date] = ShiftEntry(
                     date = date,
@@ -859,7 +886,8 @@ class ScheduleStore(private val context: Context) {
                     note = note,
                     startMinute = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) startMinute else null,
                     endMinute = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) endMinute else null,
-                    breakMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) breakMinutes else 0
+                    breakMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) breakMinutes else 0,
+                    overtimeMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) overtimeMinutes else 0
                 )
             } else {
                 val cleanCode = sanitizeCustomText(code)
@@ -880,7 +908,8 @@ class ScheduleStore(private val context: Context) {
                     date, cleanCode, label, color, note,
                     startMinute = if (hasValidTime) startMinute else null,
                     endMinute = if (hasValidTime) endMinute else null,
-                    breakMinutes = if (hasValidTime) breakMinutes else 0
+                    breakMinutes = if (hasValidTime) breakMinutes else 0,
+                    overtimeMinutes = if (hasValidTime) overtimeMinutes else 0
                 )
             }
             imported++
@@ -1077,6 +1106,11 @@ class ScheduleStore(private val context: Context) {
                 isLeave -> 0
                 keepCurrentTime -> current?.breakMinutes ?: 0
                 else -> defaultTime?.breakMinutes ?: 0
+            },
+            overtimeMinutes = when {
+                isLeave -> 0
+                keepCurrentTime -> current?.overtimeMinutes ?: 0
+                else -> 0
             }
         )
     }
@@ -1490,9 +1524,14 @@ class ScheduleStore(private val context: Context) {
         val start = obj.optInt("startMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY }
         val end = obj.optInt("endMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY }
         val breakMinutes = obj.optInt("breakMinutes", 0).coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        val duration = ScheduleLogic.workDurationMinutes(start, end, breakMinutes)
         val validTime = start != null && end != null &&
-            ScheduleLogic.workDurationMinutes(start, end, breakMinutes)?.let { it > 0 } == true &&
+            duration?.let { it > 0 } == true &&
             !ScheduleLogic.isLeaveCode(code)
+        val overtimeMinutes = obj.optInt("overtimeMinutes", 0)
+            .coerceAtLeast(0)
+            .takeIf { validTime && duration != null && it <= duration }
+            ?: 0
         return ShiftEntry(
             date = date,
             code = code,
@@ -1501,7 +1540,8 @@ class ScheduleStore(private val context: Context) {
             note = obj.optString("note", "").take(MAX_NOTE_LENGTH),
             startMinute = if (validTime) start else null,
             endMinute = if (validTime) end else null,
-            breakMinutes = if (validTime) breakMinutes else 0
+            breakMinutes = if (validTime) breakMinutes else 0,
+            overtimeMinutes = overtimeMinutes
         )
     }
 
@@ -1674,6 +1714,7 @@ class ScheduleStore(private val context: Context) {
         if (item.startMinute != null) put("startMinute", item.startMinute)
         if (item.endMinute != null) put("endMinute", item.endMinute)
         put("breakMinutes", item.breakMinutes)
+        put("overtimeMinutes", item.overtimeMinutes)
     }
 
     private fun entriesToJson(): JSONArray = JSONArray().apply {
@@ -1806,7 +1847,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
-        private const val DATA_SCHEMA_VERSION = 9
+        private const val DATA_SCHEMA_VERSION = 10
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 2
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L

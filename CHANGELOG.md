@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.8
+
+Pametnija lokalna pretraga rasporeda s boljim hrvatskim datumskim kontekstom, radnim vremenom i semantičkim upitima.
+
+### Poboljšano
+
+- pretraga prepoznaje hrvatske nazive mjeseci i kombinacije mjesec + godina
+- moguće je pretraživati dane u tjednu, npr. `petak`
+- početak i kraj radnog vremena ulaze u lokalni indeks pa upit poput `07:00` pronalazi odgovarajuće unose
+- dodani su relativni izrazi `prekosutra`, `preksutra` i `prekjučer`
+- tekstualni upiti `buduće`, `s vremenom`, `radno vrijeme` i `s napomenom` rade bez ručnog uključivanja filtra
+- rangiranje dodatno nagrađuje višerječne upite koji se podudaraju kroz oznaku, naziv, napomenu, datum ili vrijeme
+- točna kratica i dalje ima prednost pred slabim podudaranjem u napomeni
+- dijakritička tolerancija za č/ć/š/ž/đ ostaje očuvana
+- dijalog pretrage sada jasno navodi podržane primjere poput `listopad 2026`, `petak` i `07:00`
+- dodani regresijski unit testovi za mjesec/godinu, dan u tjednu, radno vrijeme, semantičke filtre i proširene relativne datume
+- CI artefakti nose točnu oznaku verzije 0.1.8
+
+### Verzija
+
+- `versionName`: `0.1.8`
+- `versionCode`: `9`
+
+
 ## 0.1.7
 
 Brže pokretanje s velikom dugoročnom arhivom rasporeda uz potpuno očuvanje postojeće recovery kompatibilnosti.

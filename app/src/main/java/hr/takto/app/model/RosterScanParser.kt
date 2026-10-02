@@ -51,6 +51,131 @@ object RosterScanParser {
         "SAT", "SATI", "VRIJEME", "PAUZA"
     )
 
+    fun parseForPerson(
+        text: String,
+        personHint: String,
+        referenceDate: LocalDate = LocalDate.now()
+    ): ScheduleScanParseResult {
+        val hintTokens = normalizeSearch(personHint)
+            .split(Regex("\\s+"))
+            .map { it.trim() }
+            .filter { it.length >= 2 }
+        if (hintTokens.isEmpty()) return parse(text, referenceDate)
+
+        val lines = text
+            .replace('|', ' ')
+            .lineSequence()
+            .map(String::trim)
+            .filter { it.isNotBlank() }
+            .toList()
+        if (lines.isEmpty()) return ScheduleScanParseResult(emptyList(), null, false)
+
+        data class PersonCandidate(
+            val index: Int,
+            val line: String,
+            val matchedTokens: Int,
+            val surnameMatched: Boolean
+        ) {
+            val score: Int
+                get() = matchedTokens + if (surnameMatched) 3 else 0
+        }
+
+        val surname = hintTokens.last()
+        val candidates = lines.mapIndexedNotNull { index, line ->
+            val normalized = normalizeSearch(line)
+            val words = normalized.split(Regex("\\s+")).filter(String::isNotBlank)
+            val matched = hintTokens.count { token -> token in words }
+            val surnameMatched = surname in words
+            val enoughNameEvidence =
+                matched == hintTokens.size ||
+                    surnameMatched ||
+                    (hintTokens.size >= 3 && matched >= hintTokens.size - 1)
+            if (enoughNameEvidence) {
+                PersonCandidate(index, line, matched, surnameMatched)
+            } else {
+                null
+            }
+        }
+
+        val bestScore = candidates.maxOfOrNull { it.score }
+        val best = candidates.filter { it.score == bestScore }
+        if (best.size != 1) {
+            val full = parse(text, referenceDate)
+            val potentialRows = countPotentialHorizontalScheduleRows(lines, referenceDate.year)
+            if (
+                best.isEmpty() &&
+                potentialRows <= 1 &&
+                full.items.isNotEmpty() &&
+                full.ambiguousDateCount == 0
+            ) {
+                return full
+            }
+            return ScheduleScanParseResult(
+                items = emptyList(),
+                detectedMonth = full.detectedMonth,
+                usedReferenceMonth = full.usedReferenceMonth,
+                ambiguousDateCount = maxOf(full.ambiguousDateCount, if (potentialRows > 1) 1 else 0)
+            )
+        }
+
+        val selected = best.single()
+        val header = lines
+            .take(selected.index)
+            .asReversed()
+            .firstOrNull { candidate ->
+                val tokens = tokenize(candidate)
+                tokens.count { dayRegex.matchEntire(it) != null } >= 3 ||
+                    tokens.count { parseFullDateToken(it, referenceDate.year) != null } >= 3
+            }
+
+        val monthLine = lines.firstOrNull { line ->
+            numericMonthYearRegex.containsMatchIn(line) ||
+                monthNames.keys.any { name ->
+                    Regex("\\b" + Regex.escape(name) + "\\b")
+                        .containsMatchIn(normalizeSearch(line))
+                }
+        }
+
+        val cleanedCurrent = removePersonTokens(selected.line, hintTokens)
+        val currentScheduleCount = tokenize(cleanedCurrent).count { normalizeScheduleToken(it) != null }
+        val expectedDayCount = header
+            ?.let(::tokenize)
+            ?.count { token ->
+                dayRegex.matchEntire(token) != null ||
+                    parseFullDateToken(token, referenceDate.year) != null
+            }
+            ?: 0
+        val continuation = if (currentScheduleCount == 0 && expectedDayCount >= 3) {
+            lines.getOrNull(selected.index + 1)
+                ?.takeIf { line ->
+                    val tokens = tokenize(line)
+                    val scheduleCount = tokens.count { normalizeScheduleToken(it) != null }
+                    tokens.size in expectedDayCount..(expectedDayCount + 1) &&
+                        scheduleCount >= expectedDayCount
+                }
+        } else {
+            null
+        }
+
+        val selectedRow = listOfNotNull(cleanedCurrent, continuation)
+            .joinToString(" ")
+            .trim()
+
+        val selectedText = listOfNotNull(monthLine, header, selectedRow.takeIf { it.isNotBlank() })
+            .distinct()
+            .joinToString("\n")
+
+        val selectedResult = parse(selectedText, referenceDate)
+        if (selectedResult.items.isNotEmpty()) return selectedResult
+
+        val potentialRows = countPotentialHorizontalScheduleRows(lines, referenceDate.year)
+        if (potentialRows <= 1) {
+            val full = parse(text, referenceDate)
+            if (full.items.isNotEmpty() && full.ambiguousDateCount == 0) return full
+        }
+        return selectedResult
+    }
+
     fun parse(text: String, referenceDate: LocalDate = LocalDate.now()): ScheduleScanParseResult {
         if (text.isBlank()) return ScheduleScanParseResult(emptyList(), null, false)
 
@@ -168,6 +293,37 @@ object RosterScanParser {
             ambiguousDateCount = ambiguousDates.size
         )
     }
+
+    private fun countPotentialHorizontalScheduleRows(
+        lines: List<String>,
+        fallbackYear: Int
+    ): Int {
+        val headerIndex = lines.indexOfFirst { line ->
+            val tokens = tokenize(line)
+            tokens.count { token ->
+                dayRegex.matchEntire(token) != null ||
+                    parseFullDateToken(token, fallbackYear) != null
+            } >= 3
+        }
+        if (headerIndex < 0) return 0
+
+        val expectedDayCount = tokenize(lines[headerIndex]).count { token ->
+            dayRegex.matchEntire(token) != null ||
+                parseFullDateToken(token, fallbackYear) != null
+        }
+        if (expectedDayCount < 3) return 0
+
+        return lines
+            .drop(headerIndex + 1)
+            .count { line ->
+                tokenize(line).count { normalizeScheduleToken(it) != null } >= expectedDayCount
+            }
+    }
+
+    private fun removePersonTokens(line: String, hintTokens: List<String>): String =
+        tokenize(line)
+            .filterNot { token -> normalizeSearch(token) in hintTokens }
+            .joinToString(" ")
 
     private fun tokenize(line: String): List<String> =
         line.split(Regex("\\s+"))

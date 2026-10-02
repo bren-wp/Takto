@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.14-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.15-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -89,8 +89,9 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 - mjesečni fond sati
 - redovni odrađeni sati
-- potvrđeni prekovremeni sati po pojedinom radnom danu prema mjesečnom fondu
-- dodatni dnevni obračun prekovremenog rada
+- potvrđeni prekovremeni sati po pojedinom radnom danu, odvojeni od redovnih sati
+- brzi unos potvrđenih prekovremenih: 0 / 30 / 60 / 120 min
+- zasebna kontrolna metrika rada iznad standardnog dana i mjesečnog fonda
 - početak i kraj radnog unosa uz unos poput **07:30**, **7.30** ili **730**
 - pauza u minutama s brzim izborom 0 / 15 / 30 / 45 / 60
 - stroga provjera da pauza ne može biti dulja od samog radnog raspona
@@ -148,15 +149,19 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 - prekovremeni sati
 - noćni, subotnji, nedjeljni i blagdanski sati
 - mjesečni i godišnji pregled
+- procjena isplate na Početnoj kada su podaci za obračun potpuni
 - raspodjela po vlastitim oznakama
 
 ### Skeniranje, uvoz, izvoz i sigurnosna kopija
 
 - skeniranje rasporeda kamerom uz ručno označavanje samo svojeg retka prije prepoznavanja
 - precizno pomicanje područja gore/dolje/lijevo/desno i rotacija u oba smjera
-- uvoz fotografije rasporeda iz galerije
+- izdvajanje samo imenovane osobe iz rasporeda s više zaposlenika
+- ručni odabir i obavezna potvrda mjeseca kada mjesec nije pronađen na slici
+- uvoz fotografije rasporeda iz galerije uz veću rezoluciju za sitniji tekst u tablicama
 - lokalno prepoznavanje datuma, oznaka i radnog vremena uz blokiranje dvosmislenih rezultata
-- automatski unos prepoznatog rasporeda u Kalendar
+- pregled svih pronađenih dana te uređivanje ili uklanjanje svakog unosa prije konačnog uvoza
+- automatski unos potvrđenog rasporeda u Kalendar
 - CSV izvoz
 - CSV uvoz sa zarezom ili točka-zarezom
 - hrvatski i ISO datumi
@@ -188,7 +193,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.14 koristi aktualni stabilni Android toolchain:
+Takto 0.1.15 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -222,10 +227,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.14-debug-apk** — instalabilni debug APK
-- **Takto-0.1.14-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.14-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.14-SHA256** — checksum datoteka
+- **Takto-0.1.15-debug-apk** — instalabilni debug APK
+- **Takto-0.1.15-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.15-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.15-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 

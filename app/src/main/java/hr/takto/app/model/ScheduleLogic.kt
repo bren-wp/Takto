@@ -151,6 +151,10 @@ object ScheduleLogic {
     fun overtimeMinutes(workMinutes: Int, standardDailyMinutes: Int): Int =
         (workMinutes - standardDailyMinutes.coerceAtLeast(0)).coerceAtLeast(0)
 
+    fun regularWorkMinutes(totalWorkMinutes: Int, confirmedOvertimeMinutes: Int): Int =
+        (totalWorkMinutes.coerceAtLeast(0) - confirmedOvertimeMinutes.coerceAtLeast(0))
+            .coerceAtLeast(0)
+
     fun automaticMonthlyTargetMinutes(month: YearMonth, standardDailyMinutes: Int): Int =
         monthWeekdays(month)
             .count { !CroatianHolidays.isHoliday(it) } * standardDailyMinutes.coerceAtLeast(0)

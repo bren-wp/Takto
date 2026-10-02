@@ -1336,7 +1336,7 @@ private fun StandardDayDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "Takto prekovremeno računa po danu kao vrijeme iznad ove vrijednosti. Ne mijenja spremljene unose.",
+                    "Ova vrijednost služi za kontrolni prikaz rada iznad standardnog dana. Ne dodaje prekovremene automatski u obračun plaće.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

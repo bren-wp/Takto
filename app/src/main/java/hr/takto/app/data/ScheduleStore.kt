@@ -21,6 +21,9 @@ import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
 import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
+import hr.takto.app.model.PayrollProfile
+import hr.takto.app.model.PayrollSystem
+import hr.takto.app.model.PensionMode
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.FileInputStream
@@ -55,6 +58,7 @@ class ScheduleStore(private val context: Context) {
     val workTimePresets = mutableStateMapOf<String, WorkTimePreset>()
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
+    val payrollProfile = mutableStateOf(loadPayrollProfile())
     val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
@@ -592,6 +596,21 @@ class ScheduleStore(private val context: Context) {
         }.toString()).apply()
     }
 
+    fun savePayrollProfile(profile: PayrollProfile) {
+        val sanitized = profile.copy(
+            coefficient = profile.coefficient.coerceIn(0.0, 20.0),
+            yearsOfService = profile.yearsOfService.coerceIn(0, 70),
+            manualBaseEur = profile.manualBaseEur.coerceIn(0.0, 20_000.0),
+            lowerTaxRatePercent = profile.lowerTaxRatePercent.coerceIn(0.0, 60.0),
+            higherTaxRatePercent = profile.higherTaxRatePercent.coerceIn(0.0, 60.0),
+            personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 50_000.0),
+            additionalGrossEur = profile.additionalGrossEur.coerceIn(0.0, 100_000.0),
+            nonTaxableEur = profile.nonTaxableEur.coerceIn(0.0, 100_000.0)
+        )
+        payrollProfile.value = sanitized
+        prefs.edit().putString(KEY_PAYROLL_PROFILE, payrollProfileToJson(sanitized).toString()).apply()
+    }
+
     fun exportArchiveJsonLines(): String =
         runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
             .getOrDefault("")
@@ -884,6 +903,7 @@ class ScheduleStore(private val context: Context) {
             put("organizationName", userProfile.value.organizationName)
             put("position", userProfile.value.position)
         })
+        put("payroll", payrollProfileToJson(payrollProfile.value))
         put("settings", JSONObject().apply {
             put("remindersEnabled", remindersEnabled.value)
             put("reminderHour", reminderHour.value)
@@ -936,6 +956,9 @@ class ScheduleStore(private val context: Context) {
                     position = profile.optString("position", userProfile.value.position)
                 )
             )
+        }
+        root.optJSONObject("payroll")?.let { payroll ->
+            savePayrollProfile(parsePayrollProfile(payroll))
         }
 
         root.optJSONObject("settings")?.let { settings ->
@@ -1609,6 +1632,39 @@ class ScheduleStore(private val context: Context) {
         }.getOrDefault(UserProfile())
     }
 
+    private fun loadPayrollProfile(): PayrollProfile {
+        val raw = prefs.getString(KEY_PAYROLL_PROFILE, null) ?: return PayrollProfile()
+        return runCatching { parsePayrollProfile(JSONObject(raw)) }.getOrDefault(PayrollProfile())
+    }
+
+    private fun parsePayrollProfile(obj: JSONObject): PayrollProfile = PayrollProfile(
+        enabled = obj.optBoolean("enabled", false),
+        system = PayrollSystem.fromPersisted(obj.optString("system", null)),
+        coefficient = obj.optDouble("coefficient", 0.0).coerceIn(0.0, 20.0),
+        yearsOfService = obj.optInt("yearsOfService", 0).coerceIn(0, 70),
+        manualBaseEur = obj.optDouble("manualBaseEur", 0.0).coerceIn(0.0, 20_000.0),
+        lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
+        higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
+        personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0).coerceIn(0.0, 50_000.0),
+        pensionMode = PensionMode.fromPersisted(obj.optString("pensionMode", null)),
+        additionalGrossEur = obj.optDouble("additionalGrossEur", 0.0).coerceIn(0.0, 100_000.0),
+        nonTaxableEur = obj.optDouble("nonTaxableEur", 0.0).coerceIn(0.0, 100_000.0)
+    )
+
+    private fun payrollProfileToJson(profile: PayrollProfile): JSONObject = JSONObject().apply {
+        put("enabled", profile.enabled)
+        put("system", profile.system.persistedValue)
+        put("coefficient", profile.coefficient)
+        put("yearsOfService", profile.yearsOfService)
+        put("manualBaseEur", profile.manualBaseEur)
+        put("lowerTaxRatePercent", profile.lowerTaxRatePercent)
+        put("higherTaxRatePercent", profile.higherTaxRatePercent)
+        put("personalAllowanceEur", profile.personalAllowanceEur)
+        put("pensionMode", profile.pensionMode.persistedValue)
+        put("additionalGrossEur", profile.additionalGrossEur)
+        put("nonTaxableEur", profile.nonTaxableEur)
+    }
+
     private fun entryToJsonObject(item: ShiftEntry): JSONObject = JSONObject().apply {
         put("date", item.date.toString())
         put("code", item.code)
@@ -1750,7 +1806,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
-        private const val DATA_SCHEMA_VERSION = 8
+        private const val DATA_SCHEMA_VERSION = 9
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 2
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L
@@ -1774,6 +1830,7 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
+        private const val KEY_PAYROLL_PROFILE = "payroll_profile_json"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
         private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"

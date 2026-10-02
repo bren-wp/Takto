@@ -127,8 +127,8 @@ fun CalendarScreen(
             .fillMaxSize()
             .padding(contentPadding)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TaktoLogo(iconSize = 34.dp)
@@ -177,7 +177,7 @@ fun CalendarScreen(
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(8.dp)) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = 4.dp, vertical = 3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
                     month = month.minusMonths(1)

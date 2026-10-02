@@ -98,6 +98,7 @@ fun ScheduleScannerDialog(
     var error by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf<ScheduleScanParseResult?>(null) }
     var overwrite by remember { mutableStateOf(true) }
+    var sourceBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var editingBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     fun processBitmap(bitmap: Bitmap) {
@@ -109,8 +110,12 @@ fun ScheduleScannerDialog(
                 scanning = false
                 val parsed = RosterScanParser.parse(recognized.text, LocalDate.now())
                 result = parsed
-                if (parsed.items.isEmpty()) {
-                    error = "Nisu pronađeni sigurni parovi datum + oznaka. Suzi označeno područje ili pokušaj s jasnijom slikom."
+                error = when {
+                    parsed.ambiguousDateCount > 0 ->
+                        "Pronađeno je više različitih rasporeda za iste datume. Ponovno označi područje tako da obuhvati zaglavlje s datumima i samo svoj red."
+                    parsed.items.isEmpty() ->
+                        "Nisu pronađeni sigurni datum i oznaka. Ponovno označi zaglavlje s datumima i svoj red ili pokušaj s jasnijom slikom."
+                    else -> null
                 }
             }
             .addOnFailureListener {
@@ -129,6 +134,7 @@ fun ScheduleScannerDialog(
             if (bitmap == null) {
                 error = "Slika se ne može otvoriti."
             } else {
+                sourceBitmap = bitmap
                 editingBitmap = bitmap
             }
         }
@@ -181,7 +187,7 @@ fun ScheduleScannerDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "Prvo odaberi ili fotografiraj raspored, zatim označi samo svoj redak ili osobu. OCR čita samo označeno područje.",
+                    "Prvo odaberi ili fotografiraj raspored. Zatim označi zaglavlje s datumima i samo svoj red, a druge osobe ostavi izvan okvira.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -246,6 +252,23 @@ fun ScheduleScannerDialog(
 
                 error?.let {
                     Text(it, color = MaterialTheme.colorScheme.error)
+                    if (sourceBitmap != null) {
+                        Button(
+                            onClick = {
+                                result = null
+                                error = null
+                                editingBitmap = sourceBitmap
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !scanning,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Text("Ponovno označi područje", color = TaktoBlue, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
 
                 result?.takeIf { it.items.isNotEmpty() }?.let { parsed ->
@@ -305,7 +328,9 @@ fun ScheduleScannerDialog(
                     ).show()
                     onDismiss()
                 },
-                enabled = items.isNotEmpty() && !scanning,
+                enabled = items.isNotEmpty() &&
+                    (result?.ambiguousDateCount ?: 0) == 0 &&
+                    !scanning,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) {
                 Text("Uvezi u kalendar")

@@ -78,7 +78,7 @@ fun RosterImageEditorDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Pomakni okvir preko svojeg imena ili retka. Povuci bijele ručke da izostaviš druge osobe.",
+                    "Pomakni okvir gore, dolje, lijevo ili desno. Obuhvati zaglavlje s datumima i samo svoj red, a druge osobe ostavi izvan okvira.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -196,7 +196,7 @@ fun RosterImageEditorDialog(
                 }
 
                 Text(
-                    "OCR će čitati samo označeno područje. Tako se sprječava prepoznavanje rasporeda drugih osoba.",
+                    "Skeniranje će obraditi samo označeno područje, zato prije nastavka provjeri da druge osobe nisu unutar okvira.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )

@@ -15,14 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -42,7 +38,6 @@ import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
-import hr.takto.app.ui.components.MonthCalendar
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
@@ -50,12 +45,9 @@ import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoAmber
 import hr.takto.app.ui.theme.TaktoBlue
 import hr.takto.app.ui.theme.TaktoGreen
-import hr.takto.app.ui.theme.TaktoPurple
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
-import java.time.temporal.TemporalAdjusters
 
 @Composable
 fun HomeScreen(
@@ -65,12 +57,6 @@ fun HomeScreen(
 ) {
     val colors = MaterialTheme.colorScheme
     val today = LocalDate.now()
-    val weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    val weekEnd = weekStart.plusDays(6)
-    val weekEntries = store.entriesBetween(weekStart, weekEnd)
-    val weekWorkMinutes = store.totalWorkMinutes(weekEntries)
-    val weekEmptyDays = (7 - weekEntries.map { it.date }.distinct().size).coerceAtLeast(0)
-
     val currentMonth = YearMonth.now()
     val monthEntries = store.entriesForMonth(currentMonth)
     val monthWorkMinutes = store.totalWorkMinutes(monthEntries)
@@ -79,8 +65,7 @@ fun HomeScreen(
     val monthOvertimeMinutes = (monthWorkMinutes - monthTargetMinutes).coerceAtLeast(0)
     val monthBalanceMinutes = monthWorkMinutes - monthTargetMinutes
     val todayEntry = store.entryFor(today)
-    val todayQuickTypes = store.suggestedShiftTypes(today).take(4)
-    val next = store.nextEntry(today.plusDays(1))
+    val todayQuickTypes = store.suggestedShiftTypes(today).take(2)
     val todayAccessibilityDescription = if (todayEntry == null) {
         "Danas, ${croatianDate(today)}, nema unosa"
     } else {
@@ -107,9 +92,8 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TaktoLogo(iconSize = 36.dp)
@@ -124,75 +108,12 @@ fun HomeScreen(
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
                 if (firstName.isBlank()) "$greeting 👋" else "$greeting, $firstName 👋",
-                style = MaterialTheme.typography.headlineLarge
+                style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                "Raspored, sati i važne obveze na jednom mjestu.",
+                "Danas na jednom mjestu. Kalendar, statistika i uzorci su u zasebnim karticama.",
                 color = colors.onSurfaceVariant
             )
-        }
-
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
-            if (maxWidth < 380.dp) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        SummaryCard(
-                            modifier = Modifier.weight(1f),
-                            value = weekEntries.size.toString(),
-                            label = "Upisani dani",
-                            color = TaktoBlue,
-                            icon = { Icon(Icons.Default.CalendarMonth, null, tint = TaktoBlue) }
-                        )
-                        SummaryCard(
-                            modifier = Modifier.weight(1f),
-                            value = ScheduleLogic.formatDuration(weekWorkMinutes),
-                            label = "Evidentirani sati",
-                            color = TaktoPurple,
-                            icon = { Icon(Icons.Default.AccessTime, null, tint = TaktoPurple) }
-                        )
-                    }
-                    SummaryCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = weekEmptyDays.toString(),
-                        label = "Dani bez unosa ovaj tjedan",
-                        color = TaktoGreen,
-                        icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
-                    )
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SummaryCard(
-                        modifier = Modifier.weight(1f),
-                        value = weekEntries.size.toString(),
-                        label = "Upisani dani",
-                        color = TaktoBlue,
-                        icon = { Icon(Icons.Default.CalendarMonth, null, tint = TaktoBlue) }
-                    )
-                    SummaryCard(
-                        modifier = Modifier.weight(1f),
-                        value = ScheduleLogic.formatDuration(weekWorkMinutes),
-                        label = "Evidentirani sati",
-                        color = TaktoPurple,
-                        icon = { Icon(Icons.Default.AccessTime, null, tint = TaktoPurple) }
-                    )
-                    SummaryCard(
-                        modifier = Modifier.weight(1f),
-                        value = weekEmptyDays.toString(),
-                        label = "Bez unosa",
-                        color = TaktoGreen,
-                        icon = { Icon(Icons.Default.EventBusy, null, tint = TaktoGreen) }
-                    )
-                }
-            }
         }
 
         GlassCard(
@@ -202,10 +123,10 @@ fun HomeScreen(
                 .semantics(mergeDescendants = true) {
                     contentDescription = todayAccessibilityDescription
                 },
-            padding = PaddingValues(16.dp),
+            padding = PaddingValues(14.dp),
             corner = 20.dp
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text(
@@ -432,150 +353,9 @@ fun HomeScreen(
             }
         }
 
-        if (next != null) {
-            GlassCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onOpenCalendar(next.date) },
-                padding = PaddingValues(14.dp),
-                corner = 18.dp
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier
-                            .size(54.dp)
-                            .background(next.color, RoundedCornerShape(15.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            next.code,
-                            color = Color.White,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = if (next.code.length <= 2) 20.sp else 14.sp,
-                            maxLines = 1
-                        )
-                    }
-                    Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                        Text(
-                            "Sljedeći unos",
-                            color = colors.onSurfaceVariant,
-                            fontSize = 12.sp
-                        )
-                        Text(next.label, fontWeight = FontWeight.Bold)
-                        Text(croatianDate(next.date), color = colors.onSurfaceVariant, fontSize = 12.sp)
-                        if (next.hasWorkTime) {
-                            Text(
-                                "${ScheduleLogic.formatClock(next.startMinute)} – ${ScheduleLogic.formatClock(next.endMinute)} · ${ScheduleLogic.formatDuration(next.workMinutes ?: 0)}",
-                                color = colors.onSurfaceVariant,
-                                fontSize = 11.sp,
-                                maxLines = 1
-                            )
-                        }
-                        if (next.note.isNotBlank()) {
-                            Text(next.note, color = colors.onSurfaceVariant, fontSize = 11.sp, maxLines = 1)
-                        }
-                    }
-                    Icon(Icons.Default.ArrowForward, contentDescription = null, tint = colors.primary)
-                }
-            }
-        }
-        else {
-            GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(14.dp), corner = 18.dp) {
-                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.EventBusy, contentDescription = null, tint = colors.onSurfaceVariant)
-                        Text(
-                            " Nema budućih unosa",
-                            fontWeight = FontWeight.Bold,
-                            color = colors.onSurfaceVariant
-                        )
-                    }
-                    Text(
-                        "Raspored nakon današnjeg dana još je prazan. Možeš odmah dodati prvi budući unos za ${croatianDate(today.plusDays(1))}.",
-                        color = colors.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                    Button(
-                        onClick = { onOpenCalendar(today.plusDays(1)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = colors.surfaceVariant),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Text("Planiraj sljedeći dan", color = colors.primary, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    "OVAJ TJEDAN",
-                    color = colors.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    fontSize = 12.sp
-                )
-                BoxWithConstraints(Modifier.fillMaxWidth()) {
-                    val compactWeek = maxWidth < 390.dp
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(if (compactWeek) 4.dp else 6.dp)
-                    ) {
-                        repeat(7) { index ->
-                            val date = weekStart.plusDays(index.toLong())
-                            val entry = store.entryFor(date)
-                            val cellColor = entry?.color ?: colors.surfaceVariant
-                            val dayDescription = if (entry == null) {
-                                "${croatianDate(date)}, nema unosa"
-                            } else {
-                                "${croatianDate(date)}, ${entry.code}, ${entry.label}"
-                            }
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(if (compactWeek) 78.dp else 86.dp)
-                                    .semantics { contentDescription = dayDescription }
-                                    .background(cellColor, RoundedCornerShape(13.dp))
-                                    .clickable { onOpenCalendar(date) }
-                                    .padding(if (compactWeek) 4.dp else 5.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        listOf("Pon", "Uto", "Sri", "Čet", "Pet", "Sub", "Ned")[index],
-                                        fontSize = if (compactWeek) 9.sp else 10.sp,
-                                        color = if (entry != null) Color.White else colors.onSurfaceVariant
-                                    )
-                                    Text(
-                                        date.dayOfMonth.toString(),
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (entry != null) Color.White else colors.onSurface
-                                    )
-                                    Text(
-                                        entry?.code.orEmpty(),
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = when {
-                                            (entry?.code?.length ?: 0) <= 2 && compactWeek -> 17.sp
-                                            (entry?.code?.length ?: 0) <= 2 -> 20.sp
-                                            compactWeek -> 10.sp
-                                            else -> 12.sp
-                                        },
-                                        color = Color.White,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         Button(
             onClick = { onOpenCalendar(today) },
-            modifier = Modifier.fillMaxWidth().height(58.dp),
+            modifier = Modifier.fillMaxWidth().height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = colors.primary),
             shape = RoundedCornerShape(18.dp)
         ) {
@@ -584,34 +364,8 @@ fun HomeScreen(
             Text("Otvori kalendar", fontWeight = FontWeight.Bold)
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        monthTitle(currentMonth).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.4.sp,
-                        fontSize = 12.sp
-                    )
-                    Spacer(Modifier.weight(1f))
-                    Text("Prazno = nema unosa", color = colors.onSurfaceVariant, fontSize = 11.sp)
-                }
-                if (monthEntries.isEmpty()) {
-                    Text(
-                        "Ovaj mjesec još nema unosa. Dodirni datum u kalendaru za prvi unos.",
-                        color = colors.onSurfaceVariant,
-                        fontSize = 12.sp
-                    )
-                }
-                MonthCalendar(
-                    month = currentMonth,
-                    entries = store.entries,
-                    compact = true,
-                    onDayClick = { onOpenCalendar(it) }
-                )
-            }
-        }
-        Spacer(Modifier.height(6.dp))
+
+        Spacer(Modifier.weight(1f))
     }
 }
 
@@ -639,14 +393,16 @@ private fun TodayQuickButton(
             fontSize = shiftCodeCompactFontSize(type.code),
             maxLines = 1
         )
-        Spacer(Modifier.size(7.dp))
-        Text(
-            text = type.name,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            fontSize = 11.sp
-        )
+        if (!type.name.equals(type.code, ignoreCase = true)) {
+            Spacer(Modifier.size(7.dp))
+            Text(
+                text = type.name,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                fontSize = 11.sp
+            )
+        }
     }
 }
 
@@ -670,25 +426,3 @@ private fun MiniMetric(
     }
 }
 
-@Composable
-private fun SummaryCard(
-    modifier: Modifier,
-    value: String,
-    label: String,
-    color: Color,
-    icon: @Composable () -> Unit
-) {
-    val colors = MaterialTheme.colorScheme
-    GlassCard(modifier = modifier, padding = PaddingValues(12.dp), corner = 18.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-            icon()
-            Text(value, fontSize = 23.sp, fontWeight = FontWeight.ExtraBold, color = color, maxLines = 1)
-            Text(
-                label,
-                style = MaterialTheme.typography.labelMedium,
-                color = colors.onSurfaceVariant,
-                maxLines = 2
-            )
-        }
-    }
-}

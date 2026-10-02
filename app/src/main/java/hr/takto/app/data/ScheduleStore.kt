@@ -15,6 +15,7 @@ import hr.takto.app.model.SavedPattern
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.SchedulePersistencePolicy
 import hr.takto.app.model.ScheduleRecovery
+import hr.takto.app.model.ScannedScheduleItem
 import hr.takto.app.model.ScheduleSuggestions
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
@@ -426,6 +427,82 @@ class ScheduleStore(private val context: Context) {
         return BulkEditResult(changed = changed, skipped = skipped, freeDays = 0)
     }
 
+    /**
+     * Skupno primjenjuje stavke dobivene lokalnim OCR-om. Eksplicitno prepoznato
+     * radno vrijeme ima prednost; inače se koristi spremljeno zadano vrijeme oznake.
+     */
+    fun importScannedSchedule(
+        items: Collection<ScannedScheduleItem>,
+        overwriteExisting: Boolean = true
+    ): ImportResult {
+        val normalized = items
+            .filter { it.code.isNotBlank() }
+            .distinctBy { it.date }
+            .sortedBy { it.date }
+            .take(MAX_BULK_DAYS)
+        if (normalized.isEmpty()) return ImportResult(0, 0, 0)
+
+        val before = captureUndo(normalized.map { it.date }, "Uvoz skeniranog rasporeda")
+        var imported = 0
+        var skipped = 0
+
+        normalized.forEach { scanned ->
+            val current = entries[scanned.date]
+            if (!overwriteExisting && current != null) {
+                skipped++
+                return@forEach
+            }
+
+            val type = shiftType(scanned.code)
+            var next = if (type != null) {
+                entryFromType(
+                    date = scanned.date,
+                    type = type,
+                    note = "",
+                    preserveExistingTime = false
+                )
+            } else {
+                val code = ScheduleLogic.normalizeReusableCode(scanned.code)
+                if (code.isBlank()) {
+                    skipped++
+                    return@forEach
+                }
+                ShiftEntry(
+                    date = scanned.date,
+                    code = code,
+                    label = code,
+                    colorArgb = importedCodeColor(code)
+                )
+            }
+
+            if (
+                !ScheduleLogic.isLeaveCode(next.code) &&
+                ScheduleLogic.isValidWorkTime(
+                    scanned.startMinute,
+                    scanned.endMinute,
+                    scanned.breakMinutes
+                )
+            ) {
+                next = next.copy(
+                    startMinute = scanned.startMinute,
+                    endMinute = scanned.endMinute,
+                    breakMinutes = scanned.breakMinutes
+                )
+            }
+
+            if (entries[scanned.date] != next) {
+                entries[scanned.date] = next
+                imported++
+            }
+        }
+
+        if (imported > 0) {
+            persistEntries()
+            commitUndo(before)
+        }
+        return ImportResult(imported, skipped, 0)
+    }
+
     /** Postavlja odabrane datume kao slobodne dane. */
     fun removeEntries(dates: Collection<LocalDate>): BulkEditResult {
         var changed = 0
@@ -595,8 +672,16 @@ class ScheduleStore(private val context: Context) {
         ScheduleLogic.weekendWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
     }
 
+    fun totalSaturdayWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        ScheduleLogic.saturdayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
+    }
+
     fun totalSundayWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
         ScheduleLogic.sundayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
+    }
+
+    fun totalHolidayWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        ScheduleLogic.holidayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
     }
 
     fun totalOvertimeMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->

@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.1.13
+
+Veliki UX/IA završni zahvat prema testiranju na stvarnim Android uređajima: uravnotežene teme, fokusirana Početna, veći Kalendar, čišći Uzorci i lokalni uvoz rasporeda sa slike.
+
+### Novo i poboljšano
+
+- tamna tema više nije gotovo crna; koristi svjetliju navy hijerarhiju s jasnijim površinama i obrubima
+- svijetla tema ima jači kontrast teksta, kartica i kontrola umjesto ispranog bijelog izgleda
+- nove instalacije prema zadanim postavkama prate sistemsku temu, uz ručni izbor tamne ili svijetle teme
+- uklonjeni su teški aurora i glass gradient slojevi iz glavnog UI-ja
+- Početna više nije dugi scroll svih modula nego fokusirani dashboard: Danas, mjesečni fond i ulaz u Kalendar
+- mini-kalendar, tjedni feed i ponovljeni sekundarni blokovi uklonjeni su s Početne jer imaju vlastite tabove
+- Kalendar dobiva više horizontalnog prostora, veće datume, veće oznake i čišće ćelije
+- Uzorci više ne crtaju nizove poput J J J J J kao odvojene pločice; prikazuju sažetak poput J × 5
+- onboarding koristi čistu temu bez zasebnog tamnog gradijenta
+- dodano skeniranje rasporeda kamerom i uvoz slike iz galerije
+- OCR prepoznaje datume, oznake, mjesec/godinu i zapisano radno vrijeme, a prije uvoza prikazuje pregled
+- OCR tekst se obrađuje lokalno; uvoz se potvrđuje prije izmjene Kalendara
+- ako na slici nema vremena, koristi se spremljeno zadano radno vrijeme prepoznate oznake kada postoji
+- prepoznati raspored upisuje se skupno uz Undo i opciju čuvanja postojećih unosa
+- automatski mjesečni fond sada izuzima hrvatske blagdane koji padaju ponedjeljak–petak
+- statistika zasebno prikazuje rad subotom, nedjeljom i na hrvatski blagdan
+- dodani testovi za hrvatske fiksne i pomične blagdane te OCR parser rasporeda
+- postojeći rasporedi, backup/import format i korisničke oznake ostaju kompatibilni
+- aplikacija i dalje ne deklarira INTERNET dopuštenje
+
+### Verzija
+
+- `versionName`: `0.1.13`
+- `versionCode`: `14`
+
+
 ## 0.1.12
 
 Responzivniji i pristupačniji Kalendar za male Android ekrane, veći sistemski font i vlastite oznake.

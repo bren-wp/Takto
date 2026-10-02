@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,7 +73,6 @@ import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.MonthCalendar
 import hr.takto.app.ui.components.ShiftChoice
-import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.theme.TaktoBlue
@@ -91,6 +91,7 @@ fun CalendarScreen(
     var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
     var customDialog by remember { mutableStateOf(false) }
     var searchDialog by remember { mutableStateOf(false) }
+    var scannerDialog by remember { mutableStateOf(false) }
     var jumpDialog by remember { mutableStateOf(false) }
     var customDate by remember { mutableStateOf<LocalDate?>(null) }
     var customPendingNote by remember { mutableStateOf("") }
@@ -127,12 +128,23 @@ fun CalendarScreen(
             .fillMaxSize()
             .padding(contentPadding)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            TaktoLogo(iconSize = 34.dp)
+            Text(
+                "Kalendar",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold
+            )
             Spacer(Modifier.weight(1f))
+            IconButton(onClick = { scannerDialog = true }) {
+                Icon(
+                    Icons.Default.AddPhotoAlternate,
+                    contentDescription = "Uvezi raspored sa slike",
+                    tint = TaktoBlue
+                )
+            }
             IconButton(onClick = { searchDialog = true }) {
                 Icon(Icons.Default.Search, contentDescription = "Pretraži raspored", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -162,22 +174,16 @@ fun CalendarScreen(
                     tint = if (multiSelect) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            TextButton(onClick = {
+            IconButton(onClick = {
                 val today = LocalDate.now()
                 month = YearMonth.from(today)
-                if (multiSelect) {
-                    selectedDates = setOf(today)
-                } else {
-                    selectedDate = today
-                }
+                if (multiSelect) selectedDates = setOf(today) else selectedDate = today
             }) {
-                Icon(Icons.Default.Today, contentDescription = null, tint = TaktoBlue)
-                Spacer(Modifier.size(4.dp))
-                Text("Danas", color = TaktoBlue)
+                Icon(Icons.Default.Today, contentDescription = "Idi na danas", tint = TaktoBlue)
             }
         }
 
-        GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(8.dp)) {
+        GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = 4.dp, vertical = 3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
                     month = month.minusMonths(1)
@@ -261,6 +267,13 @@ fun CalendarScreen(
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
+        )
+    }
+
+    if (scannerDialog) {
+        ScheduleScannerDialog(
+            store = store,
+            onDismiss = { scannerDialog = false }
         )
     }
 

@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
@@ -34,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -67,31 +67,12 @@ fun OnboardingScreen(onFinish: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        colors.surfaceContainerHigh,
-                        colors.background,
-                        colors.background
-                    )
-                )
-            )
+            .background(colors.background)
     ) {
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .size(280.dp)
-                .background(
-                    Brush.radialGradient(
-                        listOf(colors.primary.copy(alpha = 0.16f), Color.Transparent)
-                    ),
-                    CircleShape
-                )
-        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 48.dp),
+                .padding(horizontal = 22.dp, vertical = 34.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -174,9 +155,9 @@ private fun WelcomePanel() {
                 "Prati evidentirano vrijeme, redovne sate i prekovremene."
             )
             FeatureLine(
-                Icons.Default.Tune,
-                "Radi na tvoj način",
-                "Takto se prilagođava korisniku, a ne korisnik aplikaciji."
+                Icons.Default.AddPhotoAlternate,
+                "Uvoz rasporeda sa slike",
+                "Prepoznaj datume i oznake lokalno na uređaju."
             )
         }
     }

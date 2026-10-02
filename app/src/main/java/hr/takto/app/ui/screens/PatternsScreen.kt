@@ -61,6 +61,23 @@ private data class PatternDef(
     val id: String? = null
 )
 
+private fun patternSummary(codes: List<String?>): String {
+    if (codes.isEmpty()) return "Prazan uzorak"
+    val segments = mutableListOf<Pair<String?, Int>>()
+    codes.forEach { code ->
+        val last = segments.lastOrNull()
+        if (last != null && last.first == code) {
+            segments[segments.lastIndex] = code to (last.second + 1)
+        } else {
+            segments += code to 1
+        }
+    }
+    return segments.joinToString(" · ") { (code, count) ->
+        val label = code ?: "bez unosa"
+        if (count > 1) "$label × $count" else label
+    }
+}
+
 @Composable
 fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
@@ -149,21 +166,18 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         }
                     }
                     Text(pattern.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                        pattern.codes.take(8).forEach { code ->
-                            val preset = code?.let(store::shiftType)
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                                    .background(preset?.color ?: MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(code.orEmpty(), fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                            }
-                        }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            patternSummary(pattern.codes),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
-                    if (pattern.codes.size > 8) Text("+ još ${pattern.codes.size - 8} koraka", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Button(
                         onClick = { selectedPattern = pattern },
                         modifier = Modifier.fillMaxWidth(),
@@ -297,21 +311,18 @@ private fun CustomPatternDialog(
                 }
                 if (codes.isNotEmpty()) {
                     Text("Pregled", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        codes.take(8).forEach { code ->
-                            val type = code?.let(store::shiftType)
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(42.dp)
-                                    .background(type?.color ?: MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(9.dp)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(code.orEmpty(), fontWeight = FontWeight.ExtraBold, maxLines = 1)
-                            }
-                        }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(11.dp))
+                            .padding(horizontal = 10.dp, vertical = 9.dp)
+                    ) {
+                        Text(
+                            patternSummary(codes),
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
-                    if (codes.size > 8) Text("+ još ${codes.size - 8} koraka", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text(
                     "Možeš koristiti bilo koju spremljenu oznaku ili novu kratku oznaku. Znak '-' ostavlja dan bez unosa.",

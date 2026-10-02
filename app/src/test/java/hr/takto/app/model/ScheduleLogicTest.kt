@@ -100,10 +100,12 @@ class ScheduleLogicTest {
     fun weekendAndSundayMinutes_followCalendarAcrossMidnight() {
         val saturday = LocalDate.of(2026, 10, 3)
         assertEquals(8 * 60, ScheduleLogic.weekendWorkMinutes(saturday, 20 * 60, 4 * 60, 0))
+        assertEquals(4 * 60, ScheduleLogic.saturdayWorkMinutes(saturday, 20 * 60, 4 * 60, 0))
         assertEquals(4 * 60, ScheduleLogic.sundayWorkMinutes(saturday, 20 * 60, 4 * 60, 0))
 
         val friday = LocalDate.of(2026, 10, 2)
         assertEquals(4 * 60, ScheduleLogic.weekendWorkMinutes(friday, 20 * 60, 4 * 60, 0))
+        assertEquals(4 * 60, ScheduleLogic.saturdayWorkMinutes(friday, 20 * 60, 4 * 60, 0))
         assertEquals(0, ScheduleLogic.sundayWorkMinutes(friday, 20 * 60, 4 * 60, 0))
     }
 

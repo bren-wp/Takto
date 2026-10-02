@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -25,13 +24,8 @@ fun GlassCard(
     val colors = MaterialTheme.colorScheme
     Box(
         modifier = modifier
-            .background(
-                Brush.verticalGradient(
-                    listOf(colors.surfaceContainerHigh.copy(alpha = 0.94f), colors.surface.copy(alpha = 0.98f))
-                ),
-                shape
-            )
-            .border(1.dp, colors.outlineVariant.copy(alpha = 0.90f), shape)
+            .background(colors.surface, shape)
+            .border(1.dp, colors.outlineVariant, shape)
             .padding(padding),
         content = content
     )

@@ -260,7 +260,8 @@ class ScheduleStore(private val context: Context) {
             note = note.trim().take(MAX_NOTE_LENGTH),
             startMinute = current?.startMinute,
             endMinute = current?.endMinute,
-            breakMinutes = current?.breakMinutes ?: 0
+            breakMinutes = current?.breakMinutes ?: 0,
+            overtimeMinutes = current?.overtimeMinutes ?: 0
         )
         if (current == next) return
         entries[date] = next
@@ -436,7 +437,8 @@ class ScheduleStore(private val context: Context) {
                 note = normalizedNote,
                 startMinute = current?.startMinute,
                 endMinute = current?.endMinute,
-                breakMinutes = current?.breakMinutes ?: 0
+                breakMinutes = current?.breakMinutes ?: 0,
+                overtimeMinutes = current?.overtimeMinutes ?: 0
             )
             if (entries[date] != next) {
                 entries[date] = next

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.15
+
+Daljnje poboljšanje skeniranja stvarnih rasporeda s više zaposlenika, sigurniji odabir mjeseca, ručna korekcija pronađenih unosa i brži unos potvrđenih prekovremenih sati.
+
+### Novo i poboljšano
+
+- skener može koristiti ime i prezime iz radnog profila te izdvojiti samo red odabrane osobe iz rasporeda s više zaposlenika
+- podudaranje imena tolerira hrvatske dijakritičke znakove
+- ako osoba nije sigurno pronađena, Takto ne uvozi raspored druge osobe
+- podržan je slučaj kada je ime u jednom retku, a oznake smjena u sljedećem retku
+- ako mjesec nije prepoznat na slici, uvoz je blokiran dok korisnik ručno ne odabere i potvrdi točan mjesec
+- pronađeni unos sada se može urediti prije uvoza: oznaka smjene, početak, kraj, pauza ili slobodan dan
+- pogrešno pronađen unos može se ukloniti iz pregleda bez ponovnog skeniranja cijele slike
+- galerijske slike zadržavaju više detalja za sitni tekst u velikim tablicama
+- dijalog za korekciju skena prilagođen je malim ekranima i većem fontu
+- dodani su brzi izbori za potvrđene prekovremene sate: 0, 30, 60 i 120 minuta
+- tekst za standardni radni dan jasno razlikuje kontrolnu metriku od prekovremenih koji stvarno ulaze u obračun plaće
+- dodani regresijski testovi za izdvajanje jedne osobe, hrvatske dijakritike, odvojeni red imena i oznaka te ručno zadani mjesec
+
+### Verzija
+
+- `versionName`: `0.1.15`
+- `versionCode`: `16`
+
+
 ## 0.1.14
 
 Pouzdanije skeniranje rasporeda, potvrđeni prekovremeni sati i precizniji obračun plaće za državne i javne službe, uz završno poliranje mobilnog UX-a.

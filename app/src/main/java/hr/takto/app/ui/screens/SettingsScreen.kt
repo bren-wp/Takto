@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Euro
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
@@ -86,6 +87,7 @@ import java.nio.charset.StandardCharsets
 fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     var profileDialog by remember { mutableStateOf(false) }
+    var salaryDialog by remember { mutableStateOf(false) }
     var appearanceDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
@@ -303,6 +305,43 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     }
                 }
                 Icon(Icons.Default.Edit, contentDescription = "Uredi radni profil", tint = TaktoBlue)
+            }
+        }
+
+        SettingsSectionTitle("Plaća i obračun")
+
+        GlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { salaryDialog = true }
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(52.dp)
+                        .background(TaktoBlue.copy(alpha = 0.14f), RoundedCornerShape(15.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Euro, contentDescription = null, tint = TaktoBlue)
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text("Obračun plaće", fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        if (store.salaryProfile.value.isConfigured) {
+                            "Koeficijent ${store.salaryProfile.value.coefficient} · staž ${store.salaryProfile.value.completedYearsOfService} g."
+                        } else {
+                            "Postavi koeficijent, staž i porezne podatke za mjesečni obračun."
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+                Icon(Icons.Default.Edit, contentDescription = "Uredi podatke za obračun plaće", tint = TaktoBlue)
             }
         }
 
@@ -634,6 +673,18 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             onSelect = { mode ->
                 store.setThemeMode(mode)
                 appearanceDialog = false
+            }
+        )
+    }
+
+    if (salaryDialog) {
+        SalarySettingsDialog(
+            current = store.salaryProfile.value,
+            onDismiss = { salaryDialog = false },
+            onSave = { profile ->
+                store.saveSalaryProfile(profile)
+                salaryDialog = false
+                Toast.makeText(context, "Podaci za obračun plaće su spremljeni.", Toast.LENGTH_SHORT).show()
             }
         )
     }

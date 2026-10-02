@@ -97,7 +97,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val standardDaily = store.standardDailyMinutes.value
     val monthlyTarget = store.monthlyTargetMinutes(month)
     val monthlyBalance = totalWorkMinutes - monthlyTarget
-    val regularMonthlyMinutes = minOf(totalWorkMinutes, monthlyTarget).coerceAtLeast(0)
+    val regularMonthlyMinutes = (totalWorkMinutes - confirmedOvertimeMinutes).coerceAtLeast(0)
     val fundOvertimeMinutes = (totalWorkMinutes - monthlyTarget).coerceAtLeast(0)
     val nightWorkMinutes = store.totalNightWorkMinutes(timedEntries)
     val saturdayWorkMinutes = store.totalSaturdayWorkMinutes(timedEntries)

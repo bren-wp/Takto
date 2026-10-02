@@ -24,4 +24,10 @@ class StatsChartLogicTest {
         assertFalse(StatsChartLogic.hasPositiveData(listOf(0, 0, 0)))
         assertTrue(StatsChartLogic.hasPositiveData(listOf(0, 2, 0)))
     }
+    @Test
+    fun compactDurationKeepsSubHourMinutes() {
+        assertEquals("30m", StatsChartLogic.compactDurationLabel(30))
+        assertEquals("1h", StatsChartLogic.compactDurationLabel(60))
+        assertEquals("1h30", StatsChartLogic.compactDurationLabel(90))
+    }
 }

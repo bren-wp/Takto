@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -51,7 +52,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -693,15 +700,29 @@ private fun ShiftTypeGrid(
     types: List<ShiftType>,
     onSelect: (ShiftType) -> Unit
 ) {
-    types.chunked(2).forEach { pair ->
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            pair.forEach { type ->
-                ShiftChoice(type, Modifier.weight(1f)) { onSelect(type) }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val columns = CalendarUiLogic.shiftChoiceColumns(
+            availableWidthDp = maxWidth.value,
+            fontScale = LocalDensity.current.fontScale
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (columns == 1) {
+                types.forEach { type ->
+                    ShiftChoice(type, Modifier.fillMaxWidth()) { onSelect(type) }
+                }
+            } else {
+                types.chunked(2).forEach { pair ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        pair.forEach { type ->
+                            ShiftChoice(type, Modifier.weight(1f)) { onSelect(type) }
+                        }
+                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                    }
+                }
             }
-            if (pair.size == 1) Spacer(Modifier.weight(1f))
         }
     }
 }
@@ -929,23 +950,56 @@ private fun WorkTimeDialog(
                         )
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = startText,
-                        onValueChange = { startText = it.take(5) },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Početak") },
-                        placeholder = { Text("07:00") },
-                        singleLine = true
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val stackTimeFields = CalendarUiLogic.shouldStack(
+                        availableWidthDp = maxWidth.value,
+                        fontScale = LocalDensity.current.fontScale
                     )
-                    OutlinedTextField(
-                        value = endText,
-                        onValueChange = { endText = it.take(5) },
-                        modifier = Modifier.weight(1f),
-                        label = { Text("Kraj") },
-                        placeholder = { Text("15:00") },
-                        singleLine = true
-                    )
+                    if (stackTimeFields) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = startText,
+                                onValueChange = { startText = it.take(5) },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Početak") },
+                                placeholder = { Text("07:00") },
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = endText,
+                                onValueChange = { endText = it.take(5) },
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Kraj") },
+                                placeholder = { Text("15:00") },
+                                singleLine = true
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = startText,
+                                onValueChange = { startText = it.take(5) },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("Početak") },
+                                placeholder = { Text("07:00") },
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = endText,
+                                onValueChange = { endText = it.take(5) },
+                                modifier = Modifier.weight(1f),
+                                label = { Text("Kraj") },
+                                placeholder = { Text("15:00") },
+                                singleLine = true
+                            )
+                        }
+                    }
                 }
                 OutlinedTextField(
                     value = breakText,
@@ -1041,7 +1095,14 @@ private fun CustomEntryDialog(
     var text by remember(initialText) { mutableStateOf(initialText) }
     var note by remember(initialNote) { mutableStateOf(initialNote) }
     var colorArgb by remember(initialColorArgb) { mutableStateOf(initialColorArgb) }
-    val palette = listOf(0xFF22B8CFL, 0xFF2488FFL, 0xFF8B46F6L, 0xFF13D7A0L, 0xFFFFB21DL, 0xFFFF4B55L)
+    val palette = listOf(
+        "cijan" to 0xFF22B8CFL,
+        "plava" to 0xFF2488FFL,
+        "ljubičasta" to 0xFF8B46F6L,
+        "zelena" to 0xFF13D7A0L,
+        "jantarna" to 0xFFFFB21DL,
+        "crvena" to 0xFFFF4B55L
+    )
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Vlastiti unos") },
@@ -1064,22 +1125,34 @@ private fun CustomEntryDialog(
                     maxLines = 3
                 )
                 Text("Boja", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    palette.forEach { option ->
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .height(36.dp)
-                                .background(Color(option), RoundedCornerShape(10.dp))
-                                .border(
-                                    if (colorArgb == option) 2.dp else 0.dp,
-                                    if (colorArgb == option) Color.White else Color.Transparent,
-                                    RoundedCornerShape(10.dp)
-                                )
-                                .clickable { colorArgb = option },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (colorArgb == option) Text("✓", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                palette.chunked(3).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        row.forEach { (name, option) ->
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .semantics {
+                                        role = Role.RadioButton
+                                        selected = colorArgb == option
+                                        contentDescription = "Boja $name"
+                                    }
+                                    .background(Color(option), RoundedCornerShape(10.dp))
+                                    .border(
+                                        if (colorArgb == option) 2.dp else 0.dp,
+                                        if (colorArgb == option) Color.White else Color.Transparent,
+                                        RoundedCornerShape(10.dp)
+                                    )
+                                    .clickable { colorArgb = option },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (colorArgb == option) {
+                                    Text("✓", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                                }
+                            }
                         }
                     }
                 }

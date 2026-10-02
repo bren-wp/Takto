@@ -19,7 +19,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Crop
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material.icons.filled.RotateLeft
 import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -166,33 +172,79 @@ fun RosterImageEditorDialog(
                     }
                 }
 
+                Text(
+                    "Pomakni označeno područje",
+                    fontWeight = FontWeight.SemiBold
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    EditorActionButton(
+                        modifier = Modifier.weight(1f),
+                        label = "Lijevo",
+                        icon = Icons.Default.ArrowBack,
+                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, -0.04f, 0f) }
+                    )
+                    EditorActionButton(
+                        modifier = Modifier.weight(1f),
+                        label = "Gore",
+                        icon = Icons.Default.ArrowUpward,
+                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, 0f, -0.04f) }
+                    )
+                    EditorActionButton(
+                        modifier = Modifier.weight(1f),
+                        label = "Dolje",
+                        icon = Icons.Default.ArrowDownward,
+                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, 0f, 0.04f) }
+                    )
+                    EditorActionButton(
+                        modifier = Modifier.weight(1f),
+                        label = "Desno",
+                        icon = Icons.Default.ArrowForward,
+                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, 0.04f, 0f) }
+                    )
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
+                    EditorActionButton(
+                        modifier = Modifier.weight(1f),
+                        label = "−90°",
+                        icon = Icons.Default.RotateLeft,
                         onClick = {
-                            bitmap = rotateBitmap(bitmap)
+                            bitmap = rotateBitmap(bitmap, -90f)
                             crop = CropSelection()
-                        },
+                        }
+                    )
+                    EditorActionButton(
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(Icons.Default.RotateRight, contentDescription = null, tint = TaktoBlue)
-                        Spacer(Modifier.size(6.dp))
-                        Text("Okreni 90°", color = TaktoBlue, fontWeight = FontWeight.Bold)
-                    }
-                    Button(
-                        onClick = { crop = CropSelection(0f, 0f, 1f, 1f) },
+                        label = "+90°",
+                        icon = Icons.Default.RotateRight,
+                        onClick = {
+                            bitmap = rotateBitmap(bitmap, 90f)
+                            crop = CropSelection()
+                        }
+                    )
+                    EditorActionButton(
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(Icons.Default.Crop, contentDescription = null, tint = TaktoBlue)
-                        Spacer(Modifier.size(6.dp))
-                        Text("Cijela slika", color = TaktoBlue, fontWeight = FontWeight.Bold)
-                    }
+                        label = "Jedan red",
+                        icon = Icons.Default.RestartAlt,
+                        onClick = { crop = CropSelection() }
+                    )
+                }
+
+                Button(
+                    onClick = { crop = CropSelection(0f, 0f, 1f, 1f) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Crop, contentDescription = null, tint = TaktoBlue)
+                    Spacer(Modifier.size(6.dp))
+                    Text("Označi cijelu sliku", color = TaktoBlue, fontWeight = FontWeight.Bold)
                 }
 
                 Text(
@@ -288,7 +340,33 @@ private fun cropBitmap(bitmap: Bitmap, crop: CropSelection): Bitmap {
     return Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
 }
 
-private fun rotateBitmap(bitmap: Bitmap): Bitmap {
-    val matrix = Matrix().apply { postRotate(90f) }
+@Composable
+private fun EditorActionButton(
+    modifier: Modifier = Modifier,
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(12.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 9.dp)
+    ) {
+        Icon(icon, contentDescription = null, tint = TaktoBlue, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.size(3.dp))
+        Text(
+            label,
+            color = TaktoBlue,
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1
+        )
+    }
+}
+
+private fun rotateBitmap(bitmap: Bitmap, degrees: Float): Bitmap {
+    val matrix = Matrix().apply { postRotate(degrees) }
     return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
 }

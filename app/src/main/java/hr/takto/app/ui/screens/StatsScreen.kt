@@ -86,6 +86,10 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val total = monthEntries.size
     val freeDays = (month.lengthOfMonth() - monthEntries.map { it.date.dayOfMonth }.distinct().size).coerceAtLeast(0)
     val timedEntries = monthEntries.filter { it.workMinutes != null }
+    val untimedWorkEntryCount = monthEntries.count {
+        !ScheduleLogic.isLeaveCode(it.code) && !it.hasWorkTime
+    }
+    val sickLeaveDayCount = monthEntries.count { it.code.equals("BO", ignoreCase = true) }
     val totalWorkMinutes = store.totalWorkMinutes(timedEntries)
     val overtimeMinutes = store.totalOvertimeMinutes(timedEntries)
     val confirmedOvertimeMinutes = store.totalConfirmedOvertimeMinutes(timedEntries)
@@ -110,7 +114,9 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             nightMinutes = nightWorkMinutes,
             saturdayMinutes = saturdayWorkMinutes,
             sundayMinutes = sundayWorkMinutes,
-            holidayMinutes = holidayWorkMinutes
+            holidayMinutes = holidayWorkMinutes,
+            untimedWorkEntryCount = untimedWorkEntryCount,
+            sickLeaveDayCount = sickLeaveDayCount
         )
     )
 

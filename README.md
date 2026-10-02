@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.9-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.10-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -133,7 +133,9 @@ Početna stranica koristi ime iz profila za osobni pozdrav, dok backup čuva i p
 
 - ukupni broj unosa i dana bez unosa
 - dinamička raspodjela svih ugrađenih i vlastitih oznaka
-- adaptivni grafovi koji prate stvarni način korištenja
+- adaptivni grafovi koji prate stvarni način korištenja bez lažnih stupaca za nulte vrijednosti
+- jasna prazna stanja kada godina nema unosa ili evidentiranih radnih sati
+- pristupačni godišnji stupci s TalkBack opisima
 - radni sati
 - fond i razlika
 - prekovremeni sati
@@ -174,7 +176,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.9 koristi aktualni stabilni Android toolchain:
+Takto 0.1.10 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -208,10 +210,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.9-debug-apk** — instalabilni debug APK
-- **Takto-0.1.9-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.9-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.9-SHA256** — checksum datoteka
+- **Takto-0.1.10-debug-apk** — instalabilni debug APK
+- **Takto-0.1.10-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.10-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.10-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
@@ -241,9 +243,9 @@ Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName
 
 ---
 
-## Verzija 0.1.9
+## Verzija 0.1.10
 
-Verzija **0.1.9** poboljšava unos radnog vremena. Kalendar, bulk uređivanje i zadana vremena po oznakama sada koriste istu centralnu validaciju. Kompaktni unosi poput **730** pretvaraju se u 07:30, rad preko ponoći jasno je označen, a nevaljana pauza više se ne prilagođava potajno nego se korisniku prikazuje konkretna poruka prije spremanja.
+Verzija **0.1.10** poboljšava Statistiku. Mjeseci s nulom više ne izgledaju kao da imaju podatak, godine bez podataka imaju jasno prazno stanje, a trajanja kraća od sata više se ne prikazuju kao 0h. Ključne metričke kartice i donut graf prilagođavaju se uskim ekranima, dok godišnji stupci imaju preciznije TalkBack opise.
 
 ## Licenca
 

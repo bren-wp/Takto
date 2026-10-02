@@ -11,8 +11,8 @@ import hr.takto.app.model.AppThemeMode
 private val TaktoDarkScheme = darkColorScheme(
     primary = TaktoBlue,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFF173B69),
-    onPrimaryContainer = Color(0xFFEAF3FF),
+    primaryContainer = Color(0xFF2B5684),
+    onPrimaryContainer = Color(0xFFF2F7FF),
     secondary = TaktoPurple,
     onSecondary = Color.White,
     tertiary = TaktoGreen,
@@ -26,15 +26,15 @@ private val TaktoDarkScheme = darkColorScheme(
     surfaceContainer = TaktoSurface2,
     surfaceContainerHigh = TaktoSurface3,
     outline = TaktoOutline,
-    outlineVariant = TaktoOutline.copy(alpha = 0.72f),
+    outlineVariant = TaktoOutline.copy(alpha = 0.78f),
     error = TaktoRed,
     onError = Color.White
 )
 
 private val TaktoLightScheme = lightColorScheme(
-    primary = Color(0xFF176FD6),
+    primary = Color(0xFF176FCE),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFDCEBFF),
+    primaryContainer = Color(0xFFD8E8FB),
     onPrimaryContainer = Color(0xFF0B315B),
     secondary = Color(0xFF7047E8),
     onSecondary = Color.White,
@@ -53,7 +53,7 @@ private val TaktoLightScheme = lightColorScheme(
     surfaceContainer = TaktoLightSurface2,
     surfaceContainerHigh = TaktoLightSurface3,
     outline = TaktoLightOutline,
-    outlineVariant = Color(0xFFD8E1EE),
+    outlineVariant = Color(0xFFC9D3DD),
     error = Color(0xFFC6283E),
     onError = Color.White
 )

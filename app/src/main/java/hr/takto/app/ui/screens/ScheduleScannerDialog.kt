@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -116,12 +114,6 @@ fun ScheduleScannerDialog(
         onDispose { recognizer.close() }
     }
 
-    val picker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        uri?.let(::processImageUri)
-    }
-
     val cameraScanner = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { activityResult ->
@@ -147,7 +139,7 @@ fun ScheduleScannerDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "OCR se obrađuje na uređaju. Slika se ne šalje u Takto cloud niti aplikacija traži INTERNET dopuštenje.",
+                    "Prije prepoznavanja izreži samo svoj red ili svoju osobu. U skeneru možeš pomicati rubove, povećati prikaz i zakrenuti sliku. OCR se zatim obrađuje lokalno na uređaju.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -156,7 +148,7 @@ fun ScheduleScannerDialog(
                     onClick = {
                         val host = activity
                         if (host == null) {
-                            error = "Kamera za skeniranje nije dostupna u ovom prozoru."
+                            error = "Skener nije dostupan u ovom prozoru."
                         } else {
                             documentScanner.getStartScanIntent(host)
                                 .addOnSuccessListener { intentSender ->
@@ -165,7 +157,7 @@ fun ScheduleScannerDialog(
                                     )
                                 }
                                 .addOnFailureListener {
-                                    error = "Skeniranje kamerom trenutačno nije dostupno. Možeš uvesti sliku iz galerije."
+                                    error = "Skener trenutačno nije dostupan na ovom uređaju."
                                 }
                         }
                     },
@@ -176,28 +168,14 @@ fun ScheduleScannerDialog(
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(Modifier.size(8.dp))
-                    Text("Skeniraj raspored kamerom", fontWeight = FontWeight.Bold)
+                    Text("Skeniraj ili odaberi sliku", fontWeight = FontWeight.Bold)
                 }
 
-                Button(
-                    onClick = {
-                        picker.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !scanning,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = TaktoBlue)
-                    Spacer(Modifier.size(8.dp))
-                    Text(
-                        if (result == null) "Uvezi sliku iz galerije" else "Odaberi drugu sliku",
-                        color = TaktoBlue,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    "U istom skeneru možeš fotografirati raspored ili otvoriti sliku iz galerije. Prije potvrde obavezno izreži samo svoj dio rasporeda.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp
+                )
 
                 if (scanning) {
                     Row(

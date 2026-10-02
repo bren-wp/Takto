@@ -66,11 +66,16 @@ object RosterScanParser {
                 Regex("\\b" + Regex.escape(name) + "\\b").containsMatchIn(normalizedAll)
             }?.value
         val monthYear = numericMonthYear?.groupValues?.getOrNull(2)?.toIntOrNull() ?: detectedYear
+        val fullDates = fullDateRegex.findAll(text)
+            .mapNotNull { match ->
+                parseFullDateToken(match.value, detectedYear ?: referenceDate.year)
+            }
+            .toList()
 
         val detectedMonth = if (detectedMonthNumber != null && monthYear != null) {
             runCatching { YearMonth.of(monthYear, detectedMonthNumber) }.getOrNull()
         } else {
-            null
+            fullDates.map(YearMonth::from).distinct().singleOrNull()
         }
         val fallbackMonth = detectedMonth ?: YearMonth.from(referenceDate)
         val usedReferenceMonth = detectedMonth == null

@@ -57,6 +57,16 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun conflictingCodesForSameDateAreMarkedAmbiguous() {
+        val result = RosterScanParser.parse(
+            "LISTOPAD 2026\n2 D\n2 N\n3 D",
+            LocalDate.of(2026, 10, 1)
+        )
+        assertEquals(1, result.ambiguousDateCount)
+        assertEquals(listOf(3), result.items.map { it.date.dayOfMonth })
+    }
+
+    @Test
     fun reportsReferenceMonthFallback() {
         val result = RosterScanParser.parse("2 D\n3 N", LocalDate.of(2026, 11, 10))
         assertTrue(result.usedReferenceMonth)

@@ -73,6 +73,62 @@ class PayrollCalculatorTest {
     }
 
     @Test
+    fun pensionContributionBaseReductionIsAppliedBelow1300Gross() {
+        val result = PayrollCalculator.calculate(
+            PayrollProfile(
+                enabled = true,
+                system = PayrollSystem.OTHER,
+                manualBaseEur = 1_000.0,
+                coefficient = 1.0,
+                lowerTaxRatePercent = 20.0,
+                higherTaxRatePercent = 30.0,
+                personalAllowanceEur = 600.0
+            ),
+            PayrollInputs(
+                month = YearMonth.of(2026, 10),
+                monthlyFundMinutes = 176 * 60,
+                workedMinutes = 176 * 60,
+                overtimeMinutes = 0,
+                nightMinutes = 0,
+                saturdayMinutes = 0,
+                sundayMinutes = 0,
+                holidayMinutes = 0
+            )
+        )
+        assertTrue(result.complete)
+        assertEquals(150.0, result.pensionBaseReductionEur, 0.01)
+        assertEquals(850.0, result.pensionContributionBaseEur, 0.01)
+        assertEquals(127.5, result.pensionPillarIEur, 0.01)
+        assertEquals(42.5, result.pensionPillarIIEur, 0.01)
+    }
+
+    @Test
+    fun invalidTaxRateOrderIsRejected() {
+        val result = PayrollCalculator.calculate(
+            PayrollProfile(
+                enabled = true,
+                system = PayrollSystem.OTHER,
+                manualBaseEur = 2_000.0,
+                coefficient = 1.0,
+                lowerTaxRatePercent = 30.0,
+                higherTaxRatePercent = 20.0
+            ),
+            PayrollInputs(
+                month = YearMonth.of(2026, 10),
+                monthlyFundMinutes = 176 * 60,
+                workedMinutes = 176 * 60,
+                overtimeMinutes = 0,
+                nightMinutes = 0,
+                saturdayMinutes = 0,
+                sundayMinutes = 0,
+                holidayMinutes = 0
+            )
+        )
+        assertFalse(result.complete)
+        assertTrue("porezne stope nisu valjane" in result.missing)
+    }
+
+    @Test
     fun otherSystemRequiresManualBase() {
         val result = PayrollCalculator.calculate(
             PayrollProfile(

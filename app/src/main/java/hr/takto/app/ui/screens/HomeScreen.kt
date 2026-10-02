@@ -79,6 +79,19 @@ fun HomeScreen(
     val todayEntry = store.entryFor(today)
     val todayQuickTypes = store.suggestedShiftTypes(today).take(4)
     val next = store.nextEntry(today.plusDays(1))
+    val todayAccessibilityDescription = if (todayEntry == null) {
+        "Danas, ${croatianDate(today)}, nema unosa"
+    } else {
+        HomeTodayUiLogic.todayEntryDescription(
+            dateText = croatianDate(today),
+            code = todayEntry.code,
+            label = todayEntry.label,
+            startText = todayEntry.startMinute?.let(ScheduleLogic::formatClock),
+            endText = todayEntry.endMinute?.let(ScheduleLogic::formatClock),
+            durationText = todayEntry.workMinutes?.let(ScheduleLogic::formatDuration),
+            note = todayEntry.note
+        )
+    }
 
     val greeting = when (LocalTime.now().hour) {
         in 5..10 -> "Dobro jutro"
@@ -183,7 +196,10 @@ fun HomeScreen(
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(enabled = todayEntry != null) { onOpenCalendar(today) },
+                .clickable(enabled = todayEntry != null) { onOpenCalendar(today) }
+                .semantics(mergeDescendants = true) {
+                    contentDescription = todayAccessibilityDescription
+                },
             padding = PaddingValues(16.dp),
             corner = 20.dp
         ) {
@@ -291,20 +307,48 @@ fun HomeScreen(
                         color = colors.onSurfaceVariant
                     )
                     if (todayQuickTypes.isNotEmpty()) {
-                        todayQuickTypes.chunked(2).forEach { pair ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                pair.forEach { type ->
-                                    TodayQuickButton(
-                                        type = type,
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        store.setEntry(today, type)
+                        BoxWithConstraints(Modifier.fillMaxWidth()) {
+                            val fontScale = LocalDensity.current.fontScale
+                            val columns = HomeTodayUiLogic.quickActionColumns(
+                                availableWidthDp = maxWidth.value,
+                                fontScale = fontScale
+                            )
+                            if (columns == 1) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    todayQuickTypes.forEach { type ->
+                                        TodayQuickButton(
+                                            type = type,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            store.setEntry(today, type)
+                                        }
                                     }
                                 }
-                                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            } else {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    todayQuickTypes.chunked(2).forEach { pair ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            pair.forEach { type ->
+                                                TodayQuickButton(
+                                                    type = type,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    store.setEntry(today, type)
+                                                }
+                                            }
+                                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -577,7 +621,11 @@ private fun TodayQuickButton(
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.height(52.dp),
+        modifier = modifier
+            .semantics {
+                contentDescription = HomeTodayUiLogic.quickActionDescription(type.code, type.name)
+            }
+            .heightIn(min = 52.dp),
         colors = ButtonDefaults.buttonColors(containerColor = type.color),
         shape = RoundedCornerShape(14.dp),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)

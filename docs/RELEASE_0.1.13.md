@@ -27,8 +27,8 @@ Takto 0.1.13 je veliki završni UX i funkcionalni zahvat napravljen nakon pregle
 
 - automatski mjesečni fond izuzima hrvatske blagdane koji padaju na radni dan
 - podržani su fiksni i pomični hrvatski blagdani
-- Statistika posebno računa rad na blagdan
-- ostaju noćni rad, vikend, nedjelja, redovni sati, prekovremeni po fondu i dnevni prekovremeni
+- Statistika zasebno računa subotu, nedjelju i rad na blagdan
+- ostaju noćni rad, subota, nedjelja, redovni sati, prekovremeni po fondu i dnevni prekovremeni
 
 ## Stabilnost
 

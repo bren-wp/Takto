@@ -129,10 +129,20 @@ object RosterScanParser {
 
         val cleanedCurrent = removePersonTokens(selected.line, hintTokens)
         val currentScheduleCount = tokenize(cleanedCurrent).count { normalizeScheduleToken(it) != null }
-        val continuation = if (currentScheduleCount < 3) {
+        val expectedDayCount = header
+            ?.let(::tokenize)
+            ?.count { token ->
+                dayRegex.matchEntire(token) != null ||
+                    parseFullDateToken(token, referenceDate.year) != null
+            }
+            ?: 0
+        val continuation = if (currentScheduleCount == 0 && expectedDayCount >= 3) {
             lines.getOrNull(selected.index + 1)
                 ?.takeIf { line ->
-                    tokenize(line).count { normalizeScheduleToken(it) != null } >= 2
+                    val tokens = tokenize(line)
+                    val scheduleCount = tokens.count { normalizeScheduleToken(it) != null }
+                    tokens.size in expectedDayCount..(expectedDayCount + 1) &&
+                        scheduleCount >= expectedDayCount
                 }
         } else {
             null

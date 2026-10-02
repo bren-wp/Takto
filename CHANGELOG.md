@@ -21,7 +21,7 @@ Veliki UX/IA završni zahvat prema testiranju na stvarnim Android uređajima: ur
 - ako na slici nema vremena, koristi se spremljeno zadano radno vrijeme prepoznate oznake kada postoji
 - prepoznati raspored upisuje se skupno uz Undo i opciju čuvanja postojećih unosa
 - automatski mjesečni fond sada izuzima hrvatske blagdane koji padaju ponedjeljak–petak
-- statistika računa i posebno prikazuje rad na hrvatski blagdan
+- statistika zasebno prikazuje rad subotom, nedjeljom i na hrvatski blagdan
 - dodani testovi za hrvatske fiksne i pomične blagdane te OCR parser rasporeda
 - postojeći rasporedi, backup/import format i korisničke oznake ostaju kompatibilni
 - aplikacija i dalje ne deklarira INTERNET dopuštenje

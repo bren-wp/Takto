@@ -20,6 +20,8 @@ data class ScheduleScanParseResult(
 )
 
 object RosterScanParser {
+    const val FREE_DAY_CODE = "__TAKTO_FREE_DAY__"
+
     private val yearRegex = Regex("\\b(20\\d{2})\\b")
     private val numericMonthYearRegex = Regex("\\b(0?[1-9]|1[0-2])[./-](20\\d{2})\\b")
     private val fullDateRegex = Regex("\\b(\\d{1,2})[./-](\\d{1,2})(?:[./-](\\d{2,4}))?\\.?\\b")
@@ -144,11 +146,17 @@ object RosterScanParser {
             val days = tokenize(daysLine)
                 .mapNotNull { dayRegex.matchEntire(it)?.groupValues?.getOrNull(1)?.toIntOrNull() }
                 .filter { it in 1..fallbackMonth.lengthOfMonth() }
-            val codes = tokenize(codesLine).mapNotNull(::normalizeCode)
-            if (days.size >= 3 && codes.size >= days.size) {
+            val scheduleTokens = tokenize(codesLine)
+                .mapNotNull(::normalizeScheduleToken)
+            val alignedCodes = if (scheduleTokens.size >= days.size) {
+                scheduleTokens.takeLast(days.size)
+            } else {
+                emptyList()
+            }
+            if (days.size >= 3 && alignedCodes.size == days.size) {
                 days.forEachIndexed { index, day ->
                     val date = fallbackMonth.atDay(day)
-                    addCandidate(ScannedScheduleItem(date = date, code = codes[index]))
+                    addCandidate(ScannedScheduleItem(date = date, code = alignedCodes[index]))
                 }
             }
         }
@@ -169,9 +177,23 @@ object RosterScanParser {
     private fun nextCode(tokens: List<String>, startIndex: Int): String? {
         val end = minOf(tokens.size, startIndex + 4)
         for (index in startIndex until end) {
-            normalizeCode(tokens[index])?.let { return it }
+            normalizeScheduleToken(tokens[index])?.let { return it }
         }
         return null
+    }
+
+    private fun normalizeScheduleToken(value: String): String? {
+        val raw = value.trim().trim(',', ';', ':', '(', ')', '[', ']')
+        val normalized = normalizeSearch(raw)
+            .trim('.', ',', ';', ':', '/', '\\', '(', ')', '[', ']')
+            .uppercase(Locale.ROOT)
+        if (
+            raw == "-" || raw == "–" || raw == "—" ||
+            normalized in setOf("SLOBODNO", "SLOB", "OFF")
+        ) {
+            return FREE_DAY_CODE
+        }
+        return normalizeCode(value)
     }
 
     private fun normalizeCode(value: String): String? {

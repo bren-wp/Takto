@@ -1,7 +1,12 @@
 package hr.takto.app.ui.screens
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -19,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -41,6 +47,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.android.gms.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.android.gms.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -59,22 +68,25 @@ fun ScheduleScannerDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val activity = remember(context) { context.findComponentActivity() }
     val recognizer = remember {
         TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    }
+    val documentScanner = remember {
+        val options = GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setPageLimit(1)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+            .build()
+        GmsDocumentScanning.getClient(options)
     }
     var scanning by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf<ScheduleScanParseResult?>(null) }
     var overwrite by remember { mutableStateOf(true) }
 
-    DisposableEffect(recognizer) {
-        onDispose { recognizer.close() }
-    }
-
-    val picker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+    fun processImageUri(uri: android.net.Uri) {
         scanning = true
         error = null
         result = null
@@ -82,7 +94,7 @@ fun ScheduleScannerDialog(
         val input = runCatching { InputImage.fromFilePath(context, uri) }.getOrElse {
             scanning = false
             error = "Slika se ne može otvoriti."
-            return@rememberLauncherForActivityResult
+            return
         }
 
         recognizer.process(input)
@@ -98,6 +110,29 @@ fun ScheduleScannerDialog(
                 scanning = false
                 error = "Prepoznavanje teksta nije uspjelo. Pokušaj s oštrijom i ravnije fotografiranom slikom."
             }
+    }
+
+    DisposableEffect(recognizer) {
+        onDispose { recognizer.close() }
+    }
+
+    val picker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let(::processImageUri)
+    }
+
+    val cameraScanner = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { activityResult ->
+        if (activityResult.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(activityResult.data)
+        val imageUri = scanResult?.pages?.firstOrNull()?.imageUri
+        if (imageUri != null) {
+            processImageUri(imageUri)
+        } else {
+            error = "Skeniranje je završeno bez čitljive slike."
+        }
     }
 
     AlertDialog(
@@ -119,6 +154,33 @@ fun ScheduleScannerDialog(
 
                 Button(
                     onClick = {
+                        val host = activity
+                        if (host == null) {
+                            error = "Kamera za skeniranje nije dostupna u ovom prozoru."
+                        } else {
+                            documentScanner.getStartScanIntent(host)
+                                .addOnSuccessListener { intentSender ->
+                                    cameraScanner.launch(
+                                        IntentSenderRequest.Builder(intentSender).build()
+                                    )
+                                }
+                                .addOnFailureListener {
+                                    error = "Skeniranje kamerom trenutačno nije dostupno. Možeš uvesti sliku iz galerije."
+                                }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !scanning,
+                    colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null)
+                    Spacer(Modifier.size(8.dp))
+                    Text("Skeniraj raspored kamerom", fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = {
                         picker.launch(
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
@@ -131,7 +193,7 @@ fun ScheduleScannerDialog(
                     Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = TaktoBlue)
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        if (result == null) "Odaberi sliku iz galerije" else "Odaberi drugu sliku",
+                        if (result == null) "Uvezi sliku iz galerije" else "Odaberi drugu sliku",
                         color = TaktoBlue,
                         fontWeight = FontWeight.Bold
                     )
@@ -277,4 +339,11 @@ private fun ScanPreviewRow(
             )
         }
     }
+}
+
+
+private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findComponentActivity()
+    else -> null
 }

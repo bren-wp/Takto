@@ -2,6 +2,7 @@ package hr.takto.app.model
 
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.DayOfWeek
 import java.time.YearMonth
 
 enum class SalaryRegime(val persistedValue: String) {
@@ -81,6 +82,58 @@ data class SalaryResult(
 )
 
 object SalaryCalculator {
+    fun workSummary(
+        entries: Collection<ShiftEntry>,
+        profile: SalaryProfile,
+        fundMinutes: Int
+    ): SalaryWorkSummary {
+        val timed = entries.filter { it.hasWorkTime }
+        val worked = timed.sumOf { it.workMinutes ?: 0 }
+        val dailyExcess = timed.sumOf { entry ->
+            val minutes = entry.workMinutes ?: 0
+            when (profile.workOrganization) {
+                WorkOrganization.STANDARD_WEEK -> {
+                    if (entry.date.dayOfWeek == DayOfWeek.SATURDAY || entry.date.dayOfWeek == DayOfWeek.SUNDAY) {
+                        minutes
+                    } else {
+                        (minutes - 8 * 60).coerceAtLeast(0)
+                    }
+                }
+                WorkOrganization.SHIFTS, WorkOrganization.TURNUS ->
+                    (minutes - profile.regularShiftMinutes).coerceAtLeast(0)
+                WorkOrganization.OTHER -> 0
+            }
+        }
+        val monthlyExcess = (worked - fundMinutes).coerceAtLeast(0)
+        val overtime = when (profile.workOrganization) {
+            WorkOrganization.STANDARD_WEEK -> dailyExcess
+            WorkOrganization.SHIFTS, WorkOrganization.TURNUS -> maxOf(dailyExcess, monthlyExcess)
+            WorkOrganization.OTHER -> monthlyExcess
+        }
+
+        return SalaryWorkSummary(
+            fundMinutes = fundMinutes,
+            workedMinutes = worked,
+            overtimeMinutes = overtime,
+            nightMinutes = timed.sumOf {
+                ScheduleLogic.nightWorkMinutes(it.startMinute, it.endMinute, it.breakMinutes)
+            },
+            secondShiftMinutes = timed.sumOf {
+                ScheduleLogic.secondShiftWorkMinutes(it.startMinute, it.endMinute, it.breakMinutes)
+            },
+            saturdayMinutes = timed.sumOf {
+                ScheduleLogic.saturdayWorkMinutes(it.date, it.startMinute, it.endMinute, it.breakMinutes)
+            },
+            sundayMinutes = timed.sumOf {
+                ScheduleLogic.sundayWorkMinutes(it.date, it.startMinute, it.endMinute, it.breakMinutes)
+            },
+            holidayMinutes = timed.sumOf {
+                ScheduleLogic.holidayWorkMinutes(it.date, it.startMinute, it.endMinute, it.breakMinutes)
+            },
+            turnusMinutes = if (profile.workOrganization == WorkOrganization.TURNUS) worked else 0
+        )
+    }
+
     private val ZERO = BigDecimal.ZERO.setScale(2)
     private val ONE_HUNDRED = BigDecimal("100")
     private val PENSION_RATE = BigDecimal("0.20")

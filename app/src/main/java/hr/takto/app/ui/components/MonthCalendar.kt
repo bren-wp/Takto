@@ -112,7 +112,7 @@ private fun CalendarDayCell(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(if (compact) 0.93f else 0.79f)
+            .aspectRatio(if (compact) 0.93f else 0.70f)
             .background(bg, shape)
             .border(borderWidth, borderColor, shape)
             .semantics {

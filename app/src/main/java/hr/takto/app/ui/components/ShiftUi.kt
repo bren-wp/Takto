@@ -46,13 +46,15 @@ fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> U
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
             )
-            Text(
-                text = type.name,
-                color = Color.White.copy(alpha = 0.95f),
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 2,
-                textAlign = TextAlign.Center
-            )
+            if (!type.name.equals(type.code, ignoreCase = true)) {
+                Text(
+                    text = type.name,
+                    color = Color.White.copy(alpha = 0.95f),
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 2,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
     }
 }

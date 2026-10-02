@@ -35,6 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
+import hr.takto.app.model.PayrollCalculator
+import hr.takto.app.model.PayrollInputs
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
@@ -48,6 +50,7 @@ import hr.takto.app.ui.theme.TaktoGreen
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -59,11 +62,31 @@ fun HomeScreen(
     val today = LocalDate.now()
     val currentMonth = YearMonth.now()
     val monthEntries = store.entriesForMonth(currentMonth)
-    val monthWorkMinutes = store.totalWorkMinutes(monthEntries)
+    val timedEntries = monthEntries.filter { it.workMinutes != null }
+    val monthWorkMinutes = store.totalWorkMinutes(timedEntries)
     val monthTargetMinutes = store.monthlyTargetMinutes(currentMonth)
     val monthRegularMinutes = minOf(monthWorkMinutes, monthTargetMinutes).coerceAtLeast(0)
-    val monthOvertimeMinutes = (monthWorkMinutes - monthTargetMinutes).coerceAtLeast(0)
     val monthBalanceMinutes = monthWorkMinutes - monthTargetMinutes
+    val confirmedOvertimeMinutes = store.totalConfirmedOvertimeMinutes(timedEntries)
+    val untimedWorkEntryCount = monthEntries.count {
+        !ScheduleLogic.isLeaveCode(it.code) && !it.hasWorkTime
+    }
+    val sickLeaveDayCount = monthEntries.count { it.code.equals("BO", ignoreCase = true) }
+    val payroll = PayrollCalculator.calculate(
+        profile = store.payrollProfile.value,
+        input = PayrollInputs(
+            month = currentMonth,
+            monthlyFundMinutes = monthTargetMinutes,
+            workedMinutes = monthWorkMinutes,
+            overtimeMinutes = confirmedOvertimeMinutes,
+            nightMinutes = store.totalNightWorkMinutes(timedEntries),
+            saturdayMinutes = store.totalSaturdayWorkMinutes(timedEntries),
+            sundayMinutes = store.totalSundayWorkMinutes(timedEntries),
+            holidayMinutes = store.totalHolidayWorkMinutes(timedEntries),
+            untimedWorkEntryCount = untimedWorkEntryCount,
+            sickLeaveDayCount = sickLeaveDayCount
+        )
+    )
     val todayEntry = store.entryFor(today)
     val todayQuickTypes = store.suggestedShiftTypes(today).take(2)
     val todayAccessibilityDescription = if (todayEntry == null) {
@@ -330,7 +353,7 @@ fun HomeScreen(
                     MiniMetric(
                         modifier = Modifier.weight(1f),
                         label = "Prekovremeni",
-                        value = ScheduleLogic.formatDuration(monthOvertimeMinutes),
+                        value = ScheduleLogic.formatDuration(confirmedOvertimeMinutes),
                         accent = TaktoAmber
                     )
                     MiniMetric(
@@ -350,6 +373,23 @@ fun HomeScreen(
                     color = colors.onSurfaceVariant,
                     fontSize = 11.sp
                 )
+
+                if (store.payrollProfile.value.enabled) {
+                    if (payroll.complete) {
+                        Text(
+                            "Procjena isplate: ${homeEuro(payroll.payoutEur)} · neto ${homeEuro(payroll.netSalaryEur)} · bruto ${homeEuro(payroll.grossEur)}",
+                            color = colors.primary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    } else {
+                        Text(
+                            "Plaća još nije potpuno izračunata: ${payroll.missing.take(2).joinToString(", ")}.",
+                            color = colors.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
             }
         }
 
@@ -405,6 +445,9 @@ private fun TodayQuickButton(
         }
     }
 }
+
+private fun homeEuro(value: Double): String =
+    String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable
 private fun MiniMetric(

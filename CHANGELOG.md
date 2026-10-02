@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.12
+
+Responzivniji i pristupačniji Kalendar za male Android ekrane, veći sistemski font i vlastite oznake.
+
+### Poboljšano
+
+- mreža oznaka u donjem listu Kalendara prelazi iz dva stupca u jedan kada je širina manja od 360 dp
+- isti jednokolonski raspored aktivira se pri font scaleu 1.30 ili većem
+- kartice oznaka više nemaju fiksnu visinu od 84 dp nego minimalnu visinu, pa se mogu proširiti bez rezanja duljih naziva
+- polja početka i kraja radnog vremena prelaze u vertikalni raspored na uskim ekranima i pri velikom fontu
+- paleta vlastitog unosa više nije šest skučenih kontrola u jednom retku nego dva retka po tri boje
+- svaka kontrola boje ima 48 dp visinu, TalkBack naziv boje, radio-button ulogu i stanje odabira
+- responzivna pravila izdvojena su u testabilni `CalendarUiLogic`
+- dodani unit testovi za graničnu širinu, veliki font i sigurne fallback vrijednosti
+- storage, backup/import format i postojeći korisnički podaci ostaju nepromijenjeni
+- aplikacija i dalje nema INTERNET dopuštenje
+- CI artefakti nose točnu oznaku verzije 0.1.12
+
+### Verzija
+
+- `versionName`: `0.1.12`
+- `versionCode`: `13`
+
+
 ## 0.1.11
 
 Pristupačnija i stabilnija kartica **Danas** na malim Android ekranima i pri većem fontu.

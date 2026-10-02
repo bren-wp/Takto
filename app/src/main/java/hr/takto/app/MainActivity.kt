@@ -31,7 +31,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -46,11 +45,7 @@ import hr.takto.app.ui.screens.OnboardingScreen
 import hr.takto.app.ui.screens.PatternsScreen
 import hr.takto.app.ui.screens.SettingsScreen
 import hr.takto.app.ui.screens.StatsScreen
-import hr.takto.app.ui.theme.TaktoBackground
 import hr.takto.app.ui.theme.TaktoBlue
-import hr.takto.app.ui.theme.TaktoGreen
-import hr.takto.app.ui.theme.TaktoPurple
-import hr.takto.app.ui.theme.TaktoSurface
 import hr.takto.app.ui.theme.TaktoTheme
 import java.time.LocalDate
 
@@ -161,15 +156,7 @@ private fun TaktoRoot(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f),
-                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -202,7 +189,7 @@ private fun TaktoRoot(
 
 @Composable
 private fun TaktoBottomBar(current: MainSection, onSelect: (MainSection) -> Unit) {
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)) {
+    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
         MainSection.entries.forEach { section ->
             NavigationBarItem(
                 selected = current == section,

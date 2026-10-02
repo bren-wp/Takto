@@ -140,6 +140,18 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun croppedSingleRowStillWorksWhenNameIsOutsideCrop() {
+        val result = RosterScanParser.parseForPerson(
+            "LISTOPAD 2026\n1 2 3 4\nJ J N GO",
+            "Ana Horvat",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(4, result.items.size)
+        assertEquals(listOf("J", "J", "N", "GO"), result.items.map { it.code })
+    }
+
+    @Test
     fun missingPersonDoesNotImportAnotherEmployeesRoster() {
         val result = RosterScanParser.parseForPerson(
             "LISTOPAD 2026\n1 2 3\nANA HORVAT J J N\nMARKO MARIC N N D",

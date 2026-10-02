@@ -160,6 +160,7 @@ class RosterScanParserTest {
         )
 
         assertTrue(result.items.isEmpty())
+        assertTrue(result.ambiguousDateCount > 0)
     }
 
     @Test

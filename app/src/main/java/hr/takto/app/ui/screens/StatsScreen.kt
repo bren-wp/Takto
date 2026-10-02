@@ -93,7 +93,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val regularMonthlyMinutes = minOf(totalWorkMinutes, monthlyTarget).coerceAtLeast(0)
     val fundOvertimeMinutes = (totalWorkMinutes - monthlyTarget).coerceAtLeast(0)
     val nightWorkMinutes = store.totalNightWorkMinutes(timedEntries)
-    val weekendWorkMinutes = store.totalWeekendWorkMinutes(timedEntries)
+    val saturdayWorkMinutes = store.totalSaturdayWorkMinutes(timedEntries)
     val sundayWorkMinutes = store.totalSundayWorkMinutes(timedEntries)
     val holidayWorkMinutes = store.totalHolidayWorkMinutes(timedEntries)
     val targetIsManual = store.hasMonthlyTargetOverride(month)
@@ -199,7 +199,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Posebni radni sati", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    "Noćni, vikend, nedjeljni i rad na blagdan računaju se prema stvarnom datumu, uključujući smjene koje prelaze ponoć. Pauza se proporcionalno raspoređuje.",
+                    "Noćni rad, subota, nedjelja i rad na blagdan računaju se prema stvarnom datumu, uključujući smjene koje prelaze ponoć. Pauza se proporcionalno raspoređuje.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
@@ -207,7 +207,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     if (maxWidth < 390.dp) {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             TimeMetric(Modifier.fillMaxWidth(), "Noćni rad", nightWorkMinutes, Color(0xFF8B46F6))
-                            TimeMetric(Modifier.fillMaxWidth(), "Vikend", weekendWorkMinutes, Color(0xFF13D7A0))
+                            TimeMetric(Modifier.fillMaxWidth(), "Subota", saturdayWorkMinutes, Color(0xFF13D7A0))
                             TimeMetric(Modifier.fillMaxWidth(), "Nedjelja", sundayWorkMinutes, Color(0xFFFFB21D))
                             TimeMetric(Modifier.fillMaxWidth(), "Blagdan", holidayWorkMinutes, Color(0xFFEF476F))
                         }
@@ -215,7 +215,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 TimeMetric(Modifier.weight(1f), "Noćni rad", nightWorkMinutes, Color(0xFF8B46F6))
-                                TimeMetric(Modifier.weight(1f), "Vikend", weekendWorkMinutes, Color(0xFF13D7A0))
+                                TimeMetric(Modifier.weight(1f), "Subota", saturdayWorkMinutes, Color(0xFF13D7A0))
                             }
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                 TimeMetric(Modifier.weight(1f), "Nedjelja", sundayWorkMinutes, Color(0xFFFFB21D))

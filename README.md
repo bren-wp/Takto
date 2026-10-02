@@ -30,7 +30,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 
 **Vidi cijeli mjesec odjednom.** Kalendar koristi velike obojene ćelije i dosljedan sustav boja: plava, ljubičasta, zelena, jantarna i crvena. Prazna ćelija znači da za taj dan nema spremljenog unosa.
 
-**Prati stvarno radno vrijeme.** Za svaki radni unos moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, redovne i prekovremene sate, noćni rad, vikend, nedjelju i rad na hrvatske blagdane.
+**Prati stvarno radno vrijeme.** Za svaki radni unos moguće je spremiti početak, kraj i pauzu. Takto računa trajanje, redovne i prekovremene sate, noćni rad, subotu, nedjelju i rad na hrvatske blagdane.
 
 **Prilagodi aplikaciju svom poslu.** Oznake, boje, vlastite brze oznake, predlošci radnog vremena i ponavljajući uzorci mogu se prilagoditi korisniku.
 
@@ -100,7 +100,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - ručni fond po mjesecu
 - prekovremeni sati
 - noćni rad 22:00–06:00
-- vikend, nedjelja i rad na blagdan
+- subota, nedjelja i rad na blagdan
 - prosječno trajanje evidentiranog radnog unosa
 
 ### Uzorci
@@ -146,7 +146,7 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 - radni sati
 - fond i razlika
 - prekovremeni sati
-- noćni, vikend, nedjeljni i blagdanski sati
+- noćni, subotnji, nedjeljni i blagdanski sati
 - mjesečni i godišnji pregled
 - raspodjela po vlastitim oznakama
 

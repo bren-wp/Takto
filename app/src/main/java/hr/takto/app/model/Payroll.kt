@@ -116,7 +116,14 @@ object PayrollCalculator {
 
         if (!profile.enabled) missing += "obračun plaće nije uključen"
         if (base == null || base <= 0.0) missing += "osnovica"
-        if (profile.coefficient <= 0.0) missing += "koeficijent"
+        if (profile.coefficient <= 0.0) {
+            missing += "koeficijent"
+        } else if (
+            profile.system in setOf(PayrollSystem.STATE_SERVICE, PayrollSystem.PUBLIC_SERVICE) &&
+            profile.coefficient !in 1.0..8.0
+        ) {
+            missing += "koeficijent izvan dopuštenog raspona 1,00–8,00"
+        }
         if (input.monthlyFundMinutes <= 0) missing += "mjesečni fond sati"
         if (profile.lowerTaxRatePercent <= 0.0) missing += "niža stopa poreza"
         if (profile.higherTaxRatePercent <= 0.0) missing += "viša stopa poreza"

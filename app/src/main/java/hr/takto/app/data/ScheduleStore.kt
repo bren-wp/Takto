@@ -599,6 +599,10 @@ class ScheduleStore(private val context: Context) {
         ScheduleLogic.sundayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
     }
 
+    fun totalHolidayWorkMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
+        ScheduleLogic.holidayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
+    }
+
     fun totalOvertimeMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
         val minutes = entry.workMinutes ?: return@sumOf 0
         ScheduleLogic.overtimeMinutes(minutes, standardDailyMinutes.value)

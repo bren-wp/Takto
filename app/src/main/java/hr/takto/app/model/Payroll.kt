@@ -65,6 +65,8 @@ data class PayrollBreakdown(
     val holidaySupplementEur: Double,
     val additionalGrossEur: Double,
     val grossEur: Double,
+    val pensionBaseReductionEur: Double,
+    val pensionContributionBaseEur: Double,
     val pensionPillarIEur: Double,
     val pensionPillarIIEur: Double,
     val taxableIncomeEur: Double,
@@ -83,6 +85,9 @@ object CroatianPayrollRules2026 {
     const val SENIORITY_PERCENT_PER_YEAR = 0.5
     const val BASIC_PERSONAL_ALLOWANCE_EUR = 600.0
     const val MONTHLY_LOWER_TAX_BAND_EUR = 5_000.0
+    const val FULL_PENSION_BASE_REDUCTION_LIMIT_EUR = 700.0
+    const val PENSION_BASE_REDUCTION_END_EUR = 1_300.0
+    const val FULL_PENSION_BASE_REDUCTION_EUR = 300.0
 
     const val SOURCE_LABEL =
         "Zakon o plaćama NN 155/2023 · TKU javne službe NN 29/2024 · KU državna služba NN 29/2024 · osnovica 2026 NN 11/2026"
@@ -115,6 +120,11 @@ object PayrollCalculator {
         if (input.monthlyFundMinutes <= 0) missing += "mjesečni fond sati"
         if (profile.lowerTaxRatePercent <= 0.0) missing += "niža stopa poreza"
         if (profile.higherTaxRatePercent <= 0.0) missing += "viša stopa poreza"
+        if (
+            profile.lowerTaxRatePercent > 0.0 &&
+            profile.higherTaxRatePercent > 0.0 &&
+            profile.higherTaxRatePercent < profile.lowerTaxRatePercent
+        ) missing += "porezne stope nisu valjane"
         if (profile.personalAllowanceEur < 0.0) missing += "osobni odbitak"
 
         if (missing.isNotEmpty()) {
@@ -132,6 +142,8 @@ object PayrollCalculator {
                 holidaySupplementEur = 0.0,
                 additionalGrossEur = money(profile.additionalGrossEur),
                 grossEur = 0.0,
+                pensionBaseReductionEur = 0.0,
+                pensionContributionBaseEur = 0.0,
                 pensionPillarIEur = 0.0,
                 pensionPillarIIEur = 0.0,
                 taxableIncomeEur = 0.0,
@@ -167,8 +179,18 @@ object PayrollCalculator {
 
         val gross = baseWithSeniority + overtimePay + night + saturday + sunday + holiday + extraGross
 
-        val pillarI = if (profile.pensionMode == PensionMode.PILLAR_I_AND_II) gross * bd(0.15) else gross * bd(0.20)
-        val pillarII = if (profile.pensionMode == PensionMode.PILLAR_I_AND_II) gross * bd(0.05) else BigDecimal.ZERO
+        val pensionBaseReduction = pensionBaseReduction(gross)
+        val pensionContributionBase = (gross - pensionBaseReduction).max(BigDecimal.ZERO)
+        val pillarI = if (profile.pensionMode == PensionMode.PILLAR_I_AND_II) {
+            pensionContributionBase * bd(0.15)
+        } else {
+            pensionContributionBase * bd(0.20)
+        }
+        val pillarII = if (profile.pensionMode == PensionMode.PILLAR_I_AND_II) {
+            pensionContributionBase * bd(0.05)
+        } else {
+            BigDecimal.ZERO
+        }
         val incomeAfterPension = gross - pillarI - pillarII
         val taxable = (incomeAfterPension - bd(profile.personalAllowanceEur.coerceAtLeast(0.0))).max(BigDecimal.ZERO)
         val lowerBand = taxable.min(bd(CroatianPayrollRules2026.MONTHLY_LOWER_TAX_BAND_EUR))
@@ -194,6 +216,8 @@ object PayrollCalculator {
             holidaySupplementEur = money(holiday),
             additionalGrossEur = money(extraGross),
             grossEur = money(gross),
+            pensionBaseReductionEur = money(pensionBaseReduction),
+            pensionContributionBaseEur = money(pensionContributionBase),
             pensionPillarIEur = money(pillarI),
             pensionPillarIIEur = money(pillarII),
             taxableIncomeEur = money(taxable),
@@ -202,6 +226,21 @@ object PayrollCalculator {
             nonTaxableEur = money(nonTaxable),
             payoutEur = money(payout)
         )
+    }
+
+    private fun pensionBaseReduction(gross: BigDecimal): BigDecimal {
+        val grossValue = gross.toDouble()
+        return when {
+            grossValue <= 0.0 -> BigDecimal.ZERO
+            grossValue <= CroatianPayrollRules2026.FULL_PENSION_BASE_REDUCTION_LIMIT_EUR ->
+                bd(CroatianPayrollRules2026.FULL_PENSION_BASE_REDUCTION_EUR)
+                    .min(gross)
+            grossValue <= CroatianPayrollRules2026.PENSION_BASE_REDUCTION_END_EUR ->
+                bd(0.5) * (
+                    bd(CroatianPayrollRules2026.PENSION_BASE_REDUCTION_END_EUR) - gross
+                )
+            else -> BigDecimal.ZERO
+        }.max(BigDecimal.ZERO)
     }
 
     private fun bd(value: Int): BigDecimal = BigDecimal.valueOf(value.toLong())

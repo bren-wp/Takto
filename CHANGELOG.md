@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.1.14
+
+Pouzdanije skeniranje rasporeda, potvrđeni prekovremeni sati i precizniji obračun plaće za državne i javne službe, uz završno poliranje mobilnog UX-a.
+
+### Novo i poboljšano
+
+- skeniranje kamerom i uvoz iz galerije koriste isti postupak označavanja područja prije prepoznavanja
+- korisnik može izrezati samo svoj red rasporeda, pomicati okvir prstom i mijenjati mu veličinu
+- dodane su zasebne kontrole **Lijevo**, **Gore**, **Dolje** i **Desno** za precizno pomicanje područja na malom ekranu
+- dodana rotacija slike u oba smjera: **−90°** i **+90°**
+- gumb **Jedan red** vraća praktični početni okvir, a **Označi cijelu sliku** ostaje dostupan kada je raspored samo za jednu osobu
+- dvosmisleni rezultati za isti datum blokiraju uvoz umjesto da miješaju podatke više osoba
+- pregled prepoznatog rasporeda ostaje obavezan prije upisa u Kalendar
+- slobodni dani iz skeniranog rasporeda obrađuju se kao slobodni dani, bez stvaranja lažnih oznaka
+- svaki radni unos može sadržavati potvrđene prekovremene minute
+- potvrđeni prekovremeni prikazuju se u Kalendaru i zasebno u Statistici
+- samo potvrđeni prekovremeni ulaze u obračun plaće; duga smjena se ne proglašava automatski prekovremenom
+- obračun plaće podržava državnu službu, javne službe i ostale sustave s vlastitim pravilima
+- za 2026. koriste se službene osnovice po razdobljima, uz dodatak za navršene godine staža
+- obračun podržava noćni rad, subotu, nedjelju, blagdan i potvrđeni prekovremeni rad
+- za ostale sustave postotci se ne pretpostavljaju nego ih korisnik unosi
+- potpuni neto izračun se ne prikazuje kada nedostaju porezni podaci, radno vrijeme, podaci o bolovanju ili potvrda svih primjenjivih dodataka
+- podržani su MIO I./II. stup, zakonsko umanjenje osnovice i bruto kod drugih poslodavaca
+- uklonjeni su preostali tehnički izrazi iz korisničkih tekstova za sigurnosne kopije i povijest promjena
+- verzija i CI artefakti ispravljeni su na stvarni **0.1.14**
+
+### Verzija
+
+- `versionName`: `0.1.14`
+- `versionCode`: `15`
+
+
 ## 0.1.13
 
 Veliki UX/IA završni zahvat prema testiranju na stvarnim Android uređajima: uravnotežene teme, fokusirana Početna, veći Kalendar, čišći Uzorci i lokalni uvoz rasporeda sa slike.

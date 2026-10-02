@@ -195,12 +195,12 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         if (uri != null) {
             runCatching {
                 val stream = context.contentResolver.openOutputStream(uri)
-                    ?: error("Nije moguće otvoriti odredišnu arhivsku datoteku.")
+                    ?: error("Nije moguće otvoriti odredišnu datoteku.")
                 stream.use { store.writeArchiveTo(it) }
             }.onSuccess {
-                Toast.makeText(context, "Trajna arhiva rasporeda je izvezena.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Povijest promjena rasporeda je izvezena.", Toast.LENGTH_SHORT).show()
             }.onFailure {
-                Toast.makeText(context, "Arhivu nije moguće izvesti.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Povijest promjena nije moguće izvesti.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -722,7 +722,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     pendingBackupContent?.let { content ->
         ImportModeDialog(
             title = "Kako vratiti sigurnosnu kopiju?",
-            description = "Spajanje čuva postojeće datume. Ažuriranje prepisuje samo datume koji postoje u backupu; ostali stari i budući rasporedi ostaju netaknuti.",
+            description = "Spajanje čuva postojeće datume. Ažuriranje prepisuje samo datume koji postoje u sigurnosnoj kopiji; ostali stari i budući rasporedi ostaju netaknuti.",
             safeLabel = "Spoji bez prepisivanja",
             replaceLabel = "Spoji i ažuriraj datume",
             onDismiss = { pendingBackupContent = null },

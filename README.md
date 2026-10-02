@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.6-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.7-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -171,7 +171,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.6 koristi aktualni stabilni Android toolchain:
+Takto 0.1.7 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -205,10 +205,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.6-debug-apk** — instalabilni debug APK
-- **Takto-0.1.6-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.6-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.6-SHA256** — checksum datoteka
+- **Takto-0.1.7-debug-apk** — instalabilni debug APK
+- **Takto-0.1.7-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.7-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.7-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 
@@ -222,8 +222,9 @@ Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName
 - glavna snimka koristi Android AtomicFile zapis kako prekid procesa ne bi ostavio napola zapisanu datoteku
 - prije zamjene glavne snimke zadržava se pričuvna recovery kopija
 - svaka promjena rasporeda ulazi u append-only lokalnu arhivu
-- revizije nose checkpoint pa se pri pokretanju obrađuje samo dio arhive noviji od spremljene snimke
-- broj revizija i duljina arhive cacheiraju se pa veliki journal ne zahtijeva puni scan pri svakom pokretanju
+- checkpoint sprema i sigurni byte-offset pa se pri pokretanju može izravno otvoriti samo rep arhive noviji od spremljene snimke
+- ako offset nije valjan ili je snapshot starijeg formata, automatski se koristi kompatibilni fallback prema broju revizija
+- broj revizija i duljina arhive cacheiraju se kao dodatna zaštita od nepotrebnog punog prebrojavanja journala
 - konfliktni stariji zapis iz arhive ne prepisuje divergentno novije lokalno stanje
 - stari i budući rasporedi ne brišu se automatski
 - notification permission traži se samo na Androidu 13+
@@ -237,9 +238,9 @@ Kada se u `main` spoji stvarna nova verzija, release workflow čita `versionName
 
 ---
 
-## Verzija 0.1.6
+## Verzija 0.1.7
 
-Verzija **0.1.6** dodatno polira Početnu: kartica Danas jasnije komunicira ima li unosa, tjedni sažetak i tjedni pregled bolje se prilagođavaju uskim ekranima, prazna stanja daju konkretniju sljedeću akciju, a TalkBack dobiva opis svakog dana u tjednom pregledu.
+Verzija **0.1.7** optimizira dugoročnu lokalnu pohranu: checkpoint snimka pamti provjereni byte-offset u revizijskoj arhivi pa aplikacija pri pokretanju može pročitati samo nove revizije iza checkpointa. Stari snapshoti ostaju kompatibilni, a append-only arhiva se ne briše.
 
 ## Licenca
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.7
+
+Brže pokretanje s velikom dugoročnom arhivom rasporeda uz potpuno očuvanje postojeće recovery kompatibilnosti.
+
+### Poboljšano
+
+- checkpoint snimke sada pamte sigurni byte-offset u append-only revizijskoj arhivi
+- pri pokretanju se, kada je cursor valjan, čita samo rep arhive noviji od checkpointa umjesto prolaska kroz sve stare revizije
+- offset se koristi samo ako je unutar datoteke, broj checkpoint revizija nije ispred aktualnog journala i offset završava na granici retka
+- kod nevaljanog ili starog snapshot formata automatski se koristi postojeći kompatibilni fallback prema broju revizija
+- snapshot schema podignuta je na verziju 2 bez gubitka kompatibilnosti sa schema 1 datotekama
+- append-only povijest se ne briše niti skraćuje; optimizacija ne ugrožava dugoročnu arhivu
+- dodani unit testovi za valjani cursor, offset izvan datoteke, checkpoint ispred journala i neispravnu granicu retka
+- CI artefakti nose točnu oznaku verzije 0.1.7
+
+### Verzija
+
+- `versionName`: `0.1.7`
+- `versionCode`: `8`
+
+
 ## 0.1.6
 
 Preglednija Početna, kvalitetnija prazna stanja i bolja pristupačnost na malim Android ekranima.

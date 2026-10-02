@@ -22,7 +22,9 @@ import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.FileInputStream
 import java.io.OutputStream
+import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.YearMonth
@@ -58,7 +60,8 @@ class ScheduleStore(private val context: Context) {
     private var lastCheckpointRevisionCount = 0
     private data class StoredScheduleSnapshot(
         val entries: Map<LocalDate, ShiftEntry>,
-        val archiveRevisionCount: Int
+        val archiveRevisionCount: Int,
+        val archiveByteOffset: Long? = null
     )
 
     val onboardingDone = mutableStateOf(prefs.getBoolean(KEY_ONBOARDING, false))
@@ -1185,7 +1188,8 @@ class ScheduleStore(private val context: Context) {
         // višegodišnje arhive pri svakom pokretanju.
         applyArchiveRevisions(
             target = recovered,
-            skipRevisions = base.archiveRevisionCount.coerceIn(0, archiveRevisionCount.value)
+            skipRevisions = base.archiveRevisionCount.coerceIn(0, archiveRevisionCount.value),
+            resumeByteOffset = base.archiveByteOffset
         )
 
         entries.clear()
@@ -1249,7 +1253,12 @@ class ScheduleStore(private val context: Context) {
 
             StoredScheduleSnapshot(
                 entries = loadedEntries,
-                archiveRevisionCount = root.optInt("archiveRevisionCount", 0).coerceAtLeast(0)
+                archiveRevisionCount = root.optInt("archiveRevisionCount", 0).coerceAtLeast(0),
+                archiveByteOffset = if (schema >= 2 && root.has("archiveByteOffset")) {
+                    root.optLong("archiveByteOffset", -1L).takeIf { it >= 0L }
+                } else {
+                    null
+                }
             )
         }.getOrNull()
     }
@@ -1266,6 +1275,7 @@ class ScheduleStore(private val context: Context) {
             put("savedAt", java.time.Instant.now().toString())
             put("entryCount", source.size)
             put("archiveRevisionCount", checkpointRevisionCount.coerceAtLeast(0))
+            put("archiveByteOffset", context.getFileStreamPath(HISTORY_FILE).let { if (it.exists()) it.length() else 0L })
             put("entries", JSONArray().apply {
                 source.sortedBy { it.date }.forEach { put(entryToJsonObject(it)) }
             })
@@ -1306,39 +1316,59 @@ class ScheduleStore(private val context: Context) {
 
     private fun applyArchiveRevisions(
         target: MutableMap<LocalDate, ShiftEntry>,
-        skipRevisions: Int
+        skipRevisions: Int,
+        resumeByteOffset: Long?
     ) {
         val history = context.getFileStreamPath(HISTORY_FILE)
         if (!history.exists()) return
 
-        runCatching {
-            history.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
-                lines.drop(skipRevisions).forEach { line ->
-                    if (line.isBlank()) return@forEach
-                    val revision = runCatching { JSONObject(line) }.getOrNull() ?: return@forEach
-                    val date = runCatching {
-                        LocalDate.parse(revision.optString("date"), DateTimeFormatter.ISO_LOCAL_DATE)
-                    }.getOrNull() ?: return@forEach
+        fun applyLine(line: String) {
+            if (line.isBlank()) return
+            val revision = runCatching { JSONObject(line) }.getOrNull() ?: return
+            val date = runCatching {
+                LocalDate.parse(revision.optString("date"), DateTimeFormatter.ISO_LOCAL_DATE)
+            }.getOrNull() ?: return
 
-                    val before = if (revision.isNull("before")) {
-                        null
-                    } else {
-                        parseEntry(revision.optJSONObject("before"))
+            val before = if (revision.isNull("before")) null else parseEntry(revision.optJSONObject("before"))
+            val after = if (revision.isNull("after")) null else parseEntry(revision.optJSONObject("after"))
+            val resolution = ScheduleRecovery.resolve(
+                current = target[date],
+                before = before,
+                after = after
+            )
+            if (resolution.shouldApply) {
+                if (resolution.next == null) target.remove(date)
+                else target[date] = resolution.next
+            }
+        }
+
+        val byteOffset = resumeByteOffset?.takeIf { offset ->
+            val boundaryValid = offset == 0L || runCatching {
+                RandomAccessFile(history, "r").use { file ->
+                    file.seek(offset - 1L)
+                    file.read() == '\n'.code
+                }
+            }.getOrDefault(false)
+            SchedulePersistencePolicy.canResumeArchiveFromByteOffset(
+                fileLength = history.length(),
+                currentRevisionCount = archiveRevisionCount.value,
+                checkpointRevisionCount = skipRevisions,
+                checkpointByteOffset = offset,
+                boundaryIsValid = boundaryValid
+            )
+        }
+
+        runCatching {
+            if (byteOffset != null) {
+                FileInputStream(history).use { input ->
+                    input.channel.position(byteOffset)
+                    input.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
+                        lines.forEach(::applyLine)
                     }
-                    val after = if (revision.isNull("after")) {
-                        null
-                    } else {
-                        parseEntry(revision.optJSONObject("after"))
-                    }
-                    val resolution = ScheduleRecovery.resolve(
-                        current = target[date],
-                        before = before,
-                        after = after
-                    )
-                    if (resolution.shouldApply) {
-                        if (resolution.next == null) target.remove(date)
-                        else target[date] = resolution.next
-                    }
+                }
+            } else {
+                history.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
+                    lines.drop(skipRevisions).forEach(::applyLine)
                 }
             }
         }
@@ -1639,7 +1669,7 @@ class ScheduleStore(private val context: Context) {
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
         private const val DATA_SCHEMA_VERSION = 8
         private const val ARCHIVE_SCHEMA_VERSION = 1
-        private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 1
+        private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 2
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L
         private const val SNAPSHOT_COPY_BUFFER_BYTES = 64 * 1024
         private const val CURRENT_SCHEDULE_FILE = "takto_schedule_current.json"

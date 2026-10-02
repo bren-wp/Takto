@@ -16,6 +16,10 @@ Daljnje poboljšanje skeniranja stvarnih rasporeda s više zaposlenika, sigurnij
 - galerijske slike zadržavaju više detalja za sitni tekst u velikim tablicama
 - dijalog za korekciju skena prilagođen je malim ekranima i većem fontu
 - dodani su brzi izbori za potvrđene prekovremene sate: 0, 30, 60 i 120 minuta
+- brzi izbori prekovremenih raspoređuju se u čitljiv 2 × 2 raspored na manjim ekranima
+- svi pronađeni dani iz skena prikazuju se prije uvoza; nema skrivenih unosa nakon prvih 18
+- redovni sati sada izričito isključuju potvrđene prekovremene kako se isti sati ne bi prikazivali u obje kategorije
+- Početna prikazuje potvrđene prekovremene, a kada je obračun potpun i procjenu isplate, neto i bruto iznosa
 - tekst za standardni radni dan jasno razlikuje kontrolnu metriku od prekovremenih koji stvarno ulaze u obračun plaće
 - dodani regresijski testovi za izdvajanje jedne osobe, hrvatske dijakritike, odvojeni red imena i oznaka te ručno zadani mjesec
 

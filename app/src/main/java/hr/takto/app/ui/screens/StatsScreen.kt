@@ -88,6 +88,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val timedEntries = monthEntries.filter { it.workMinutes != null }
     val totalWorkMinutes = store.totalWorkMinutes(timedEntries)
     val overtimeMinutes = store.totalOvertimeMinutes(timedEntries)
+    val confirmedOvertimeMinutes = store.totalConfirmedOvertimeMinutes(timedEntries)
     val averageShiftMinutes = if (timedEntries.isNotEmpty()) totalWorkMinutes / timedEntries.size else 0
     val standardDaily = store.standardDailyMinutes.value
     val monthlyTarget = store.monthlyTargetMinutes(month)
@@ -105,7 +106,7 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             month = month,
             monthlyFundMinutes = monthlyTarget,
             workedMinutes = totalWorkMinutes,
-            overtimeMinutes = fundOvertimeMinutes,
+            overtimeMinutes = confirmedOvertimeMinutes,
             nightMinutes = nightWorkMinutes,
             saturdayMinutes = saturdayWorkMinutes,
             sundayMinutes = sundayWorkMinutes,
@@ -246,24 +247,29 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text("Prekovremeni sati", style = MaterialTheme.typography.titleLarge)
+                        Text("Priznati prekovremeni", style = MaterialTheme.typography.titleLarge)
                         Text(
-                            "Prema mjesečnom fondu",
+                            "Ulaze u obračun plaće",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
                     Text(
-                        ScheduleLogic.formatDuration(fundOvertimeMinutes),
+                        ScheduleLogic.formatDuration(confirmedOvertimeMinutes),
                         color = Color(0xFFFFB21D),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold
                     )
                 }
                 Text(
-                    "Dnevno iznad standardnog radnog dana: ${ScheduleLogic.formatDuration(overtimeMinutes)}",
+                    "Kontrola prema mjesečnom fondu: ${ScheduleLogic.formatDuration(fundOvertimeMinutes)} · iznad standardnog dana: ${ScheduleLogic.formatDuration(overtimeMinutes)}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
+                )
+                Text(
+                    "Za plaću se koriste samo prekovremeni koje si izričito upisao uz radni dan.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp
                 )
             }
         }

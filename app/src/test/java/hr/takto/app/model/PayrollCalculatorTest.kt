@@ -25,7 +25,8 @@ class PayrollCalculatorTest {
                 yearsOfService = 10,
                 lowerTaxRatePercent = 20.0,
                 higherTaxRatePercent = 30.0,
-                personalAllowanceEur = 600.0
+                personalAllowanceEur = 600.0,
+                allAdjustmentsConfirmed = true
             ),
             PayrollInputs(
                 month = YearMonth.of(2026, 10),
@@ -82,7 +83,8 @@ class PayrollCalculatorTest {
                 coefficient = 1.0,
                 lowerTaxRatePercent = 20.0,
                 higherTaxRatePercent = 30.0,
-                personalAllowanceEur = 600.0
+                personalAllowanceEur = 600.0,
+                allAdjustmentsConfirmed = true
             ),
             PayrollInputs(
                 month = YearMonth.of(2026, 10),

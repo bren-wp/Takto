@@ -48,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.PayrollCalculator
+import hr.takto.app.model.PayrollInputs
 import hr.takto.app.model.StatsChartLogic
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
@@ -97,6 +99,19 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val sundayWorkMinutes = store.totalSundayWorkMinutes(timedEntries)
     val holidayWorkMinutes = store.totalHolidayWorkMinutes(timedEntries)
     val targetIsManual = store.hasMonthlyTargetOverride(month)
+    val payroll = PayrollCalculator.calculate(
+        profile = store.payrollProfile.value,
+        input = PayrollInputs(
+            month = month,
+            monthlyFundMinutes = monthlyTarget,
+            workedMinutes = totalWorkMinutes,
+            overtimeMinutes = fundOvertimeMinutes,
+            nightMinutes = nightWorkMinutes,
+            saturdayMinutes = saturdayWorkMinutes,
+            sundayMinutes = sundayWorkMinutes,
+            holidayMinutes = holidayWorkMinutes
+        )
+    )
 
     Column(
         modifier = Modifier
@@ -222,6 +237,104 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                                 TimeMetric(Modifier.weight(1f), "Blagdan", holidayWorkMinutes, Color(0xFFEF476F))
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Prekovremeni sati", style = MaterialTheme.typography.titleLarge)
+                        Text(
+                            "Prema mjesečnom fondu",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
+                    Text(
+                        ScheduleLogic.formatDuration(fundOvertimeMinutes),
+                        color = Color(0xFFFFB21D),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+                Text(
+                    "Dnevno iznad standardnog radnog dana: ${ScheduleLogic.formatDuration(overtimeMinutes)}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+            }
+        }
+
+        GlassCard(modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Plaća", style = MaterialTheme.typography.titleLarge)
+                when {
+                    !store.payrollProfile.value.enabled -> {
+                        Text(
+                            "Obračun plaće nije postavljen. U Postavkama upiši sustav obračuna, koeficijent, staž i porezne podatke.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    !payroll.complete -> {
+                        Text(
+                            "Nedostaju podaci: ${payroll.missing.joinToString(", ")}.",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            "Dovrši podatke u Postavkama kako Takto ne bi prikazao netočan iznos.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
+                    else -> {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            MoneyMetric(
+                                modifier = Modifier.weight(1f),
+                                label = "Isplata",
+                                value = payroll.payoutEur,
+                                color = Color(0xFF13D7A0)
+                            )
+                            MoneyMetric(
+                                modifier = Modifier.weight(1f),
+                                label = "Neto",
+                                value = payroll.netSalaryEur,
+                                color = TaktoBlue
+                            )
+                            MoneyMetric(
+                                modifier = Modifier.weight(1f),
+                                label = "Bruto",
+                                value = payroll.grossEur,
+                                color = Color(0xFF8B46F6)
+                            )
+                        }
+                        Text(
+                            "Sat: ${statsEuro(payroll.hourlyRateEur)} · osnovna plaća: ${statsEuro(payroll.baseSalaryEur)} · staž: ${statsEuro(payroll.seniorityEur)}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                        Text(
+                            "Prekovremeni: ${statsEuro(payroll.overtimePayEur)} · noć: ${statsEuro(payroll.nightSupplementEur)} · subota: ${statsEuro(payroll.saturdaySupplementEur)} · nedjelja: ${statsEuro(payroll.sundaySupplementEur)} · blagdan: ${statsEuro(payroll.holidaySupplementEur)}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
+                        if (payroll.additionalGrossEur > 0.0 || payroll.nonTaxableEur > 0.0) {
+                            Text(
+                                "Ostali bruto dodaci: ${statsEuro(payroll.additionalGrossEur)} · neoporezivo: ${statsEuro(payroll.nonTaxableEur)}",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp
+                            )
+                        }
+                        Text(
+                            "Izračun se temelji na spremljenim parametrima i evidentiranim satima za odabrani mjesec.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp
+                        )
                     }
                 }
             }
@@ -357,6 +470,27 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
     }
 }
+
+@Composable
+private fun MoneyMetric(
+    modifier: Modifier,
+    label: String,
+    value: Double,
+    color: Color
+) {
+    Column(
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(13.dp))
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(statsEuro(value), color = color, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+    }
+}
+
+private fun statsEuro(value: Double): String =
+    String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable
 private fun TimeMetric(modifier: Modifier, label: String, minutes: Int, color: Color) {

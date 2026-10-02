@@ -631,7 +631,9 @@ class ScheduleStore(private val context: Context) {
             nightPercent = profile.nightPercent.coerceIn(0.0, 300.0),
             saturdayPercent = profile.saturdayPercent.coerceIn(0.0, 300.0),
             sundayPercent = profile.sundayPercent.coerceIn(0.0, 300.0),
-            holidayPercent = profile.holidayPercent.coerceIn(0.0, 300.0)
+            holidayPercent = profile.holidayPercent.coerceIn(0.0, 300.0),
+            otherEmployersGrossEur = profile.otherEmployersGrossEur.coerceIn(0.0, 100_000.0),
+            allAdjustmentsConfirmed = profile.allAdjustmentsConfirmed
         )
         payrollProfile.value = sanitized
         prefs.edit().putString(KEY_PAYROLL_PROFILE, payrollProfileToJson(sanitized).toString()).apply()
@@ -1700,7 +1702,9 @@ class ScheduleStore(private val context: Context) {
         nightPercent = obj.optDouble("nightPercent", 0.0).coerceIn(0.0, 300.0),
         saturdayPercent = obj.optDouble("saturdayPercent", 0.0).coerceIn(0.0, 300.0),
         sundayPercent = obj.optDouble("sundayPercent", 0.0).coerceIn(0.0, 300.0),
-        holidayPercent = obj.optDouble("holidayPercent", 0.0).coerceIn(0.0, 300.0)
+        holidayPercent = obj.optDouble("holidayPercent", 0.0).coerceIn(0.0, 300.0),
+        otherEmployersGrossEur = obj.optDouble("otherEmployersGrossEur", 0.0).coerceIn(0.0, 100_000.0),
+        allAdjustmentsConfirmed = obj.optBoolean("allAdjustmentsConfirmed", false)
     )
 
     private fun payrollProfileToJson(profile: PayrollProfile): JSONObject = JSONObject().apply {
@@ -1720,6 +1724,8 @@ class ScheduleStore(private val context: Context) {
         put("saturdayPercent", profile.saturdayPercent)
         put("sundayPercent", profile.sundayPercent)
         put("holidayPercent", profile.holidayPercent)
+        put("otherEmployersGrossEur", profile.otherEmployersGrossEur)
+        put("allAdjustmentsConfirmed", profile.allAdjustmentsConfirmed)
     }
 
     private fun entryToJsonObject(item: ShiftEntry): JSONObject = JSONObject().apply {

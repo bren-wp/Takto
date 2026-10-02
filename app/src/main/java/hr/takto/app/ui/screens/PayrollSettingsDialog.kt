@@ -53,6 +53,12 @@ fun PayrollSettingsDialog(
     var saturdayPercent by remember(initial) { mutableStateOf(decimalText(initial.saturdayPercent)) }
     var sundayPercent by remember(initial) { mutableStateOf(decimalText(initial.sundayPercent)) }
     var holidayPercent by remember(initial) { mutableStateOf(decimalText(initial.holidayPercent)) }
+    var otherEmployersGross by remember(initial) {
+        mutableStateOf(decimalText(initial.otherEmployersGrossEur))
+    }
+    var allAdjustmentsConfirmed by remember(initial) {
+        mutableStateOf(initial.allAdjustmentsConfirmed)
+    }
 
     val currentMonth = YearMonth.now()
     val officialBase = CroatianPayrollRules2026.officialBase(currentMonth, system)
@@ -208,6 +214,17 @@ fun PayrollSettingsDialog(
                 }
 
                 OutlinedTextField(
+                    value = otherEmployersGross,
+                    onValueChange = { otherEmployersGross = sanitizeDecimal(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Bruto kod drugih poslodavaca (€)") },
+                    supportingText = {
+                        Text("Ostavi 0 ako u tom mjesecu nemaš drugog poslodavca.")
+                    },
+                    singleLine = true
+                )
+
+                OutlinedTextField(
                     value = extraGross,
                     onValueChange = { extraGross = sanitizeDecimal(it) },
                     modifier = Modifier.fillMaxWidth(),
@@ -221,6 +238,24 @@ fun PayrollSettingsDialog(
                     label = { Text("Neoporezive isplate (€)") },
                     singleLine = true
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Svi dodaci i naknade su uneseni", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Potvrdi tek kada si unio sve posebne i granske dodatke koji vrijede za taj mjesec.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(
+                        checked = allAdjustmentsConfirmed,
+                        onCheckedChange = { allAdjustmentsConfirmed = it }
+                    )
+                }
 
                 Text(
                     "Za točan neto upiši porezne stope koje vrijede prema mjestu oporezivanja i ukupni osobni odbitak koji se primjenjuje na tvojoj PK.",
@@ -261,7 +296,9 @@ fun PayrollSettingsDialog(
                             nightPercent = parseDecimal(nightPercent),
                             saturdayPercent = parseDecimal(saturdayPercent),
                             sundayPercent = parseDecimal(sundayPercent),
-                            holidayPercent = parseDecimal(holidayPercent)
+                            holidayPercent = parseDecimal(holidayPercent),
+                            otherEmployersGrossEur = parseDecimal(otherEmployersGross),
+                            allAdjustmentsConfirmed = allAdjustmentsConfirmed
                         )
                     )
                 },

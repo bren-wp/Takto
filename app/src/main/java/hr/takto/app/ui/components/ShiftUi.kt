@@ -58,11 +58,11 @@ fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> U
 }
 
 fun shiftCodeFontSize(code: String): androidx.compose.ui.unit.TextUnit = when {
-    code.length <= 1 -> 25.sp
-    code.length <= 3 -> 19.sp
-    code.length <= 5 -> 15.sp
-    code.length <= 8 -> 12.sp
-    else -> 10.sp
+    code.length <= 1 -> 28.sp
+    code.length <= 3 -> 21.sp
+    code.length <= 5 -> 16.sp
+    code.length <= 8 -> 13.sp
+    else -> 11.sp
 }
 
 fun shiftCodeCompactFontSize(code: String): androidx.compose.ui.unit.TextUnit = when {

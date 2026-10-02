@@ -18,6 +18,8 @@ object ScheduleLogic {
     const val MINUTES_PER_DAY = 24 * 60
     const val MAX_BREAK_MINUTES = 12 * 60
     const val NIGHT_START_MINUTE = 22 * 60
+    const val SECOND_SHIFT_START_MINUTE = 14 * 60
+    const val SECOND_SHIFT_END_MINUTE = 22 * 60
     const val NIGHT_END_MINUTE = 6 * 60
     const val MAX_MONTHLY_TARGET_MINUTES = 400 * 60
 
@@ -167,6 +169,23 @@ object ScheduleLogic {
             -120 to NIGHT_END_MINUTE,
             NIGHT_START_MINUTE to (MINUTES_PER_DAY + NIGHT_END_MINUTE),
             (MINUTES_PER_DAY + NIGHT_START_MINUTE) to (2 * MINUTES_PER_DAY + NIGHT_END_MINUTE)
+        ).sumOf { (windowStart, windowEnd) ->
+            overlapMinutes(span.first, span.second, windowStart, windowEnd)
+        }
+        return proportionalNetMinutes(overlap, gross, breakMinutes)
+    }
+
+    fun secondShiftWorkMinutes(
+        startMinute: Int?,
+        endMinute: Int?,
+        breakMinutes: Int = 0
+    ): Int {
+        val span = absoluteShiftSpan(startMinute, endMinute) ?: return 0
+        val gross = span.second - span.first
+        if (gross <= 0) return 0
+        val overlap = listOf(
+            SECOND_SHIFT_START_MINUTE to SECOND_SHIFT_END_MINUTE,
+            (MINUTES_PER_DAY + SECOND_SHIFT_START_MINUTE) to (MINUTES_PER_DAY + SECOND_SHIFT_END_MINUTE)
         ).sumOf { (windowStart, windowEnd) ->
             overlapMinutes(span.first, span.second, windowStart, windowEnd)
         }

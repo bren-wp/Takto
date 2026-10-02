@@ -1156,17 +1156,23 @@ class ScheduleStore(private val context: Context) {
     }
 
     private fun loadEntries() {
+        val emergencySnapshot = if (prefs.getBoolean(KEY_ENTRIES_EMERGENCY, false)) {
+            readLegacyPreferenceEntries()
+        } else {
+            null
+        }
         val currentSnapshot = readSnapshotFile(CURRENT_SCHEDULE_FILE)
         val recoverySnapshot = readSnapshotFile(RECOVERY_SCHEDULE_FILE)
         val newestFileSnapshot = listOfNotNull(currentSnapshot, recoverySnapshot)
             .maxByOrNull { it.archiveRevisionCount }
-        val legacySnapshot = if (newestFileSnapshot == null) {
+        val legacySnapshot = if (emergencySnapshot == null && newestFileSnapshot == null) {
             readLegacyPreferenceEntries()
         } else {
             null
         }
 
         val base = when {
+            emergencySnapshot != null -> StoredScheduleSnapshot(emergencySnapshot, archiveRevisionCount.value)
             newestFileSnapshot != null -> newestFileSnapshot
             legacySnapshot != null -> StoredScheduleSnapshot(legacySnapshot, 0)
             else -> StoredScheduleSnapshot(emptyMap(), 0)
@@ -1196,7 +1202,10 @@ class ScheduleStore(private val context: Context) {
             lastCheckpointRevisionCount = base.archiveRevisionCount
         }
         if (currentWritten && recoveryWritten) {
-            prefs.edit().remove(KEY_ENTRIES).apply()
+            prefs.edit()
+                .remove(KEY_ENTRIES)
+                .remove(KEY_ENTRIES_EMERGENCY)
+                .apply()
         }
     }
 
@@ -1380,12 +1389,20 @@ class ScheduleStore(private val context: Context) {
             val snapshotWritten = writeSnapshotFile(CURRENT_SCHEDULE_FILE, entries.values)
             if (snapshotWritten) {
                 lastCheckpointRevisionCount = archiveRevisionCount.value
-                prefs.edit().remove(KEY_ENTRIES).apply()
+                prefs.edit()
+                    .remove(KEY_ENTRIES)
+                    .remove(KEY_ENTRIES_EMERGENCY)
+                    .apply()
                 durable = true
             } else if (!archive.appended) {
-                // Krajnji fallback samo ako ni journal nije mogao biti trajno
-                // zapisan. Ne koristi se u normalnom radu.
-                durable = prefs.edit().putString(KEY_ENTRIES, entriesToJson().toString()).commit()
+                // Krajnji fallback samo ako ni journal ni atomska snimka nisu
+                // mogli biti trajno zapisani. Poseban marker osigurava da se
+                // emergency kopija na sljedećem pokretanju ne zanemari zbog
+                // starijeg, ali još uvijek valjanog checkpointa.
+                durable = prefs.edit()
+                    .putString(KEY_ENTRIES, entriesToJson().toString())
+                    .putBoolean(KEY_ENTRIES_EMERGENCY, true)
+                    .commit()
             }
         }
 
@@ -1629,6 +1646,7 @@ class ScheduleStore(private val context: Context) {
         private const val HISTORY_FILE = "takto_schedule_history.jsonl"
         private const val PREFS_NAME = "takto_schedule"
         private const val KEY_ENTRIES = "entries_json"
+        private const val KEY_ENTRIES_EMERGENCY = "entries_json_emergency"
         private const val KEY_ONBOARDING = "onboarding_done"
         private const val KEY_REMINDERS = "reminders"
         private const val KEY_REMINDER_HOUR = "reminder_hour"

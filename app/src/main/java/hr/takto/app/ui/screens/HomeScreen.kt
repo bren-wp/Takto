@@ -393,14 +393,16 @@ private fun TodayQuickButton(
             fontSize = shiftCodeCompactFontSize(type.code),
             maxLines = 1
         )
-        Spacer(Modifier.size(7.dp))
-        Text(
-            text = type.name,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            fontSize = 11.sp
-        )
+        if (!type.name.equals(type.code, ignoreCase = true)) {
+            Spacer(Modifier.size(7.dp))
+            Text(
+                text = type.name,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                fontSize = 11.sp
+            )
+        }
     }
 }
 

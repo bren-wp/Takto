@@ -66,7 +66,7 @@ private fun patternSummary(codes: List<String?>): String {
     val segments = mutableListOf<Pair<String?, Int>>()
     codes.forEach { code ->
         val last = segments.lastOrNull()
-        if (last?.first == code) {
+        if (last != null && last.first == code) {
             segments[segments.lastIndex] = code to (last.second + 1)
         } else {
             segments += code to 1

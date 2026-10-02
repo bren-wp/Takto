@@ -1081,6 +1081,24 @@ private fun WorkTimeDialog(
                     placeholder = { Text("0") },
                     singleLine = true
                 )
+                Text(
+                    "Brzi unos prekovremenih",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf(0, 30, 60, 120).forEach { minutes ->
+                        FilterChip(
+                            selected = overtime == minutes,
+                            onClick = { overtimeText = if (minutes == 0) "" else minutes.toString() },
+                            label = { Text(if (minutes == 0) "0" else "${minutes} min") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
                 when {
                     valid -> {
                         Text(

@@ -152,8 +152,7 @@ class ScheduleStore(private val context: Context) {
     fun saveWorkTimePreset(code: String, startMinute: Int, endMinute: Int, breakMinutes: Int): Boolean {
         val type = shiftType(code) ?: return false
         if (ScheduleLogic.isLeaveCode(type.code)) return false
-        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes) ?: return false
-        if (duration <= 0) return false
+        if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) return false
         val safe = WorkTimePreset(
             code = type.code,
             startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
@@ -277,9 +276,8 @@ class ScheduleStore(private val context: Context) {
     fun updateWorkTime(date: LocalDate, startMinute: Int, endMinute: Int, breakMinutes: Int): Boolean {
         val current = entries[date] ?: return false
         if (ScheduleLogic.isLeaveCode(current.code)) return false
-        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes) ?: return false
-        if (duration <= 0) return false
-        val safeBreak = breakMinutes.coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) return false
+        val safeBreak = breakMinutes
         val next = current.copy(
             startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
             endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
@@ -309,12 +307,12 @@ class ScheduleStore(private val context: Context) {
         endMinute: Int,
         breakMinutes: Int
     ): BulkEditResult {
-        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
-            ?: return BulkEditResult(0, 0, 0)
-        if (duration <= 0) return BulkEditResult(0, 0, 0)
+        if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) {
+            return BulkEditResult(0, 0, 0)
+        }
         val unique = dates.distinct().sorted().take(MAX_BULK_DAYS)
         val before = captureUndo(unique, "Radno vrijeme za ${unique.size} dana")
-        val safeBreak = breakMinutes.coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        val safeBreak = breakMinutes
         var changed = 0
         var skipped = 0
         unique.forEach { date ->

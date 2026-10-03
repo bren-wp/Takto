@@ -9,6 +9,12 @@ internal object HomeTodayUiLogic {
     private const val SINGLE_COLUMN_WIDTH_DP = 360f
     private const val LARGE_FONT_SCALE = 1.30f
 
+    fun shouldStackMetrics(availableWidthDp: Float, fontScale: Float): Boolean {
+        val safeWidth = availableWidthDp.takeIf { it.isFinite() } ?: 0f
+        val safeFontScale = fontScale.takeIf { it.isFinite() && it > 0f } ?: 1f
+        return safeWidth < 360f || safeFontScale >= 1.25f
+    }
+
     fun quickActionColumns(availableWidthDp: Float, fontScale: Float): Int {
         val safeWidth = availableWidthDp.takeIf { it.isFinite() } ?: 0f
         val safeFontScale = fontScale.takeIf { it.isFinite() && it > 0f } ?: 1f

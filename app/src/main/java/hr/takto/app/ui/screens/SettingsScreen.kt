@@ -45,7 +45,6 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Slideshow
 import androidx.compose.material.icons.filled.Upload

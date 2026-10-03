@@ -215,6 +215,10 @@ fun RosterImageEditorDialog(
                     }
                 }
 
+                Text(
+                    "Zakretanje i brzi odabir",
+                    fontWeight = FontWeight.SemiBold
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -237,13 +241,13 @@ fun RosterImageEditorDialog(
                             crop = CropSelection()
                         }
                     )
-                    EditorActionButton(
-                        modifier = Modifier.weight(1f),
-                        label = "Jedan red",
-                        icon = Icons.Default.RestartAlt,
-                        onClick = { crop = CropSelection() }
-                    )
                 }
+                EditorActionButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = "Vrati okvir na jedan red",
+                    icon = Icons.Default.RestartAlt,
+                    onClick = { crop = CropSelection() }
+                )
 
                 Button(
                     onClick = { crop = CropSelection(0f, 0f, 1f, 1f) },

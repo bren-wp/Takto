@@ -1339,7 +1339,7 @@ private fun WorkTimePresetDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(start, end, pause) },
+                onClick = { if (valid) onSave(start!!, end!!, pause) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }

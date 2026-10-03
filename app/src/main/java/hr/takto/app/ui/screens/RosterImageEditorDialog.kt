@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -55,7 +58,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
-private data class CropSelection(
+internal data class CropSelection(
     val left: Float = 0.04f,
     val top: Float = 0.34f,
     val right: Float = 0.96f,
@@ -65,7 +68,7 @@ private data class CropSelection(
     val height: Float get() = bottom - top
 }
 
-private enum class CropDragMode { NONE, MOVE, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
+internal enum class CropDragMode { NONE, MOVE, LEFT, RIGHT, TOP, BOTTOM, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 @Composable
 fun RosterImageEditorDialog(
@@ -82,7 +85,13 @@ fun RosterImageEditorDialog(
         onDismissRequest = onDismiss,
         title = { Text("Odaberi samo svoj raspored") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 620.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Text(
                     "Pomakni okvir gore, dolje, lijevo ili desno. Obuhvati zaglavlje s datumima i samo svoj red, a druge osobe ostavi izvan okvira.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -161,8 +170,12 @@ fun RosterImageEditorDialog(
                             val handleRadius = 7.dp.toPx()
                             listOf(
                                 Offset(l, t),
+                                Offset((l + r) / 2f, t),
                                 Offset(r, t),
+                                Offset(l, (t + b) / 2f),
+                                Offset(r, (t + b) / 2f),
                                 Offset(l, b),
+                                Offset((l + r) / 2f, b),
                                 Offset(r, b)
                             ).forEach { center ->
                                 drawCircle(Color.White, radius = handleRadius, center = center)
@@ -176,34 +189,32 @@ fun RosterImageEditorDialog(
                     "Pomakni označeno područje",
                     fontWeight = FontWeight.SemiBold
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    EditorActionButton(
-                        modifier = Modifier.weight(1f),
-                        label = "Lijevo",
-                        icon = Icons.Default.ArrowBack,
-                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, -0.04f, 0f) }
-                    )
-                    EditorActionButton(
-                        modifier = Modifier.weight(1f),
-                        label = "Gore",
-                        icon = Icons.Default.ArrowUpward,
-                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, 0f, -0.04f) }
-                    )
-                    EditorActionButton(
-                        modifier = Modifier.weight(1f),
-                        label = "Dolje",
-                        icon = Icons.Default.ArrowDownward,
-                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, 0f, 0.04f) }
-                    )
-                    EditorActionButton(
-                        modifier = Modifier.weight(1f),
-                        label = "Desno",
-                        icon = Icons.Default.ArrowForward,
-                        onClick = { crop = updateCrop(crop, CropDragMode.MOVE, 0.04f, 0f) }
-                    )
+                listOf(
+                    "Lijevo" to Pair(Icons.Default.ArrowBack, Offset(-0.02f, 0f)),
+                    "Gore" to Pair(Icons.Default.ArrowUpward, Offset(0f, -0.02f)),
+                    "Dolje" to Pair(Icons.Default.ArrowDownward, Offset(0f, 0.02f)),
+                    "Desno" to Pair(Icons.Default.ArrowForward, Offset(0.02f, 0f))
+                ).chunked(2).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        row.forEach { (label, action) ->
+                            EditorActionButton(
+                                modifier = Modifier.weight(1f),
+                                label = label,
+                                icon = action.first,
+                                onClick = {
+                                    crop = updateCrop(
+                                        crop,
+                                        CropDragMode.MOVE,
+                                        action.second.x,
+                                        action.second.y
+                                    )
+                                }
+                            )
+                        }
+                    }
                 }
 
                 Row(
@@ -248,7 +259,7 @@ fun RosterImageEditorDialog(
                 }
 
                 Text(
-                    "Skeniranje će obraditi samo označeno područje, zato prije nastavka provjeri da druge osobe nisu unutar okvira.",
+                    "Povuci kutove ili sredinu ruba za precizno sužavanje/širenje okvira. Skeniranje će obraditi samo označeno područje, zato provjeri da druge osobe nisu unutar okvira.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -288,12 +299,16 @@ private fun cropModeForPoint(
         near(r, t) -> CropDragMode.TOP_RIGHT
         near(l, b) -> CropDragMode.BOTTOM_LEFT
         near(r, b) -> CropDragMode.BOTTOM_RIGHT
+        abs(point.y - t) <= handleRadiusPx && point.x in l..r -> CropDragMode.TOP
+        abs(point.y - b) <= handleRadiusPx && point.x in l..r -> CropDragMode.BOTTOM
+        abs(point.x - l) <= handleRadiusPx && point.y in t..b -> CropDragMode.LEFT
+        abs(point.x - r) <= handleRadiusPx && point.y in t..b -> CropDragMode.RIGHT
         point.x in l..r && point.y in t..b -> CropDragMode.MOVE
         else -> CropDragMode.NONE
     }
 }
 
-private fun updateCrop(
+internal fun updateCrop(
     current: CropSelection,
     mode: CropDragMode,
     dx: Float,
@@ -312,6 +327,18 @@ private fun updateCrop(
                 bottom = top + current.height
             )
         }
+        CropDragMode.LEFT -> current.copy(
+            left = (current.left + dx).coerceIn(0f, current.right - minWidth)
+        )
+        CropDragMode.RIGHT -> current.copy(
+            right = (current.right + dx).coerceIn(current.left + minWidth, 1f)
+        )
+        CropDragMode.TOP -> current.copy(
+            top = (current.top + dy).coerceIn(0f, current.bottom - minHeight)
+        )
+        CropDragMode.BOTTOM -> current.copy(
+            bottom = (current.bottom + dy).coerceIn(current.top + minHeight, 1f)
+        )
         CropDragMode.TOP_LEFT -> current.copy(
             left = (current.left + dx).coerceIn(0f, current.right - minWidth),
             top = (current.top + dy).coerceIn(0f, current.bottom - minHeight)

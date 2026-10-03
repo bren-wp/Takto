@@ -55,8 +55,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hr.takto.app.ui.theme.TaktoBlue
 import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 internal data class CropSelection(
     val left: Float = 0.04f,

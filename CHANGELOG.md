@@ -23,6 +23,8 @@ Veliki UI/UX i održavanje pass: tamni način potpuno je uklonjen, D/N postaju j
 - odabir radnog mjesta automatski popunjava referentni koeficijent i prikazuje službeni naziv/kod iz kataloga
 - ručni unos koeficijenta ostaje dostupan i prekida vezu s presetom kako se ne bi prikazivala netočna oznaka radnog mjesta
 - odabrano radno mjesto sprema se u lokalni profil obračuna i sigurnosnu kopiju
+- dodan je pretraživ katalog poreznih lokaliteta 2026. iz RASPORED-a; izbor mjesta popunjava nižu i višu stopu
+- ručna izmjena porezne stope uklanja vezu s presetom kako aplikacija ne bi prikazivala netočan odabrani lokalitet
 - izračun i dalje ne prikazuje potpunu procjenu kada nedostaju nužni porezni ili obračunski podaci
 
 ### Kod, migracija i QA

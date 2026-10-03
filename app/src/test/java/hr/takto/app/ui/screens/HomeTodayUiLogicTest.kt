@@ -1,6 +1,8 @@
 package hr.takto.app.ui.screens
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class HomeTodayUiLogicTest {
@@ -20,6 +22,15 @@ class HomeTodayUiLogicTest {
     fun invalidMeasurementsFallBackSafely() {
         assertEquals(1, HomeTodayUiLogic.quickActionColumns(Float.NaN, 1f))
         assertEquals(2, HomeTodayUiLogic.quickActionColumns(420f, Float.NaN))
+    }
+
+    @Test
+    fun dashboardMetricsStackOnNarrowScreensAndLargeText() {
+        assertTrue(HomeTodayUiLogic.shouldStackMetrics(359f, 1f))
+        assertFalse(HomeTodayUiLogic.shouldStackMetrics(360f, 1f))
+        assertTrue(HomeTodayUiLogic.shouldStackMetrics(420f, 1.25f))
+        assertFalse(HomeTodayUiLogic.shouldStackMetrics(420f, 1.24f))
+        assertTrue(HomeTodayUiLogic.shouldStackMetrics(Float.NaN, 1f))
     }
 
     @Test

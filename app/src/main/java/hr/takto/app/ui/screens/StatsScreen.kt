@@ -53,13 +53,13 @@ import hr.takto.app.model.PayrollCalculator
 import hr.takto.app.model.PayrollInputs
 import hr.takto.app.model.StatsChartLogic
 import hr.takto.app.ui.components.GlassCard
+import hr.takto.app.ui.components.formatEuro
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
 import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
-import java.util.Locale
 
 private data class ScheduleCodeStat(
     val code: String,
@@ -356,18 +356,18 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                             }
                         }
                         Text(
-                            "Sat: ${statsEuro(payroll.hourlyRateEur)} · osnovna plaća: ${statsEuro(payroll.baseSalaryEur)} · staž: ${statsEuro(payroll.seniorityEur)}",
+                            "Sat: ${formatEuro(payroll.hourlyRateEur)} · osnovna plaća: ${formatEuro(payroll.baseSalaryEur)} · staž: ${formatEuro(payroll.seniorityEur)}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                         Text(
-                            "Prekovremeni: ${statsEuro(payroll.overtimePayEur)} · noć: ${statsEuro(payroll.nightSupplementEur)} · subota: ${statsEuro(payroll.saturdaySupplementEur)} · nedjelja: ${statsEuro(payroll.sundaySupplementEur)} · blagdan: ${statsEuro(payroll.holidaySupplementEur)}",
+                            "Prekovremeni: ${formatEuro(payroll.overtimePayEur)} · noć: ${formatEuro(payroll.nightSupplementEur)} · subota: ${formatEuro(payroll.saturdaySupplementEur)} · nedjelja: ${formatEuro(payroll.sundaySupplementEur)} · blagdan: ${formatEuro(payroll.holidaySupplementEur)}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )
                         if (payroll.additionalGrossEur > 0.0 || payroll.nonTaxableEur > 0.0) {
                             Text(
-                                "Ostali bruto dodaci: ${statsEuro(payroll.additionalGrossEur)} · neoporezivo: ${statsEuro(payroll.nonTaxableEur)}",
+                                "Ostali bruto dodaci: ${formatEuro(payroll.additionalGrossEur)} · neoporezivo: ${formatEuro(payroll.nonTaxableEur)}",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
                             )
@@ -538,12 +538,12 @@ private fun MoneyMetric(
             .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(statsEuro(value), color = color, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+        Text(formatEuro(value), color = color, fontWeight = FontWeight.ExtraBold, maxLines = 1)
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
     }
 }
 
-private fun statsEuro(value: Double): String =
+private fun formatEuro(value: Double): String =
     String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable

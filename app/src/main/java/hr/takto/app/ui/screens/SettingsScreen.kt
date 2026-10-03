@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -64,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -340,43 +342,49 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     Text("Oznake rasporeda", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 10.dp))
                 }
                 Text("Gotove oznake možeš prilagoditi, a vlastite oznake mogu predstavljati bilo koji tip rada, obveze ili odsutnosti.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                store.shiftTypes().chunked(3).forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        row.forEach { type ->
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { colorDialogCode = type.code },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val fontScale = LocalDensity.current.fontScale
+                    val columns = if (maxWidth < 380.dp || fontScale >= 1.25f) 2 else 3
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        store.shiftTypes().chunked(columns).forEach { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(54.dp)
-                                        .background(type.color, RoundedCornerShape(14.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        type.code,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = readableContentColor(type.color),
-                                        fontSize = if (type.code.length == 1) 21.sp else 16.sp,
-                                        maxLines = 1
-                                    )
+                                row.forEach { type ->
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { colorDialogCode = type.code },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .height(56.dp)
+                                                .background(type.color, RoundedCornerShape(14.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                type.code,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = readableContentColor(type.color),
+                                                fontSize = if (type.code.length == 1) 21.sp else 16.sp,
+                                                maxLines = 1
+                                            )
+                                        }
+                                        Text(
+                                            type.name,
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2
+                                        )
+                                    }
                                 }
-                                Text(
-                                    type.name,
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2
-                                )
+                                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                             }
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 Text("Vlastite brze oznake", fontWeight = FontWeight.SemiBold)

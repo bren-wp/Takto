@@ -18,7 +18,7 @@ Android CI prije testova pokreće:
 python3 scripts/dead_code_audit.py --strict
 ```
 
-Release se blokira kada je privatni Kotlin simbol dokazano neiskorišten. Top-level kandidati i markeri ostaju u izvještaju za ručni pregled.
+Release se blokira ako audit pronađe dokazano neiskorišten privatni Kotlin simbol, top-level deklaraciju bez reference ili produkcijsku `TODO`/`FIXME` oznaku.
 
 ## 0.1.18 cleanup
 

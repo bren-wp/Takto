@@ -15,10 +15,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = ROOT / "app/src/main/java"
+MANIFEST_PATH = ROOT / "app/src/main/AndroidManifest.xml"
 KOTLIN_FILES = sorted(SOURCE_ROOT.rglob("*.kt")) if SOURCE_ROOT.exists() else []
 
 contents = {path: path.read_text(encoding="utf-8") for path in KOTLIN_FILES}
 all_text = "\n".join(contents.values())
+manifest_text = MANIFEST_PATH.read_text(encoding="utf-8") if MANIFEST_PATH.exists() else ""
+manifest_components = set(
+    re.findall(r'android:name="(?:\.[A-Za-z0-9_$.]*\.)?([A-Z][A-Za-z0-9_]*)"', manifest_text)
+)
 
 dead_private = []
 top_level_candidates = []
@@ -54,7 +59,7 @@ for path, source in contents.items():
         )
     )
     for name in sorted(top_level):
-        if name in {"MainActivity", "TaktoApplication"}:
+        if name in {"MainActivity", "TaktoApplication"} or name in manifest_components:
             continue
         count = len(re.findall(rf"\b{re.escape(name)}\b", all_text))
         if count == 1:
@@ -65,6 +70,7 @@ report = {
     "dead_private_kotlin": dead_private,
     "top_level_review_candidates": top_level_candidates,
     "todo_fixme_markers": markers,
+    "manifest_components_ignored": sorted(manifest_components),
 }
 print(json.dumps(report, indent=2, ensure_ascii=False))
 

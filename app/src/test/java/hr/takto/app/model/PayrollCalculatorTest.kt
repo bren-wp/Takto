@@ -200,4 +200,21 @@ class PayrollCalculatorTest {
         assertTrue(PayrollRoleCatalog2026.rolesFor(PayrollSystem.OTHER).isEmpty())
     }
 
+    @Test
+    fun taxCatalogKeepsReferenceRatesFromRaspored() {
+        val rijeka = PayrollTaxCatalog2026.locality("rijeka")!!
+        assertEquals(20.0, rijeka.lowerRate, 0.001)
+        assertEquals(25.0, rijeka.higherRate, 0.001)
+
+        val zagreb = PayrollTaxCatalog2026.locality("zagreb")!!
+        assertEquals(23.0, zagreb.lowerRate, 0.001)
+        assertEquals(33.0, zagreb.higherRate, 0.001)
+    }
+
+    @Test
+    fun taxCatalogSearchMatchesCityAndCounty() {
+        assertEquals("rijeka", PayrollTaxCatalog2026.search("Rijeka").single().id)
+        assertTrue(PayrollTaxCatalog2026.search("Istarska").map { it.id }.containsAll(listOf("pazin", "pula")))
+    }
+
 }

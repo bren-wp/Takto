@@ -27,6 +27,7 @@ import hr.takto.app.model.CroatianPayrollRules2026
 import hr.takto.app.model.PayrollProfile
 import hr.takto.app.model.PayrollSystem
 import hr.takto.app.model.PensionMode
+import hr.takto.app.ui.components.formatEuro
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
 import java.util.Locale

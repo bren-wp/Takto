@@ -11,7 +11,7 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.16-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.17-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
@@ -50,6 +50,8 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - preporuke oznaka uzimaju u obzir i učestalost i svježinu stvarnog korištenja
 - veliki mjesečni pregled 6 × 7
 - odabir oznaka u Kalendaru automatski prelazi u jedan stupac na uskim ekranima ili pri velikom fontu
+- alatna traka Kalendara automatski prelazi u dva retka na uskim ekranima i pri povećanom fontu kako akcije ne bi bile odrezane
+- naslov mjeseca u Kalendaru eksplicitno je izložen kao gumb za odabir drugog mjeseca radi bolje TalkBack navigacije
 - polja početka i kraja rada slažu se vertikalno kada bi dva stupca bila pretijesna
 - vlastiti izbor boje koristi pristupačne 48 dp kontrole, a tekst automatski bira svijetlu ili tamnu boju prema kontrastu
 - prilagodljivi brzi odabir koji prioritizira nedavno korištene oznake
@@ -162,6 +164,9 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 - uvoz fotografije rasporeda iz galerije uz veću rezoluciju za sitniji tekst u tablicama
 - lokalno prepoznavanje datuma, oznaka i radnog vremena uz blokiranje dvosmislenih rezultata
 - pregled svih pronađenih dana te uređivanje ili uklanjanje svakog unosa prije konačnog uvoza
+- skener unaprijed prikazuje koliko je datuma novo, a koliko već popunjeno
+- postojeći datumi se po zadanim postavkama ne prepisuju; destruktivno prepisivanje traži dodatnu potvrdu
+- skenirane oznake koriste automatski čitljiv tekst i kod vrlo svijetlih vlastitih boja
 - automatski unos potvrđenog rasporeda u Kalendar
 - CSV izvoz
 - CSV uvoz sa zarezom ili točka-zarezom
@@ -194,7 +199,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.16 koristi aktualni stabilni Android toolchain:
+Takto 0.1.17 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -228,10 +233,10 @@ GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.16-debug-apk** — instalabilni debug APK
-- **Takto-0.1.16-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.16-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.16-SHA256** — checksum datoteka
+- **Takto-0.1.17-debug-apk** — instalabilni debug APK
+- **Takto-0.1.17-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.17-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.17-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 

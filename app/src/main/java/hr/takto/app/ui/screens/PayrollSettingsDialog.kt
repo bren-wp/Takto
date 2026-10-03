@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hr.takto.app.model.CroatianPayrollRules2026
 import hr.takto.app.model.PayrollProfile
+import hr.takto.app.model.PayrollRoleCatalog2026
 import hr.takto.app.model.PayrollSystem
 import hr.takto.app.model.PensionMode
 import hr.takto.app.ui.components.formatEuro
@@ -40,6 +41,10 @@ fun PayrollSettingsDialog(
 ) {
     var enabled by remember(initial) { mutableStateOf(initial.enabled) }
     var system by remember(initial) { mutableStateOf(initial.system) }
+    var rolePresetId by remember(initial) { mutableStateOf(initial.rolePresetId) }
+    var roleQuery by remember(initial) {
+        mutableStateOf(PayrollRoleCatalog2026.role(initial.rolePresetId)?.label.orEmpty())
+    }
     var coefficient by remember(initial) { mutableStateOf(decimalText(initial.coefficient)) }
     var years by remember(initial) { mutableStateOf(initial.yearsOfService.toString()) }
     var manualBase by remember(initial) { mutableStateOf(decimalText(initial.manualBaseEur)) }
@@ -63,6 +68,13 @@ fun PayrollSettingsDialog(
 
     val currentMonth = YearMonth.now()
     val officialBase = CroatianPayrollRules2026.officialBase(currentMonth, system)
+    val selectedRole = PayrollRoleCatalog2026.role(rolePresetId)
+        ?.takeIf { it.system == system }
+    val matchingRoles = if (system == PayrollSystem.OTHER) {
+        emptyList()
+    } else {
+        PayrollRoleCatalog2026.search(system, roleQuery, limit = 7)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -91,7 +103,15 @@ fun PayrollSettingsDialog(
                 PayrollSystem.entries.forEach { option ->
                     FilterChip(
                         selected = system == option,
-                        onClick = { system = option },
+                        onClick = {
+                            if (system != option) {
+                                system = option
+                                if (PayrollRoleCatalog2026.role(rolePresetId)?.system != option) {
+                                    rolePresetId = ""
+                                    roleQuery = ""
+                                }
+                            }
+                        },
                         label = { Text(option.label) },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -113,14 +133,72 @@ fun PayrollSettingsDialog(
                     )
                 }
 
+                if (system == PayrollSystem.STATE_SERVICE || system == PayrollSystem.PUBLIC_SERVICE) {
+                    Text("Radno mjesto i koeficijent", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Pretraži referentni katalog ili ostavi ručni koeficijent ako tvoje radno mjesto nije na popisu.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    OutlinedTextField(
+                        value = roleQuery,
+                        onValueChange = {
+                            roleQuery = it.take(80)
+                            if (selectedRole != null && !selectedRole.label.equals(it.trim(), ignoreCase = true)) {
+                                rolePresetId = ""
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Traži radno mjesto") },
+                        placeholder = { Text("npr. medicinska sestra, učitelj, referent, policija") },
+                        singleLine = true
+                    )
+                    matchingRoles.forEach { role ->
+                        FilterChip(
+                            selected = rolePresetId == role.id,
+                            onClick = {
+                                rolePresetId = role.id
+                                roleQuery = role.label
+                                coefficient = decimalText(role.coefficient)
+                            },
+                            label = {
+                                Column {
+                                    Text("${role.label} · ${decimalText(role.coefficient)}", fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "${role.sector} · ${role.code}",
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    selectedRole?.let { role ->
+                        Text(
+                            "Odabrano: ${role.officialName} · koeficijent ${decimalText(role.coefficient)} · oznaka ${role.code}",
+                            color = TaktoBlue,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Text(
+                        PayrollRoleCatalog2026.SOURCE_LABEL,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+
                 OutlinedTextField(
                     value = coefficient,
-                    onValueChange = { coefficient = sanitizeDecimal(it) },
+                    onValueChange = {
+                        coefficient = sanitizeDecimal(it)
+                        rolePresetId = ""
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Koeficijent radnog mjesta") },
+                    label = { Text("Koeficijent / bodovanje") },
                     supportingText = {
                         if (system == PayrollSystem.STATE_SERVICE || system == PayrollSystem.PUBLIC_SERVICE) {
-                            Text("Službena platna ljestvica koristi raspon 1,00–8,00.")
+                            Text("Koeficijent možeš odabrati iz kataloga ili upisati ručno. Za obračun se koristi spremljena brojčana vrijednost.")
                         }
                     },
                     singleLine = true
@@ -284,6 +362,7 @@ fun PayrollSettingsDialog(
                         PayrollProfile(
                             enabled = enabled,
                             system = system,
+                            rolePresetId = rolePresetId,
                             coefficient = parseDecimal(coefficient),
                             yearsOfService = years.toIntOrNull() ?: 0,
                             manualBaseEur = parseDecimal(manualBase),

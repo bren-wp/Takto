@@ -650,10 +650,6 @@ class ScheduleStore(private val context: Context) {
         prefs.edit().putString(KEY_PAYROLL_PROFILE, payrollProfileToJson(sanitized).toString()).apply()
     }
 
-    fun exportArchiveJsonLines(): String =
-        runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
-            .getOrDefault("")
-
     fun writeArchiveTo(output: OutputStream) {
         val file = context.getFileStreamPath(HISTORY_FILE)
         if (!file.exists()) return

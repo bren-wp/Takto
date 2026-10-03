@@ -8,6 +8,7 @@ Takto 0.1.18 donosi novi završni pass kroz izgled, početne smjene, obračun pl
 - uklonjen je sistemski/automatski izbor teme
 - uklonjene su postavke, perzistencija i testovi vezani uz stare teme
 - Android window chrome i Compose paleta koriste isti svijetli vizualni sustav
+- Android 8.0 zadržava kompatibilni osnovni theme, a light navigation bar aktivira se od API 27
 
 ## Oznake i radno vrijeme
 
@@ -17,6 +18,8 @@ Takto 0.1.18 donosi novi završni pass kroz izgled, početne smjene, obračun pl
 - D ima početni predložak 07:00–19:00
 - N ima početni predložak 19:00–07:00
 - oba predloška predstavljaju 12 sati rada i mogu se mijenjati
+- mreža ugrađenih oznaka prilagođava se uskim ekranima i velikom fontu
+- editor slike ima preglednije kontrole za pomicanje, rotaciju i vraćanje okvira na jedan red
 - SD je neradni status i ne računa se kao odrađena smjena
 - 12-satni predlošci ne mijenjaju automatski mjesečni fond; fond ostaje zasebna obračunska postavka
 
@@ -34,8 +37,10 @@ Iz projekta `bren-wp/RASPORED` prenesen je referentni katalog odabranih radnih m
 ## Dead-code i QA
 
 - dodan je strogi, konzervativni audit privatnih Kotlin simbola
-- audit se pokreće u Android CI-ju prije unit testova
-- top-level Android entry pointovi poput BroadcastReceivera ostaju samo kandidati za ručni pregled i ne brišu se napamet
+- audit se pokreće u Android CI-ju prije unit testova i prije releasea
+- strict način blokira privatne i top-level Kotlin deklaracije bez reference te produkcijske `TODO`/`FIXME` markere
+- Android entry pointovi deklarirani u manifestu izuzeti su od lažnih dead-code prijava
+- uklonjena su nepotrebna nullable upozorenja i zastarjele directional ikone u glavnim UI putanjama
 - prošireni su unit testovi za početne oznake, boje, SD i koeficijente kataloga
 
 ## Verzija

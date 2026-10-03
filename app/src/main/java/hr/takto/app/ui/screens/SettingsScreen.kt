@@ -1258,6 +1258,7 @@ private fun WorkTimePresetDialog(
     var startText by remember(code, preset) { mutableStateOf(preset?.startMinute?.let(ScheduleLogic::formatClock) ?: "07:00") }
     var endText by remember(code, preset) { mutableStateOf(preset?.endMinute?.let(ScheduleLogic::formatClock) ?: "15:00") }
     var breakText by remember(code, preset) { mutableStateOf((preset?.breakMinutes ?: 0).takeIf { it > 0 }?.toString().orEmpty()) }
+    var confirmClear by remember(code, preset) { mutableStateOf(false) }
     val start = ScheduleLogic.parseClock(startText)
     val end = ScheduleLogic.parseClock(endText)
     val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
@@ -1275,24 +1276,22 @@ private fun WorkTimePresetDialog(
                     "$name · novo dodijeljeni dani mogu automatski dobiti ovo radno vrijeme. Vrijeme možeš upisati i kao 730 ili 7.30.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = startText,
-                        onValueChange = { startText = it.take(5) },
-                        label = { Text("Početak") },
-                        placeholder = { Text("07:00") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = endText,
-                        onValueChange = { endText = it.take(5) },
-                        label = { Text("Kraj") },
-                        placeholder = { Text("15:00") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                }
+                OutlinedTextField(
+                    value = startText,
+                    onValueChange = { startText = it.take(5) },
+                    label = { Text("Početak") },
+                    placeholder = { Text("07:00") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = endText,
+                    onValueChange = { endText = it.take(5) },
+                    label = { Text("Kraj") },
+                    placeholder = { Text("15:00") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
                 OutlinedTextField(
                     value = breakText,
                     onValueChange = { breakText = it.filter(Char::isDigit).take(3) },
@@ -1301,7 +1300,7 @@ private fun WorkTimePresetDialog(
                     singleLine = true
                 )
                 Text("Brza pauza", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-                listOf(0, 15, 30, 45, 60).chunked(3).forEach { row ->
+                listOf(0, 15, 30, 45, 60).chunked(2).forEach { row ->
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         row.forEach { minutes ->
                             FilterChip(
@@ -1311,7 +1310,7 @@ private fun WorkTimePresetDialog(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 when {
@@ -1355,12 +1354,26 @@ private fun WorkTimePresetDialog(
         },
         dismissButton = {
             Row {
-                if (preset != null) TextButton(onClick = onClear) { Text("Ukloni", color = MaterialTheme.colorScheme.error) }
+                if (preset != null) TextButton(onClick = { confirmClear = true }) { Text("Ukloni", color = MaterialTheme.colorScheme.error) }
                 TextButton(onClick = onDismiss) { Text("Odustani") }
             }
         }
     )
+
+    if (confirmClear) {
+        ConfirmDeleteDialog(
+            title = "Ukloni zadano radno vrijeme?",
+            message = "Zadano vrijeme za oznaku $code uklonit će se za buduće unose. Već spremljeni dani u kalendaru ostaju nepromijenjeni.",
+            confirmLabel = "Ukloni vrijeme",
+            onConfirm = {
+                confirmClear = false
+                onClear()
+            },
+            onDismiss = { confirmClear = false }
+        )
+    }
 }
+
 @Composable
 private fun StandardDayDialog(
     initialMinutes: Int,

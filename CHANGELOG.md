@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.1.16
+
+Veliki UI/UX i dead-code polish: bolja responzivnost, sigurnije destruktivne radnje, pristupačniji kontrast vlastitih boja, precizniji editor skeniranja i čišći kod.
+
+### UI i UX
+
+- Početna je skrolabilna i mjesečne metrike se preslaguju na malim ekranima i pri većem fontu
+- onboarding poštuje safe drawing insets, skrolabilan je i čuva trenutnu stranicu nakon rekreacije Activityja
+- odabrana donja kartica, odabrani datum/mjesec Kalendara i mjesec Statistike čuvaju se nakon rekreacije Activityja
+- vlastite svijetle/tamne boje automatski dobivaju čitljiv kontrast teksta u Kalendaru, Početnoj, Statistici, pretrazi i Postavkama
+- ugrađene oznake u Postavkama više se ne sabijaju nego se prikazuju u vodoravno skrolabilnom retku
+- radno vrijeme, mjesečni fond i dijalozi uzoraka prilagođeni su manjim ekranima i velikom fontu
+- kontrolne metrike više se ne nazivaju prekovremenima: odvojeni su "Višak iznad fonda", "Iznad dnevnog standarda" i stvarni "Priznati prekovremeni"
+
+### Sigurnost interakcija
+
+- potvrda prije brisanja jednog ili više kalendarskih unosa
+- potvrda prije brisanja vlastite brze oznake ili spremljenog uzorka
+- potvrda prije uklanjanja radnog vremena i predloška zadanog vremena
+- dodatna potvrda prije primjene uzorka s prepisivanjem postojećih unosa
+- lijepljenje tjedna jasno navodi hoće li prepisati postojeće unose
+
+### Skeniranje rasporeda
+
+- editor izreza sada ima osam hvatišta: četiri kuta i četiri sredine ruba
+- područje se može sužavati/širiti zasebno s lijeve, desne, gornje i donje strane
+- pomicanje tipkama je finije, u koraku 2 %, za preciznije označavanje jednog retka
+- editor izreza je skrolabilan na manjim zaslonima
+
+### Dead-code i održavanje
+
+- uklonjena neupotrebljiva komponenta `TaktoAmbientBackground`
+- uklonjen neupotrebljivi `compact` način iz `MonthCalendar`
+- uklonjeni nepotrebni importi pronađeni auditom
+- tri duplicirana formattera eura zamijenjena zajedničkim helperom
+- dodani testovi za kontrast vlastitih boja, crop rubove, responzivne metrike i zajedničko formatiranje eura
+- QA checklist usklađen je s aktualnom backup shemom v10 i ponašanjem potvrđenih prekovremenih
+
+### Verzija
+
+- `versionName`: `0.1.16`
+- `versionCode`: `17`
+
+
 ## 0.1.15
 
 Daljnje poboljšanje skeniranja stvarnih rasporeda s više zaposlenika, sigurniji odabir mjeseca, ručna korekcija pronađenih unosa i brži unos potvrđenih prekovremenih sati.

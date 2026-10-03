@@ -29,6 +29,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -115,8 +116,10 @@ private fun TaktoRoot(
     requestedDate: LocalDate?,
     requestNonce: Long
 ) {
-    var current by remember { mutableStateOf(MainSection.HOME) }
-    var calendarDate by remember { mutableStateOf<LocalDate?>(null) }
+    var currentName by rememberSaveable { mutableStateOf(MainSection.HOME.name) }
+    var calendarDateIso by rememberSaveable { mutableStateOf<String?>(null) }
+    val current = MainSection.entries.firstOrNull { it.name == currentName } ?: MainSection.HOME
+    val calendarDate = calendarDateIso?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
     val context = LocalContext.current
     // Čitanje snapshot mape ovdje osigurava da se alarm sljedećeg rada ponovno
     // izračuna nakon dodavanja, brisanja ili promjene vremena bez ručnog poziva iz svakog ekrana.
@@ -139,8 +142,8 @@ private fun TaktoRoot(
 
     LaunchedEffect(requestNonce, requestedDate, store.onboardingDone.value) {
         if (store.onboardingDone.value && requestedDate != null) {
-            calendarDate = requestedDate
-            current = MainSection.CALENDAR
+            calendarDateIso = requestedDate.toString()
+            currentName = MainSection.CALENDAR.name
         }
     }
     if (!store.onboardingDone.value) {
@@ -149,8 +152,8 @@ private fun TaktoRoot(
     }
 
     BackHandler(enabled = current != MainSection.HOME) {
-        current = MainSection.HOME
-        calendarDate = null
+        currentName = MainSection.HOME.name
+        calendarDateIso = null
     }
 
     Box(
@@ -163,9 +166,9 @@ private fun TaktoRoot(
             bottomBar = {
                 TaktoBottomBar(current = current, onSelect = { section ->
                     if (section == MainSection.CALENDAR && current != MainSection.CALENDAR) {
-                        calendarDate = null
+                        calendarDateIso = null
                     }
-                    current = section
+                    currentName = section.name
                 })
             }
         ) { padding ->
@@ -174,8 +177,8 @@ private fun TaktoRoot(
                     store = store,
                     contentPadding = padding,
                     onOpenCalendar = { date ->
-                        calendarDate = date
-                        current = MainSection.CALENDAR
+                        calendarDateIso = date?.toString()
+                        currentName = MainSection.CALENDAR.name
                     }
                 )
                 MainSection.CALENDAR -> CalendarScreen(store = store, contentPadding = padding, initialDate = calendarDate)

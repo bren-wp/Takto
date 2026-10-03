@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.ui.components.ConfirmDeleteDialog
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
@@ -125,6 +126,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     }
     var selectedPattern by remember { mutableStateOf<PatternDef?>(null) }
     var customPatternDialog by remember { mutableStateOf(false) }
+    var pendingDeletePattern by remember { mutableStateOf<PatternDef?>(null) }
 
     Column(
         modifier = Modifier
@@ -160,7 +162,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         Icon(Icons.Default.Replay, null, tint = TaktoBlue)
                         Text(pattern.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 10.dp).weight(1f))
                         pattern.id?.let { id ->
-                            IconButton(onClick = { store.removeSavedPattern(id) }) {
+                            IconButton(onClick = { pendingDeletePattern = pattern }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Obriši uzorak", tint = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -190,6 +192,19 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
             }
         }
+    }
+
+    pendingDeletePattern?.let { pattern ->
+        ConfirmDeleteDialog(
+            title = "Obriši uzorak?",
+            message = "Uzorak „${pattern.name}” uklonit će se iz spremljenih uzoraka. Već primijenjeni dani u kalendaru ostaju nepromijenjeni.",
+            confirmLabel = "Obriši uzorak",
+            onConfirm = {
+                pattern.id?.let(store::removeSavedPattern)
+                pendingDeletePattern = null
+            },
+            onDismiss = { pendingDeletePattern = null }
+        )
     }
 
     if (customPatternDialog) {

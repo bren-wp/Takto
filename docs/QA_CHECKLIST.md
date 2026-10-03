@@ -1,4 +1,4 @@
-# Takto 0.1.16 — QA checklist
+# Takto 0.1.18 — QA checklist
 
 ## Build
 - [ ] Gradle sync prolazi bez greške
@@ -210,13 +210,39 @@
 - [ ] svi pronađeni dani skena mogu se pregledati i ispraviti prije uvoza
 - [ ] raspored s više osoba ne uvozi drugu osobu kada ciljna osoba nije sigurno pronađena
 
-## Dead-code / održavanje 0.1.16
+## Dead-code / održavanje 0.1.18
 - [ ] nema referenci na uklonjeni TaktoAmbientBackground
 - [ ] MonthCalendar nema neupotrebljivi compact način prikaza
 - [ ] formatiranje eura koristi zajednički helper umjesto tri duplicirane funkcije
 - [ ] nema nepotrebnih UI importa otkrivenih auditom
 - [ ] novi helperi za kontrast, crop i responzivni layout imaju unit testove
 
+
+## Klik-po-klik produkcijski smoke test
+
+- [ ] prvi pokret → onboarding se može proći Dalje → Dalje → Otvori Takto bez rezanja sadržaja
+- [ ] Preskoči onboarding vodi izravno na Početnu i onboarding se ne vraća nakon ponovnog pokretanja
+- [ ] Početna → D/N brzi unos → Kalendar prikazuje točan datum, oznaku i zadano vrijeme
+- [ ] Početna → današnji spremljeni unos → uređivanje mijenja samo odabrani dan
+- [ ] Kalendar → dan → Radno vrijeme → promjena početka/kraja/pauze → Spremi → statistika odmah koristi novo trajanje
+- [ ] Kalendar → dan → priznati prekovremeni → 30/60/120 min → Spremi → Početna i Statistika prikazuju isti iznos sati
+- [ ] Kalendar → višestruki odabir → oznaka → potvrda → svi i samo odabrani dani se mijenjaju
+- [ ] Kalendar → Vrati → cijela zadnja grupna promjena vraća se jednim dodirom
+- [ ] Kalendar → skeniraj → kamera → izrez → pomak gore/dolje/lijevo/desno → zakreni → skeniraj označeno → pregled → uvoz
+- [ ] Kalendar → skeniraj → galerija → isti editor i isti pregled rade kao kod kamere
+- [ ] sken više osoba → upis ciljnog imena → ne preuzima red druge osobe
+- [ ] sken bez prepoznatog mjeseca → ručni odabir mjeseca je obavezan prije uvoza
+- [ ] skenirani dan → Uredi → promijeni oznaku/vrijeme/pauzu → Spremi → korekcija ostaje u pregledu
+- [ ] skenirani dan → Ukloni → samo taj datum nestaje iz uvoza
+- [ ] Postavke → Oznake rasporeda → mreža je čitljiva na uskom zaslonu i pri velikom fontu
+- [ ] Postavke → Radno vrijeme po oznakama → D/N predlošci mogu se izmijeniti i ukloniti
+- [ ] Postavke → Obračun plaće → radno mjesto → koeficijent → lokalitet → porezne stope → Spremi
+- [ ] Statistika → isti mjesec → bruto/neto/prekovremeni odgovaraju spremljenim ulazima
+- [ ] Postavke → Sigurnosna kopija → izvoz → povrat → kalendar, profil, payroll i preseti ostaju sačuvani
+- [ ] Uzorci → odaberi → primijeni bez prepisivanja → postojeći dani ostaju netaknuti
+- [ ] Uzorci → primijeni s prepisivanjem → potvrda → Vrati vraća cijelu primjenu
+- [ ] Android 8.0 / API 26 → aplikacija se pokreće bez theme/lint kompatibilnosnog problema
+- [ ] Android 8.1+ / API 27+ → svijetla navigacijska traka koristi tamne ikone
 
 ## UI/UX 0.1.18 regresija
 - [ ] aplikacija nema tamni, sistemski ni automatski način teme

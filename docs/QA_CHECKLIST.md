@@ -132,9 +132,9 @@
 - [ ] schema v10 vraća vlastite brze oznake, vlastite uzorke, boje, profil i postavke podsjetnika prije smjene
 - [ ] starije podržane JSON sheme 1–9 i dalje se prihvaćaju
 - [ ] CSV uvoz nudi čuvanje ili prepisivanje postojećih datuma
-- [ ] JSON restore nudi spajanje ili potpunu zamjenu
+- [ ] povrat sigurnosne kopije nudi spajanje bez prepisivanja ili spajanje uz ažuriranje datuma koji postoje u kopiji
 - [ ] malformed CSV s nezatvorenim navodnicima odbija se
-- [ ] novija nepodržana JSON schema odbija se
+- [ ] novija nepodržana JSON schema (> v10) odbija se
 - [ ] Android Share izbornik dobiva CSV tekst rasporeda
 - [ ] iCalendar izvoz stvara valjanu `.ics` datoteku s `VCALENDAR` i `VEVENT` zapisima
 - [ ] radna smjena s vremenom izvozi `DTSTART` / `DTEND`

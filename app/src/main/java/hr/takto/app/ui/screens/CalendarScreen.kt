@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -969,6 +970,7 @@ private fun WorkTimeDialog(
     var overtimeText by remember(initialOvertimeMinutes) {
         mutableStateOf(initialOvertimeMinutes.takeIf { it > 0 }?.toString().orEmpty())
     }
+    var confirmClearTime by remember(title, showClear) { mutableStateOf(false) }
     val start = ScheduleLogic.parseClock(startText)
     val end = ScheduleLogic.parseClock(endText)
     val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
@@ -984,7 +986,13 @@ private fun WorkTimeDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 540.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
                     "Vrijeme možeš upisati kao 07:30, 7.30 ili 730. Ako je završetak ranije od početka, rad završava sljedeći dan.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1068,7 +1076,7 @@ private fun WorkTimeDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium
                 )
-                listOf(0, 15, 30, 45, 60).chunked(3).forEach { row ->
+                listOf(0, 15, 30, 45, 60).chunked(2).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1081,7 +1089,7 @@ private fun WorkTimeDialog(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 OutlinedTextField(
@@ -1166,7 +1174,7 @@ private fun WorkTimeDialog(
                     )
                 }
                 if (showClear) {
-                    TextButton(onClick = onClear) {
+                    TextButton(onClick = { confirmClearTime = true }) {
                         Text("Ukloni radno vrijeme", color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -1181,7 +1189,21 @@ private fun WorkTimeDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
     )
+
+    if (confirmClearTime) {
+        ConfirmDeleteDialog(
+            title = "Ukloni radno vrijeme?",
+            message = "Početak, kraj, pauza i potvrđeni prekovremeni uklonit će se iz ovog unosa. Oznaka i napomena ostat će spremljene.",
+            confirmLabel = "Ukloni vrijeme",
+            onConfirm = {
+                confirmClearTime = false
+                onClear()
+            },
+            onDismiss = { confirmClearTime = false }
+        )
+    }
 }
+
 @Composable
 private fun CustomEntryDialog(
     initialText: String,

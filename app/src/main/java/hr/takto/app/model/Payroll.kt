@@ -33,6 +33,7 @@ data class PayrollProfile(
     val coefficient: Double = 0.0,
     val yearsOfService: Int = 0,
     val manualBaseEur: Double = 0.0,
+    val taxLocalityPresetId: String = "",
     val lowerTaxRatePercent: Double = 0.0,
     val higherTaxRatePercent: Double = 0.0,
     val personalAllowanceEur: Double = 600.0,
@@ -140,6 +141,58 @@ object PayrollRoleCatalog2026 {
                     role.officialName.lowercase().contains(needle) ||
                     role.sector.lowercase().contains(needle) ||
                     role.code.lowercase().contains(needle)
+            }
+            .take(limit.coerceIn(1, 20))
+            .toList()
+    }
+}
+
+data class PayrollTaxLocalityPreset(
+    val id: String,
+    val county: String,
+    val name: String,
+    val lowerRate: Double,
+    val higherRate: Double,
+    val source: String
+)
+
+object PayrollTaxCatalog2026 {
+    const val SOURCE_LABEL = "Porezne stope 2026: katalog bren-wp/RASPORED"
+
+    val localities: List<PayrollTaxLocalityPreset> = listOf(
+        PayrollTaxLocalityPreset("zagreb", "Grad Zagreb", "Zagreb", 23.0, 33.0, "NN 28/2025"),
+        PayrollTaxLocalityPreset("rijeka", "Primorsko-goranska", "Rijeka", 20.0, 25.0, "NN 149/2025"),
+        PayrollTaxLocalityPreset("split", "Splitsko-dalmatinska", "Split", 21.5, 32.0, "RRiF 2026 / NN 35/2025"),
+        PayrollTaxLocalityPreset("osijek", "Osječko-baranjska", "Osijek", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("zadar", "Zadarska", "Zadar", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("pazin", "Istarska", "Pazin", 22.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("pula", "Istarska", "Pula", 22.0, 32.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("karlovac", "Karlovačka", "Karlovac", 19.0, 29.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("varazdin", "Varaždinska", "Varaždin", 21.0, 32.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("sibenik", "Šibensko-kninska", "Šibenik", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("sisak", "Sisačko-moslavačka", "Sisak", 21.6, 31.6, "RRiF 2026"),
+        PayrollTaxLocalityPreset("dubrovnik", "Dubrovačko-neretvanska", "Dubrovnik", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("cakovec", "Međimurska", "Čakovec", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("bjelovar", "Bjelovarsko-bilogorska", "Bjelovar", 18.0, 25.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("gospic", "Ličko-senjska", "Gospić", 22.0, 32.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("virovitica", "Virovitičko-podravska", "Virovitica", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("pozega", "Požeško-slavonska", "Požega", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("slavonski-brod", "Brodsko-posavska", "Slavonski Brod", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("vukovar", "Vukovarsko-srijemska", "Vukovar", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("krapina", "Krapinsko-zagorska", "Krapina", 20.0, 30.0, "RRiF 2026"),
+        PayrollTaxLocalityPreset("koprivnica", "Koprivničko-križevačka", "Koprivnica", 20.0, 30.0, "RRiF 2026")
+    )
+
+    fun locality(id: String?): PayrollTaxLocalityPreset? =
+        id?.takeIf { it.isNotBlank() }?.let { wanted -> localities.firstOrNull { it.id == wanted } }
+
+    fun search(query: String, limit: Int = 6): List<PayrollTaxLocalityPreset> {
+        val needle = query.trim().lowercase()
+        return localities.asSequence()
+            .filter { item ->
+                needle.isBlank() ||
+                    item.name.lowercase().contains(needle) ||
+                    item.county.lowercase().contains(needle)
             }
             .take(limit.coerceIn(1, 20))
             .toList()

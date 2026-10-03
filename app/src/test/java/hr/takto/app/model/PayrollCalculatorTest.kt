@@ -179,4 +179,25 @@ class PayrollCalculatorTest {
         assertFalse(result.complete)
         assertTrue("osnovica" in result.missing)
     }
+    @Test
+    fun roleCatalogKeepsReferenceCoefficientsFromRaspored() {
+        assertEquals(1.78, PayrollRoleCatalog2026.role("health-nurse-sss-1")!!.coefficient, 0.001)
+        assertEquals(2.01, PayrollRoleCatalog2026.role("edu-teacher")!!.coefficient, 0.001)
+        assertEquals(1.43, PayrollRoleCatalog2026.role("state-referent")!!.coefficient, 0.001)
+        assertEquals(1.70, PayrollRoleCatalog2026.role("police-station")!!.coefficient, 0.001)
+    }
+
+    @Test
+    fun roleCatalogSeparatesPublicAndStateSystems() {
+        assertTrue(
+            PayrollRoleCatalog2026.rolesFor(PayrollSystem.PUBLIC_SERVICE)
+                .all { it.system == PayrollSystem.PUBLIC_SERVICE }
+        )
+        assertTrue(
+            PayrollRoleCatalog2026.rolesFor(PayrollSystem.STATE_SERVICE)
+                .all { it.system == PayrollSystem.STATE_SERVICE }
+        )
+        assertTrue(PayrollRoleCatalog2026.rolesFor(PayrollSystem.OTHER).isEmpty())
+    }
+
 }

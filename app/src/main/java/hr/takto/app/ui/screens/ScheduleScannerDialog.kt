@@ -70,6 +70,7 @@ import hr.takto.app.model.ScheduleScanParseResult
 import hr.takto.app.model.ScannedScheduleItem
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
 import kotlinx.coroutines.Dispatchers
@@ -532,18 +533,20 @@ private fun ScanPreviewRow(
             .padding(horizontal = 10.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val badgeColor = if (freeDay) {
+            colors.surfaceContainerHighest
+        } else {
+            type?.color ?: TaktoBlue
+        }
         Box(
             modifier = Modifier
                 .size(42.dp)
-                .background(
-                    if (freeDay) colors.surfaceContainerHighest else type?.color ?: TaktoBlue,
-                    RoundedCornerShape(11.dp)
-                ),
+                .background(badgeColor, RoundedCornerShape(11.dp)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 if (freeDay) "—" else item.code,
-                color = if (freeDay) colors.onSurfaceVariant else Color.White,
+                color = if (freeDay) colors.onSurfaceVariant else readableContentColor(badgeColor),
                 fontWeight = FontWeight.ExtraBold,
                 maxLines = 1
             )

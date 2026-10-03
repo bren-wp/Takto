@@ -50,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,8 +91,8 @@ fun CalendarScreen(
     initialDate: LocalDate? = null
 ) {
     val context = LocalContext.current
-    var month by remember(initialDate) { mutableStateOf(initialDate?.let(YearMonth::from) ?: YearMonth.now()) }
-    var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
+    var month by rememberSaveable(initialDate) { mutableStateOf(initialDate?.let(YearMonth::from) ?: YearMonth.now()) }
+    var selectedDate by rememberSaveable(initialDate) { mutableStateOf(initialDate) }
     var customDialog by remember { mutableStateOf(false) }
     var searchDialog by remember { mutableStateOf(false) }
     var scannerDialog by remember { mutableStateOf(false) }

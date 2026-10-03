@@ -887,7 +887,7 @@ class ScheduleStore(private val context: Context) {
             val hasValidTime = startMinute != null && endMinute != null &&
                 workDuration?.let { it > 0 } == true
             val overtimeMinutes = parts.getOrNull(8)?.trim()?.toIntOrNull()?.coerceAtLeast(0)
-                ?.takeIf { hasValidTime && workDuration != null && it <= workDuration }
+                ?.takeIf { hasValidTime && it <= workDuration }
                 ?: 0
             if (preset != null) {
                 entries[date] = ShiftEntry(
@@ -1101,22 +1101,22 @@ class ScheduleStore(private val context: Context) {
             note = note.trim().take(MAX_NOTE_LENGTH),
             startMinute = when {
                 isLeave -> null
-                keepCurrentTime -> current?.startMinute
+                keepCurrentTime -> current.startMinute
                 else -> defaultTime?.startMinute
             },
             endMinute = when {
                 isLeave -> null
-                keepCurrentTime -> current?.endMinute
+                keepCurrentTime -> current.endMinute
                 else -> defaultTime?.endMinute
             },
             breakMinutes = when {
                 isLeave -> 0
-                keepCurrentTime -> current?.breakMinutes ?: 0
+                keepCurrentTime -> current.breakMinutes
                 else -> defaultTime?.breakMinutes ?: 0
             },
             overtimeMinutes = when {
                 isLeave -> 0
-                keepCurrentTime -> current?.overtimeMinutes ?: 0
+                keepCurrentTime -> current.overtimeMinutes
                 else -> 0
             }
         )
@@ -1548,7 +1548,7 @@ class ScheduleStore(private val context: Context) {
             !ScheduleLogic.isLeaveCode(code)
         val overtimeMinutes = obj.optInt("overtimeMinutes", 0)
             .coerceAtLeast(0)
-            .takeIf { validTime && duration != null && it <= duration }
+            .takeIf { validTime && it <= duration }
             ?: 0
         return ShiftEntry(
             date = date,

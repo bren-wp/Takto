@@ -603,11 +603,6 @@ class ScheduleStore(private val context: Context) {
         return BulkEditResult(changed, skipped, freeDays)
     }
 
-    fun setThemeMode(mode: AppThemeMode) {
-        themeMode.value = mode
-        prefs.edit().putString(KEY_THEME_MODE, mode.persistedValue).apply()
-    }
-
     fun saveUserProfile(profile: UserProfile) {
         val sanitized = profile.copy(
             fullName = profile.fullName.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
@@ -1015,9 +1010,6 @@ class ScheduleStore(private val context: Context) {
                 .coerceIn(0, MAX_SHIFT_REMINDER_LEAD_MINUTES)
             standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
                 .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
-            themeMode.value = AppThemeMode.fromPersisted(
-                settings.optString("themeMode", themeMode.value.persistedValue)
-            )
             settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
                 targets.keys().forEach { key ->
                     val month = runCatching { YearMonth.parse(key) }.getOrNull()
@@ -1150,26 +1142,6 @@ class ScheduleStore(private val context: Context) {
         prefs.edit().putString(KEY_SHIFT_COLORS, obj.toString()).apply()
     }
 
-    private fun seedReferenceShortcutsOnce() {
-        if (prefs.getBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, false)) return
-
-        val defaults = listOf(
-            CustomShiftPreset("J", "J", 0xFF64748BL),
-            CustomShiftPreset("SD", "SD", 0xFF334155L)
-        )
-        defaults.forEach { preset ->
-            if (
-                customShiftPresets.keys.none { it.equals(preset.code, ignoreCase = true) } &&
-                DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) } &&
-                customShiftPresets.size < MAX_CUSTOM_PRESETS
-            ) {
-                customShiftPresets[preset.code] = preset
-            }
-        }
-        persistCustomShiftPresets()
-        prefs.edit().putBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, true).apply()
-    }
-
     private fun importedCodeColor(code: String): Long {
         val palette = longArrayOf(
             0xFF22B8CFL, 0xFF2488FFL, 0xFF8B46F6L, 0xFF13D7A0L,
@@ -1228,6 +1200,21 @@ class ScheduleStore(private val context: Context) {
                 }
             }
         }.onFailure { workTimePresets.clear() }
+    }
+
+    private fun seedDefaultWorkTimePresets() {
+        val defaults = listOf(
+            WorkTimePreset("D", 7 * 60, 19 * 60, 0),
+            WorkTimePreset("N", 19 * 60, 7 * 60, 0)
+        )
+        var changed = false
+        defaults.forEach { preset ->
+            if (workTimePresets.keys.none { it.equals(preset.code, ignoreCase = true) }) {
+                workTimePresets[preset.code] = preset
+                changed = true
+            }
+        }
+        if (changed) persistWorkTimePresets()
     }
 
     private fun persistWorkTimePresets() {
@@ -1877,7 +1864,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
-        private const val DATA_SCHEMA_VERSION = 10
+        private const val DATA_SCHEMA_VERSION = 11
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 2
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L

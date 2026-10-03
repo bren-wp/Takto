@@ -10,9 +10,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,7 +30,6 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.ColorLens
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
@@ -42,7 +40,6 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Share
@@ -68,15 +65,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import hr.takto.app.BuildConfig
 import hr.takto.app.data.ScheduleStore
-import hr.takto.app.model.AppThemeMode
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.PayrollRoleCatalog2026
 import hr.takto.app.model.EmploymentCatalog
+import hr.takto.app.model.DefaultWorkTimePresets
 import hr.takto.app.model.UserProfile
 import hr.takto.app.reminders.ReminderScheduler
 import hr.takto.app.ui.components.ConfirmDeleteDialog
@@ -91,7 +90,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     val context = LocalContext.current
     var profileDialog by remember { mutableStateOf(false) }
     var payrollDialog by remember { mutableStateOf(false) }
-    var appearanceDialog by remember { mutableStateOf(false) }
     var reminderDialog by remember { mutableStateOf(false) }
     var shiftReminderLeadDialog by remember { mutableStateOf(false) }
     var notificationPermissionTarget by remember { mutableStateOf<String?>(null) }
@@ -318,10 +316,14 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             icon = Icons.Default.Payments,
             title = "Obračun plaće",
             subtitle = if (!store.payrollProfile.value.enabled) {
-                "Postavi koeficijent, staž, porezne stope i osobni odbitak"
+                "Postavi radno mjesto, koeficijent, staž, porezne stope i osobni odbitak"
             } else {
                 buildString {
                     append(store.payrollProfile.value.system.label)
+                    PayrollRoleCatalog2026.role(store.payrollProfile.value.rolePresetId)?.let { role ->
+                        append(" · ")
+                        append(role.label)
+                    }
                     if (store.payrollProfile.value.coefficient > 0.0) {
                         append(" · koeficijent ")
                         append(store.payrollProfile.value.coefficient)
@@ -340,40 +342,48 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                     Text("Oznake rasporeda", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 10.dp))
                 }
                 Text("Gotove oznake možeš prilagoditi, a vlastite oznake mogu predstavljati bilo koji tip rada, obveze ili odsutnosti.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    store.shiftTypes().forEach { type ->
-                        Column(
-                            modifier = Modifier
-                                .width(76.dp)
-                                .clickable { colorDialogCode = type.code },
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp)
-                                    .background(type.color, RoundedCornerShape(12.dp)),
-                                contentAlignment = Alignment.Center
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val fontScale = LocalDensity.current.fontScale
+                    val columns = if (maxWidth < 380.dp || fontScale >= 1.25f) 2 else 3
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        store.shiftTypes().chunked(columns).forEach { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    type.code,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = readableContentColor(type.color),
-                                    fontSize = if (type.code.length == 1) 20.sp else 16.sp,
-                                    maxLines = 1
-                                )
+                                row.forEach { type ->
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { colorDialogCode = type.code },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .height(56.dp)
+                                                .background(type.color, RoundedCornerShape(14.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                type.code,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = readableContentColor(type.color),
+                                                fontSize = if (type.code.length == 1) 21.sp else 16.sp,
+                                                maxLines = 1
+                                            )
+                                        }
+                                        Text(
+                                            type.name,
+                                            fontSize = 10.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2
+                                        )
+                                    }
+                                }
+                                repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
                             }
-                            Text(
-                                type.name,
-                                fontSize = 10.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2
-                            )
                         }
                     }
                 }
@@ -592,22 +602,7 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             onClick = { exportArchiveLauncher.launch("Takto-trajna-arhiva.jsonl") }
         )
 
-        SettingsSectionTitle("Izgled i aplikacija")
-
-        SettingsRow(
-            icon = when (store.themeMode.value) {
-                AppThemeMode.LIGHT -> Icons.Default.LightMode
-                AppThemeMode.DARK -> Icons.Default.DarkMode
-                AppThemeMode.SYSTEM -> Icons.Default.ColorLens
-            },
-            title = "Izgled",
-            subtitle = when (store.themeMode.value) {
-                AppThemeMode.LIGHT -> "Svijetli način"
-                AppThemeMode.DARK -> "Tamni način"
-                AppThemeMode.SYSTEM -> "Prema postavci uređaja"
-            },
-            onClick = { appearanceDialog = true }
-        )
+        SettingsSectionTitle("Aplikacija")
 
         SettingsRow(
             icon = Icons.Default.ColorLens,
@@ -672,7 +667,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
         )
     }
 
-
     pendingDeleteCustomCode?.let { code ->
         val type = store.shiftType(code)
         ConfirmDeleteDialog(
@@ -688,17 +682,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 pendingDeleteCustomCode = null
             },
             onDismiss = { pendingDeleteCustomCode = null }
-        )
-    }
-
-    if (appearanceDialog) {
-        AppearanceDialog(
-            current = store.themeMode.value,
-            onDismiss = { appearanceDialog = false },
-            onSelect = { mode ->
-                store.setThemeMode(mode)
-                appearanceDialog = false
-            }
         )
     }
 
@@ -791,7 +774,6 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             }
         )
     }
-
 
     colorDialogCode?.let { code ->
         val type = store.shiftType(code)
@@ -1254,8 +1236,15 @@ private fun WorkTimePresetDialog(
     onSave: (Int, Int, Int) -> Unit,
     onClear: () -> Unit
 ) {
-    var startText by remember(code, preset) { mutableStateOf(preset?.startMinute?.let(ScheduleLogic::formatClock) ?: "07:00") }
-    var endText by remember(code, preset) { mutableStateOf(preset?.endMinute?.let(ScheduleLogic::formatClock) ?: "15:00") }
+    val defaultPreset = DefaultWorkTimePresets.forCode(code)
+    val defaultStartMinute = defaultPreset?.startMinute ?: 7 * 60
+    val defaultEndMinute = defaultPreset?.endMinute ?: 15 * 60
+    var startText by remember(code, preset) {
+        mutableStateOf(preset?.startMinute?.let(ScheduleLogic::formatClock) ?: ScheduleLogic.formatClock(defaultStartMinute))
+    }
+    var endText by remember(code, preset) {
+        mutableStateOf(preset?.endMinute?.let(ScheduleLogic::formatClock) ?: ScheduleLogic.formatClock(defaultEndMinute))
+    }
     var breakText by remember(code, preset) { mutableStateOf((preset?.breakMinutes ?: 0).takeIf { it > 0 }?.toString().orEmpty()) }
     var confirmClear by remember(code, preset) { mutableStateOf(false) }
     val start = ScheduleLogic.parseClock(startText)
@@ -1263,7 +1252,7 @@ private fun WorkTimePresetDialog(
     val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
     val grossDuration = ScheduleLogic.grossWorkDurationMinutes(start, end)
     val valid = pause != null && ScheduleLogic.isValidWorkTime(start, end, pause)
-    val duration = if (valid) ScheduleLogic.workDurationMinutes(start, end, pause ?: 0) else null
+    val duration = if (valid) ScheduleLogic.workDurationMinutes(start, end, pause) else null
     val overnight = valid && ScheduleLogic.isOvernightWork(start, end)
 
     AlertDialog(
@@ -1272,7 +1261,11 @@ private fun WorkTimePresetDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "$name · novo dodijeljeni dani mogu automatski dobiti ovo radno vrijeme. Vrijeme možeš upisati i kao 730 ili 7.30.",
+                    if (code.equals("D", true) || code.equals("N", true)) {
+                        "$name · početno je postavljeno 12 sati (D 07:00–19:00, N 19:00–07:00). Vrijeme i pauzu možeš promijeniti."
+                    } else {
+                        "$name · novo dodijeljeni dani mogu automatski dobiti ovo radno vrijeme. Vrijeme možeš upisati i kao 730 ili 7.30."
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedTextField(
@@ -1346,7 +1339,7 @@ private fun WorkTimePresetDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(start!!, end!!, pause!!) },
+                onClick = { if (valid) onSave(start!!, end!!, pause) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }
@@ -1411,12 +1404,12 @@ private fun StandardDayDialog(
                         singleLine = true
                     )
                 }
-                if (valid) Text("Standard: ${ScheduleLogic.formatDuration(total ?: 0)}", color = TaktoBlue, fontWeight = FontWeight.Bold)
+                if (valid) Text("Standard: ${ScheduleLogic.formatDuration(total)}", color = TaktoBlue, fontWeight = FontWeight.Bold)
             }
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(total!!) },
+                onClick = { if (valid) onSave(total) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }
@@ -1465,63 +1458,6 @@ private fun SettingsSectionTitle(title: String) {
 }
 
 @Composable
-private fun AppearanceDialog(
-    current: AppThemeMode,
-    onDismiss: () -> Unit,
-    onSelect: (AppThemeMode) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Izgled aplikacije") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "Odaberi prikaz koji ti najbolje odgovara. Promjena se primjenjuje odmah i ostaje spremljena.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                listOf(
-                    Triple(AppThemeMode.SYSTEM, "Prema uređaju", "Automatski prati svijetli ili tamni način uređaja"),
-                    Triple(AppThemeMode.LIGHT, "Svijetli način", "Neutralna svijetla pozadina, jasne kartice i tamni tekst"),
-                    Triple(AppThemeMode.DARK, "Tamni način", "Svjetlija navy pozadina bez gotovo crnih površina")
-                ).forEach { (mode, title, subtitle) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                if (mode == current) MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(14.dp)
-                            )
-                            .clickable { onSelect(mode) }
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            when (mode) {
-                                AppThemeMode.LIGHT -> Icons.Default.LightMode
-                                AppThemeMode.DARK -> Icons.Default.DarkMode
-                                AppThemeMode.SYSTEM -> Icons.Default.ColorLens
-                            },
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                            Text(title, fontWeight = FontWeight.Bold)
-                            Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                        }
-                        if (mode == current) {
-                            Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.ExtraBold)
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Zatvori") } }
-    )
-}
-
-@Composable
 private fun SettingsRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
@@ -1555,7 +1491,6 @@ private fun SettingsRow(
         }
     }
 }
-
 
 @Composable
 private fun UserProfileDialog(

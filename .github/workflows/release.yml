@@ -85,6 +85,10 @@ jobs:
         if: steps.release_meta.outputs.skip != 'true'
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Dead-code audit
+        if: steps.release_meta.outputs.skip != 'true'
+        run: python3 scripts/dead_code_audit.py --strict
+
       - name: Verify
         if: steps.release_meta.outputs.skip != 'true'
         run: ./gradlew --no-daemon --stacktrace testDebugUnitTest lintDebug lintRelease

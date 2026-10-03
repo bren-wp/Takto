@@ -27,12 +27,16 @@ data class ShiftEntry(
 }
 
 object DefaultShiftTypes {
-    val day = ShiftType("D", "Dan", Color(0xFF2488FF))
-    val night = ShiftType("N", "Noć", Color(0xFF8B46F6))
-    val annual = ShiftType("GO", "Godišnji odmor", Color(0xFF13D7A0))
-    val sick = ShiftType("BO", "Bolovanje", Color(0xFFFFB21D))
-    val paid = ShiftType("PD", "Plaćeni dopust", Color(0xFFFF4B55))
-    val presets = listOf(day, night, annual, sick, paid)
+    // D i N su namjerno prvi: na novoj instalaciji postaju dvije početne brze oznake.
+    // Svaka ugrađena oznaka ima vlastitu, dovoljno udaljenu boju radi brzog čitanja kalendara.
+    val day = ShiftType("D", "Dnevna smjena", Color(0xFF2563EB))
+    val night = ShiftType("N", "Noćna smjena", Color(0xFF7C3AED))
+    val morning = ShiftType("J", "Jutarnja smjena", Color(0xFF0891B2))
+    val annual = ShiftType("GO", "Godišnji odmor", Color(0xFF16A34A))
+    val free = ShiftType("SD", "Slobodan dan", Color(0xFF64748B))
+    val sick = ShiftType("BO", "Bolovanje", Color(0xFFF59E0B))
+    val paid = ShiftType("PD", "Plaćeni dopust", Color(0xFFDC2626))
+    val presets = listOf(day, night, morning, annual, free, sick, paid)
 }
 
 data class CustomShiftPreset(
@@ -55,4 +59,13 @@ data class WorkTimePreset(
 ) {
     val durationMinutes: Int?
         get() = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
+}
+
+object DefaultWorkTimePresets {
+    val day = WorkTimePreset("D", 7 * 60, 19 * 60)
+    val night = WorkTimePreset("N", 19 * 60, 7 * 60)
+    val presets = listOf(day, night)
+
+    fun forCode(code: String): WorkTimePreset? =
+        presets.firstOrNull { it.code.equals(code, ignoreCase = true) }
 }

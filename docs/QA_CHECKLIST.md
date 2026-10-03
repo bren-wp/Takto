@@ -1,4 +1,4 @@
-# Takto 0.1.16 — QA checklist
+# Takto 0.1.18 — QA checklist
 
 ## Build
 - [ ] Gradle sync prolazi bez greške
@@ -128,13 +128,13 @@
 - [ ] GO / BO / PD iz CSV-a ignoriraju slučajno unesene sate
 - [ ] stariji CSV bez `boja/pocetak/kraj/pauza_min` i dalje radi
 - [ ] JSON backup se može izvesti i vratiti
-- [ ] JSON sigurnosna kopija schema v10 vraća radno vrijeme, potvrđene prekovremene, standardni radni dan, mjesečne fondove, profil plaće i predloške vremena
-- [ ] schema v10 vraća vlastite brze oznake, vlastite uzorke, boje, profil i postavke podsjetnika prije smjene
+- [ ] JSON sigurnosna kopija schema v11 vraća radno vrijeme, potvrđene prekovremene, standardni radni dan, mjesečne fondove, profil plaće i predloške vremena
+- [ ] schema v11 vraća vlastite brze oznake, vlastite uzorke, boje, profil i postavke podsjetnika prije smjene
 - [ ] starije podržane JSON sheme 1–9 i dalje se prihvaćaju
 - [ ] CSV uvoz nudi čuvanje ili prepisivanje postojećih datuma
 - [ ] povrat sigurnosne kopije nudi spajanje bez prepisivanja ili spajanje uz ažuriranje datuma koji postoje u kopiji
 - [ ] malformed CSV s nezatvorenim navodnicima odbija se
-- [ ] novija nepodržana JSON schema (> v10) odbija se
+- [ ] novija nepodržana JSON schema (> v11) odbija se
 - [ ] Android Share izbornik dobiva CSV tekst rasporeda
 - [ ] iCalendar izvoz stvara valjanu `.ics` datoteku s `VCALENDAR` i `VEVENT` zapisima
 - [ ] radna smjena s vremenom izvozi `DTSTART` / `DTEND`
@@ -178,12 +178,12 @@
 
 ## Vizualni QA
 - [ ] nema preklapanja na manjim zaslonima
-- [ ] veliki fontovi ne režu D / N / GO / BO / PD
+- [ ] veliki fontovi ne režu D / N / J / GO / SD / BO / PD
 - [ ] vlastite oznake od 4+ znakova ostaju čitljive u kalendaru
 - [ ] promjena boja vidljiva je u kalendaru, statistici i novim unosima
 - [ ] dijalog Radno vrijeme ostaje upotrebljiv pri većem system font scaleu
 - [ ] Undo ikona ima jasan disabled/enabled status i pristupačan opis
-- [ ] tamna tema ostaje čitljiva pri većem system font scaleu
+- [ ] jedini svijetli izgled ostaje čitljiv pri većem system font scaleu i pri jakom ambijentalnom svjetlu
 
 ## UI/UX 0.1.16 regresija
 - [ ] Početna se može skrolati na manjim ekranima i pri velikom fontu
@@ -194,7 +194,7 @@
 - [ ] Statistika čuva odabrani mjesec nakon rekreacije Activityja
 - [ ] vrlo svijetle vlastite boje koriste tamni tekst, a tamne boje svijetli tekst
 - [ ] tekst ostaje čitljiv na vlastitim bojama u Kalendaru, Početnoj, pretrazi, Statistici i Postavkama
-- [ ] ugrađene oznake u Postavkama ne sabijaju se kada ih ima više, nego se vodoravno skrolaju
+- [ ] ugrađene oznake u Postavkama prikazuju se u preglednoj mreži bez horizontalnog skrolanja i bez rezanja naziva
 - [ ] brisanje jednog kalendarskog unosa traži potvrdu
 - [ ] brisanje više odabranih dana traži potvrdu i može se vratiti jednim Undo korakom
 - [ ] brisanje vlastite brze oznake traži potvrdu i ne briše postojeće kalendarske zapise
@@ -210,9 +210,49 @@
 - [ ] svi pronađeni dani skena mogu se pregledati i ispraviti prije uvoza
 - [ ] raspored s više osoba ne uvozi drugu osobu kada ciljna osoba nije sigurno pronađena
 
-## Dead-code / održavanje 0.1.16
+## Dead-code / održavanje 0.1.18
 - [ ] nema referenci na uklonjeni TaktoAmbientBackground
 - [ ] MonthCalendar nema neupotrebljivi compact način prikaza
 - [ ] formatiranje eura koristi zajednički helper umjesto tri duplicirane funkcije
 - [ ] nema nepotrebnih UI importa otkrivenih auditom
 - [ ] novi helperi za kontrast, crop i responzivni layout imaju unit testove
+
+
+## Klik-po-klik produkcijski smoke test
+
+- [ ] prvi pokret → onboarding se može proći Dalje → Dalje → Otvori Takto bez rezanja sadržaja
+- [ ] Preskoči onboarding vodi izravno na Početnu i onboarding se ne vraća nakon ponovnog pokretanja
+- [ ] Početna → D/N brzi unos → Kalendar prikazuje točan datum, oznaku i zadano vrijeme
+- [ ] Početna → današnji spremljeni unos → uređivanje mijenja samo odabrani dan
+- [ ] Kalendar → dan → Radno vrijeme → promjena početka/kraja/pauze → Spremi → statistika odmah koristi novo trajanje
+- [ ] Kalendar → dan → priznati prekovremeni → 30/60/120 min → Spremi → Početna i Statistika prikazuju isti iznos sati
+- [ ] Kalendar → višestruki odabir → oznaka → potvrda → svi i samo odabrani dani se mijenjaju
+- [ ] Kalendar → Vrati → cijela zadnja grupna promjena vraća se jednim dodirom
+- [ ] Kalendar → skeniraj → kamera → izrez → pomak gore/dolje/lijevo/desno → zakreni → skeniraj označeno → pregled → uvoz
+- [ ] Kalendar → skeniraj → galerija → isti editor i isti pregled rade kao kod kamere
+- [ ] sken više osoba → upis ciljnog imena → ne preuzima red druge osobe
+- [ ] sken bez prepoznatog mjeseca → ručni odabir mjeseca je obavezan prije uvoza
+- [ ] skenirani dan → Uredi → promijeni oznaku/vrijeme/pauzu → Spremi → korekcija ostaje u pregledu
+- [ ] skenirani dan → Ukloni → samo taj datum nestaje iz uvoza
+- [ ] Postavke → Oznake rasporeda → mreža je čitljiva na uskom zaslonu i pri velikom fontu
+- [ ] Postavke → Radno vrijeme po oznakama → D/N predlošci mogu se izmijeniti i ukloniti
+- [ ] Postavke → Obračun plaće → radno mjesto → koeficijent → lokalitet → porezne stope → Spremi
+- [ ] Statistika → isti mjesec → bruto/neto/prekovremeni odgovaraju spremljenim ulazima
+- [ ] Postavke → Sigurnosna kopija → izvoz → povrat → kalendar, profil, payroll i preseti ostaju sačuvani
+- [ ] Uzorci → odaberi → primijeni bez prepisivanja → postojeći dani ostaju netaknuti
+- [ ] Uzorci → primijeni s prepisivanjem → potvrda → Vrati vraća cijelu primjenu
+- [ ] Android 8.0 / API 26 → aplikacija se pokreće bez theme/lint kompatibilnosnog problema
+- [ ] Android 8.1+ / API 27+ → svijetla navigacijska traka koristi tamne ikone
+
+## UI/UX 0.1.18 regresija
+- [ ] aplikacija nema tamni, sistemski ni automatski način teme
+- [ ] statusna i navigacijska traka koriste svijetli izgled
+- [ ] na novoj instalaciji prve brze oznake su D i N
+- [ ] D, N, J, GO, SD, BO i PD imaju međusobno različite početne boje
+- [ ] D dobiva zadano vrijeme 07:00–19:00, a N 19:00–07:00
+- [ ] korisnik može promijeniti ili ukloniti zadano D/N vrijeme bez ponovnog automatskog vraćanja
+- [ ] SD ne dobiva radno vrijeme niti se računa kao odrađena smjena
+- [ ] mjesečni fond ostaje zasebna postavka i ne postaje automatski 12 h po radnom danu
+- [ ] pretraga radnog mjesta u obračunu plaće filtrira samo odgovarajući javni/državni katalog
+- [ ] odabir radnog mjesta popunjava koeficijent, a ručna izmjena koeficijenta uklanja vezu s presetom
+- [ ] dead-code audit prolazi u strict načinu prije testova

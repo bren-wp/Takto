@@ -7,7 +7,6 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -37,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import hr.takto.app.data.ScheduleStore
-import hr.takto.app.model.AppThemeMode
 import hr.takto.app.reminders.ReminderScheduler
 import hr.takto.app.ui.screens.CalendarScreen
 import hr.takto.app.ui.screens.HomeScreen
@@ -59,20 +57,14 @@ class MainActivity : ComponentActivity() {
         consumeNavigationIntent(intent)
         val store = (application as TaktoApplication).scheduleStore
         setContent {
-            val systemDark = isSystemInDarkTheme()
-            val darkAppearance = when (store.themeMode.value) {
-                AppThemeMode.DARK -> true
-                AppThemeMode.LIGHT -> false
-                AppThemeMode.SYSTEM -> systemDark
-            }
             val view = LocalView.current
             SideEffect {
                 val controller = WindowCompat.getInsetsController(window, view)
-                controller.isAppearanceLightStatusBars = !darkAppearance
-                controller.isAppearanceLightNavigationBars = !darkAppearance
+                controller.isAppearanceLightStatusBars = true
+                controller.isAppearanceLightNavigationBars = true
             }
 
-            TaktoTheme(mode = store.themeMode.value) {
+            TaktoTheme {
                 TaktoRoot(
                     store = store,
                     requestedDate = openDateRequest.value,

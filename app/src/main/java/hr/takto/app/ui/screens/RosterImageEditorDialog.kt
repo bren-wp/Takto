@@ -22,14 +22,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Crop
 import androidx.compose.material.icons.filled.RestartAlt
-import androidx.compose.material.icons.filled.RotateLeft
-import androidx.compose.material.icons.filled.RotateRight
+import androidx.compose.material.icons.automirrored.filled.RotateLeft
+import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -188,10 +188,10 @@ fun RosterImageEditorDialog(
                     fontWeight = FontWeight.SemiBold
                 )
                 listOf(
-                    "Lijevo" to Pair(Icons.Default.ArrowBack, Offset(-0.02f, 0f)),
+                    "Lijevo" to Pair(Icons.AutoMirrored.Filled.ArrowBack, Offset(-0.02f, 0f)),
                     "Gore" to Pair(Icons.Default.ArrowUpward, Offset(0f, -0.02f)),
                     "Dolje" to Pair(Icons.Default.ArrowDownward, Offset(0f, 0.02f)),
-                    "Desno" to Pair(Icons.Default.ArrowForward, Offset(0.02f, 0f))
+                    "Desno" to Pair(Icons.AutoMirrored.Filled.ArrowForward, Offset(0.02f, 0f))
                 ).chunked(2).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -215,6 +215,10 @@ fun RosterImageEditorDialog(
                     }
                 }
 
+                Text(
+                    "Zakretanje i brzi odabir",
+                    fontWeight = FontWeight.SemiBold
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -222,7 +226,7 @@ fun RosterImageEditorDialog(
                     EditorActionButton(
                         modifier = Modifier.weight(1f),
                         label = "−90°",
-                        icon = Icons.Default.RotateLeft,
+                        icon = Icons.AutoMirrored.Filled.RotateLeft,
                         onClick = {
                             bitmap = rotateBitmap(bitmap, -90f)
                             crop = CropSelection()
@@ -231,19 +235,19 @@ fun RosterImageEditorDialog(
                     EditorActionButton(
                         modifier = Modifier.weight(1f),
                         label = "+90°",
-                        icon = Icons.Default.RotateRight,
+                        icon = Icons.AutoMirrored.Filled.RotateRight,
                         onClick = {
                             bitmap = rotateBitmap(bitmap, 90f)
                             crop = CropSelection()
                         }
                     )
-                    EditorActionButton(
-                        modifier = Modifier.weight(1f),
-                        label = "Jedan red",
-                        icon = Icons.Default.RestartAlt,
-                        onClick = { crop = CropSelection() }
-                    )
                 }
+                EditorActionButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = "Vrati okvir na jedan red",
+                    icon = Icons.Default.RestartAlt,
+                    onClick = { crop = CropSelection() }
+                )
 
                 Button(
                     onClick = { crop = CropSelection(0f, 0f, 1f, 1f) },

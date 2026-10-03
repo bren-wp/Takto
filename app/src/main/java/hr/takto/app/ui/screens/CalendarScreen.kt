@@ -30,7 +30,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material3.AlertDialog
@@ -803,7 +803,7 @@ private fun CalendarToolbarActions(
         }
         IconButton(onClick = onUndo, enabled = canUndo) {
             Icon(
-                Icons.Default.Undo,
+                Icons.AutoMirrored.Filled.Undo,
                 contentDescription = if (canUndo) {
                     "Vrati: $undoDescription"
                 } else {
@@ -1079,7 +1079,7 @@ private fun WorkTimeDialog(
     val overtime = overtimeText.trim().ifBlank { "0" }.toIntOrNull()
     val grossDuration = ScheduleLogic.grossWorkDurationMinutes(start, end)
     val validTime = pause != null && ScheduleLogic.isValidWorkTime(start, end, pause)
-    val duration = if (validTime) ScheduleLogic.workDurationMinutes(start, end, pause ?: 0) else null
+    val duration = if (validTime) ScheduleLogic.workDurationMinutes(start, end, pause) else null
     val validOvertime = overtime != null && duration != null && overtime in 0..duration
     val valid = validTime && validOvertime
     val overnight = validTime && ScheduleLogic.isOvernightWork(start, end)
@@ -1229,9 +1229,9 @@ private fun WorkTimeDialog(
                     valid -> {
                         Text(
                             buildString {
-                                append("Neto: ").append(ScheduleLogic.formatDuration(duration ?: 0))
-                                if ((overtime ?: 0) > 0) {
-                                    append(" · prekovremeni ").append(ScheduleLogic.formatDuration(overtime ?: 0))
+                                append("Neto: ").append(ScheduleLogic.formatDuration(duration))
+                                if (overtime > 0) {
+                                    append(" · prekovremeni ").append(ScheduleLogic.formatDuration(overtime))
                                 }
                                 if (overnight) append(" · završetak sljedeći dan")
                             },
@@ -1284,7 +1284,7 @@ private fun WorkTimeDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(start!!, end!!, pause!!, overtime!!) },
+                onClick = { if (valid) onSave(start!!, end!!, pause, overtime) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }

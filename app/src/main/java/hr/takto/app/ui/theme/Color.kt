@@ -2,30 +2,20 @@ package hr.takto.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Brand / shift palette
+// Brand / semantic palette
 val TaktoBlue = Color(0xFF2488FF)
 val TaktoPurple = Color(0xFF8B46F6)
-val TaktoGreen = Color(0xFF13D7A0)
-val TaktoAmber = Color(0xFFFFB21D)
-val TaktoRed = Color(0xFFFF4B55)
-val TaktoCyan = Color(0xFF1DE1E8)
+val TaktoGreen = Color(0xFF13A977)
+val TaktoAmber = Color(0xFFE99400)
+val TaktoRed = Color(0xFFD9364B)
+val TaktoCyan = Color(0xFF0E9CB5)
 
-// Dark appearance: elevated navy instead of near-black so cards and controls remain
-// readable without the heavy "black glass" look visible on OLED devices.
-val TaktoBackground = Color(0xFF17263A)
-val TaktoSurface = Color(0xFF203249)
-val TaktoSurface2 = Color(0xFF29415D)
-val TaktoSurface3 = Color(0xFF34516F)
-val TaktoText = Color(0xFFF6F8FB)
-val TaktoMuted = Color(0xFFC4CEDA)
-val TaktoOutline = Color(0xFF58708B)
-
-// Light appearance: neutral surfaces with stronger text/outline contrast so cards do not
-// disappear into an overexposed white background.
-val TaktoLightBackground = Color(0xFFF1F4F7)
+// Jedini produkcijski izgled: neutralna svijetla podloga, jasne kartice i dovoljno
+// snažan kontrast teksta/obruba za sunce, veći font i manje OLED/LCD zaslone.
+val TaktoLightBackground = Color(0xFFF3F6F9)
 val TaktoLightSurface = Color(0xFFFFFFFF)
-val TaktoLightSurface2 = Color(0xFFE4EAF0)
-val TaktoLightSurface3 = Color(0xFFD7E0E9)
-val TaktoLightText = Color(0xFF18222D)
-val TaktoLightMuted = Color(0xFF526273)
-val TaktoLightOutline = Color(0xFFB2BFCC)
+val TaktoLightSurface2 = Color(0xFFE8EEF4)
+val TaktoLightSurface3 = Color(0xFFDCE5ED)
+val TaktoLightText = Color(0xFF16212D)
+val TaktoLightMuted = Color(0xFF526373)
+val TaktoLightOutline = Color(0xFFB3C0CC)

@@ -7,10 +7,10 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import hr.takto.app.model.AppThemeMode
 import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
+import hr.takto.app.model.DefaultWorkTimePresets
 import hr.takto.app.model.SavedPattern
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.SchedulePersistencePolicy
@@ -60,7 +60,6 @@ class ScheduleStore(private val context: Context) {
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
     val payrollProfile = mutableStateOf(loadPayrollProfile())
-    val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
     private var lastCheckpointRevisionCount = 0
@@ -90,8 +89,8 @@ class ScheduleStore(private val context: Context) {
     init {
         loadShiftColors()
         loadCustomShiftPresets()
-        seedReferenceShortcutsOnce()
         loadWorkTimePresets()
+        seedDefaultWorkTimePresets()
         loadMonthlyTargetOverrides()
         loadSavedPatterns()
         archiveRevisionCount.value = loadArchiveRevisionCount()
@@ -603,11 +602,6 @@ class ScheduleStore(private val context: Context) {
         return BulkEditResult(changed, skipped, freeDays)
     }
 
-    fun setThemeMode(mode: AppThemeMode) {
-        themeMode.value = mode
-        prefs.edit().putString(KEY_THEME_MODE, mode.persistedValue).apply()
-    }
-
     fun saveUserProfile(profile: UserProfile) {
         val sanitized = profile.copy(
             fullName = profile.fullName.trim().replace(Regex("\\s+"), " ").take(MAX_PROFILE_TEXT),
@@ -630,9 +624,11 @@ class ScheduleStore(private val context: Context) {
 
     fun savePayrollProfile(profile: PayrollProfile) {
         val sanitized = profile.copy(
+            rolePresetId = profile.rolePresetId.trim().take(80),
             coefficient = profile.coefficient.coerceIn(0.0, 20.0),
             yearsOfService = profile.yearsOfService.coerceIn(0, 70),
             manualBaseEur = profile.manualBaseEur.coerceIn(0.0, 20_000.0),
+            taxLocalityPresetId = profile.taxLocalityPresetId.trim().take(80),
             lowerTaxRatePercent = profile.lowerTaxRatePercent.coerceIn(0.0, 60.0),
             higherTaxRatePercent = profile.higherTaxRatePercent.coerceIn(0.0, 60.0),
             personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 50_000.0),
@@ -891,7 +887,7 @@ class ScheduleStore(private val context: Context) {
             val hasValidTime = startMinute != null && endMinute != null &&
                 workDuration?.let { it > 0 } == true
             val overtimeMinutes = parts.getOrNull(8)?.trim()?.toIntOrNull()?.coerceAtLeast(0)
-                ?.takeIf { hasValidTime && workDuration != null && it <= workDuration }
+                ?.takeIf { hasValidTime && it <= workDuration }
                 ?: 0
             if (preset != null) {
                 entries[date] = ShiftEntry(
@@ -956,7 +952,6 @@ class ScheduleStore(private val context: Context) {
             put("shiftRemindersEnabled", shiftRemindersEnabled.value)
             put("shiftReminderLeadMinutes", shiftReminderLeadMinutes.value)
             put("standardDailyMinutes", standardDailyMinutes.value)
-            put("themeMode", themeMode.value.persistedValue)
             put("monthlyTargetOverrides", JSONObject().apply {
                 monthlyTargetOverrides.forEach { (month, minutes) -> put(month, minutes) }
             })
@@ -1015,9 +1010,6 @@ class ScheduleStore(private val context: Context) {
                 .coerceIn(0, MAX_SHIFT_REMINDER_LEAD_MINUTES)
             standardDailyMinutes.value = settings.optInt("standardDailyMinutes", standardDailyMinutes.value)
                 .coerceIn(MIN_STANDARD_DAILY_MINUTES, MAX_STANDARD_DAILY_MINUTES)
-            themeMode.value = AppThemeMode.fromPersisted(
-                settings.optString("themeMode", themeMode.value.persistedValue)
-            )
             settings.optJSONObject("monthlyTargetOverrides")?.let { targets ->
                 targets.keys().forEach { key ->
                     val month = runCatching { YearMonth.parse(key) }.getOrNull()
@@ -1067,7 +1059,6 @@ class ScheduleStore(private val context: Context) {
                 .putBoolean(KEY_SHIFT_REMINDERS, shiftRemindersEnabled.value)
                 .putInt(KEY_SHIFT_REMINDER_LEAD_MINUTES, shiftReminderLeadMinutes.value)
                 .putInt(KEY_STANDARD_DAILY_MINUTES, standardDailyMinutes.value)
-                .putString(KEY_THEME_MODE, themeMode.value.persistedValue)
                 .apply()
             persistShiftColors()
             persistCustomShiftPresets()
@@ -1110,22 +1101,22 @@ class ScheduleStore(private val context: Context) {
             note = note.trim().take(MAX_NOTE_LENGTH),
             startMinute = when {
                 isLeave -> null
-                keepCurrentTime -> current?.startMinute
+                keepCurrentTime -> current.startMinute
                 else -> defaultTime?.startMinute
             },
             endMinute = when {
                 isLeave -> null
-                keepCurrentTime -> current?.endMinute
+                keepCurrentTime -> current.endMinute
                 else -> defaultTime?.endMinute
             },
             breakMinutes = when {
                 isLeave -> 0
-                keepCurrentTime -> current?.breakMinutes ?: 0
+                keepCurrentTime -> current.breakMinutes
                 else -> defaultTime?.breakMinutes ?: 0
             },
             overtimeMinutes = when {
                 isLeave -> 0
-                keepCurrentTime -> current?.overtimeMinutes ?: 0
+                keepCurrentTime -> current.overtimeMinutes
                 else -> 0
             }
         )
@@ -1150,26 +1141,6 @@ class ScheduleStore(private val context: Context) {
         prefs.edit().putString(KEY_SHIFT_COLORS, obj.toString()).apply()
     }
 
-    private fun seedReferenceShortcutsOnce() {
-        if (prefs.getBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, false)) return
-
-        val defaults = listOf(
-            CustomShiftPreset("J", "J", 0xFF64748BL),
-            CustomShiftPreset("SD", "SD", 0xFF334155L)
-        )
-        defaults.forEach { preset ->
-            if (
-                customShiftPresets.keys.none { it.equals(preset.code, ignoreCase = true) } &&
-                DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) } &&
-                customShiftPresets.size < MAX_CUSTOM_PRESETS
-            ) {
-                customShiftPresets[preset.code] = preset
-            }
-        }
-        persistCustomShiftPresets()
-        prefs.edit().putBoolean(KEY_REFERENCE_SHORTCUTS_SEEDED, true).apply()
-    }
-
     private fun importedCodeColor(code: String): Long {
         val palette = longArrayOf(
             0xFF22B8CFL, 0xFF2488FFL, 0xFF8B46F6L, 0xFF13D7A0L,
@@ -1181,16 +1152,23 @@ class ScheduleStore(private val context: Context) {
 
     private fun loadCustomShiftPresets() {
         val raw = prefs.getString(KEY_CUSTOM_SHIFT_PRESETS, null) ?: return
+        var cleanedLegacyCollisions = false
         runCatching {
             val array = JSONArray(raw)
             repeat(array.length().coerceAtMost(MAX_CUSTOM_PRESETS)) { index ->
                 parseCustomShiftPreset(array.optJSONObject(index))?.let { preset ->
                     if (DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) }) {
                         customShiftPresets[preset.code] = preset
+                    } else {
+                        cleanedLegacyCollisions = true
                     }
                 }
             }
-        }.onFailure { customShiftPresets.clear() }
+        }.onSuccess {
+            if (cleanedLegacyCollisions) persistCustomShiftPresets()
+        }.onFailure {
+            customShiftPresets.clear()
+        }
     }
 
     private fun persistCustomShiftPresets() {
@@ -1218,16 +1196,40 @@ class ScheduleStore(private val context: Context) {
 
     private fun loadWorkTimePresets() {
         val raw = prefs.getString(KEY_WORK_TIME_PRESETS, null) ?: return
+        var cleanedInvalidPresets = false
         runCatching {
             val array = JSONArray(raw)
             repeat(array.length().coerceAtMost(MAX_WORK_TIME_PRESETS)) { index ->
-                parseWorkTimePreset(array.optJSONObject(index))?.let { preset ->
-                    if (shiftType(preset.code) != null && !ScheduleLogic.isLeaveCode(preset.code)) {
-                        workTimePresets[preset.code] = preset
-                    }
+                val parsed = parseWorkTimePreset(array.optJSONObject(index))
+                if (
+                    parsed != null &&
+                    shiftType(parsed.code) != null &&
+                    !ScheduleLogic.isLeaveCode(parsed.code)
+                ) {
+                    workTimePresets[parsed.code] = parsed
+                } else {
+                    cleanedInvalidPresets = true
                 }
             }
-        }.onFailure { workTimePresets.clear() }
+        }.onSuccess {
+            if (cleanedInvalidPresets) persistWorkTimePresets()
+        }.onFailure {
+            workTimePresets.clear()
+        }
+    }
+
+    private fun seedDefaultWorkTimePresets() {
+        if (prefs.getBoolean(KEY_DEFAULT_WORK_TIMES_SEEDED, false)) return
+
+        var changed = false
+        DefaultWorkTimePresets.presets.forEach { preset ->
+            if (workTimePresets.keys.none { it.equals(preset.code, ignoreCase = true) }) {
+                workTimePresets[preset.code] = preset
+                changed = true
+            }
+        }
+        if (changed) persistWorkTimePresets()
+        prefs.edit().putBoolean(KEY_DEFAULT_WORK_TIMES_SEEDED, true).apply()
     }
 
     private fun persistWorkTimePresets() {
@@ -1546,7 +1548,7 @@ class ScheduleStore(private val context: Context) {
             !ScheduleLogic.isLeaveCode(code)
         val overtimeMinutes = obj.optInt("overtimeMinutes", 0)
             .coerceAtLeast(0)
-            .takeIf { validTime && duration != null && it <= duration }
+            .takeIf { validTime && it <= duration }
             ?: 0
         return ShiftEntry(
             date = date,
@@ -1696,9 +1698,11 @@ class ScheduleStore(private val context: Context) {
     private fun parsePayrollProfile(obj: JSONObject): PayrollProfile = PayrollProfile(
         enabled = obj.optBoolean("enabled", false),
         system = PayrollSystem.fromPersisted(obj.optString("system").takeIf { it.isNotBlank() }),
+        rolePresetId = obj.optString("rolePresetId", "").trim().take(80),
         coefficient = obj.optDouble("coefficient", 0.0).coerceIn(0.0, 20.0),
         yearsOfService = obj.optInt("yearsOfService", 0).coerceIn(0, 70),
         manualBaseEur = obj.optDouble("manualBaseEur", 0.0).coerceIn(0.0, 20_000.0),
+        taxLocalityPresetId = obj.optString("taxLocalityPresetId", "").trim().take(80),
         lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
         higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
         personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0).coerceIn(0.0, 50_000.0),
@@ -1717,9 +1721,11 @@ class ScheduleStore(private val context: Context) {
     private fun payrollProfileToJson(profile: PayrollProfile): JSONObject = JSONObject().apply {
         put("enabled", profile.enabled)
         put("system", profile.system.persistedValue)
+        put("rolePresetId", profile.rolePresetId)
         put("coefficient", profile.coefficient)
         put("yearsOfService", profile.yearsOfService)
         put("manualBaseEur", profile.manualBaseEur)
+        put("taxLocalityPresetId", profile.taxLocalityPresetId)
         put("lowerTaxRatePercent", profile.lowerTaxRatePercent)
         put("higherTaxRatePercent", profile.higherTaxRatePercent)
         put("personalAllowanceEur", profile.personalAllowanceEur)
@@ -1877,7 +1883,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
-        private const val DATA_SCHEMA_VERSION = 10
+        private const val DATA_SCHEMA_VERSION = 11
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 2
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L
@@ -1897,13 +1903,12 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_STANDARD_DAILY_MINUTES = "standard_daily_minutes"
         private const val KEY_MONTHLY_TARGET_OVERRIDES = "monthly_target_overrides_json"
         private const val KEY_WORK_TIME_PRESETS = "work_time_presets_json"
+        private const val KEY_DEFAULT_WORK_TIMES_SEEDED = "default_work_times_seeded_v1"
         private const val KEY_SHIFT_COLORS = "shift_colors_json"
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
         private const val KEY_PAYROLL_PROFILE = "payroll_profile_json"
-        private const val KEY_THEME_MODE = "theme_mode"
-        private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
         private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"
         private const val KEY_ARCHIVE_FILE_LENGTH = "archive_file_length"
 

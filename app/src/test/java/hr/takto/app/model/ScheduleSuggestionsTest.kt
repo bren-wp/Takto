@@ -43,8 +43,8 @@ class ScheduleSuggestionsTest {
     }
 
     @Test
-    fun customTypeWinsTieAgainstUnusedPreset() {
-        val preset = ShiftType("D", "Dan", Color.Blue, isPreset = true)
+    fun customTypeWinsTieAgainstUnusedNonPrimaryPreset() {
+        val preset = ShiftType("GO", "Godišnji", Color.Blue, isPreset = true)
         val custom = ShiftType("EDU", "Edukacija", Color.Green, isPreset = false)
 
         val ranked = ScheduleSuggestions.rank(
@@ -73,4 +73,15 @@ class ScheduleSuggestionsTest {
 
         assertEquals("B", ranked.first().code)
     }
+    @Test
+    fun freshInstallKeepsDayAndNightFirst() {
+        val ranked = ScheduleSuggestions.rank(
+            types = DefaultShiftTypes.presets,
+            entries = emptyList(),
+            referenceDate = today
+        )
+
+        assertEquals(listOf("D", "N"), ranked.take(2).map { it.code })
+    }
+
 }

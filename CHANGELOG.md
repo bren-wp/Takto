@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.1.18
+
+Veliki UI/UX i održavanje pass: tamni način potpuno je uklonjen, D/N postaju jasne početne 12-satne smjene, ugrađene oznake dobivaju zasebne boje, a obračun plaće dobiva pretraživ katalog koeficijenata iz projekta RASPORED.
+
+### UI i UX
+
+- aplikacija sada ima jedan dosljedan svijetli produkcijski izgled; uklonjeni su tamni, sistemski i automatski način teme
+- Android statusna i navigacijska traka usklađene su sa svijetlim izgledom
+- uklonjene su postavke i dijalog za izbor teme
+- ugrađene oznake u Postavkama prikazuju se u preglednoj mreži umjesto vodoravnog skrolanja
+- mreža oznaka automatski koristi 2 ili 3 stupca ovisno o širini zaslona i povećanju fonta
+- editor izreza rasporeda ima jasnije odvojene kontrole za pomicanje, zakretanje i vraćanje okvira na jedan red
+- D i N su prve početne brze oznake na novoj instalaciji
+- D, N, J, GO, SD, BO i PD imaju međusobno različite početne boje
+- D početno koristi 07:00–19:00, a N 19:00–07:00; korisnik vrijeme i pauzu može promijeniti
+- SD je eksplicitno neradni status i ne dobiva radno vrijeme
+- mjesečni fond ostaje zasebna postavka i nije automatski promijenjen na 12 sati po radnom danu
+
+### Plaća i koeficijenti
+
+- dodan je pretraživ katalog odabranih radnih mjesta i koeficijenata iz projekta `bren-wp/RASPORED`
+- katalog uključuje zdravstvo, školstvo, opću državnu službu i policiju
+- odabir radnog mjesta automatski popunjava referentni koeficijent i prikazuje službeni naziv/kod iz kataloga
+- ručni unos koeficijenta ostaje dostupan i prekida vezu s presetom kako se ne bi prikazivala netočna oznaka radnog mjesta
+- odabrano radno mjesto sprema se u lokalni profil obračuna i sigurnosnu kopiju
+- dodan je pretraživ katalog poreznih lokaliteta 2026. iz RASPORED-a; izbor mjesta popunjava nižu i višu stopu
+- ručna izmjena porezne stope uklanja vezu s presetom kako aplikacija ne bi prikazivala netočan odabrani lokalitet
+- izračun i dalje ne prikazuje potpunu procjenu kada nedostaju nužni porezni ili obračunski podaci
+
+### Kod, migracija i QA
+
+- uklonjeni su model, testovi, UI i perzistencija za stare načine teme
+- stari J/SD jednokratni seed zamijenjen je ugrađenim semantičkim oznakama
+- D/N 12-satni predlošci vremena postavljaju se samo jednom pa ih korisnik može trajno prilagoditi ili ukloniti
+- dodan je konzervativni `scripts/dead_code_audit.py --strict` i Android CI ga izvršava prije unit testova
+- strict audit sada blokira privatne i top-level Kotlin deklaracije bez reference te produkcijske `TODO`/`FIXME` markere
+- uklonjena su upozorenja za zastarjele directional ikone i nepotrebne nullable provjere u ključnim dijalozima
+- `windowLightNavigationBar` premješten je u API 27 resurse kako bi minSdk 26 ostao lint-kompatibilan
+- dodani su regresijski testovi za početni poredak oznaka, jedinstvene boje, SD semantiku i ključne koeficijente kataloga
+
+### Verzija
+
+- `versionName`: `0.1.18`
+- `versionCode`: `19`
+
+
 ## 0.1.17
 
 Daljnje poliranje interakcija, pristupačnosti i sigurnosti uvoza rasporeda, uz dodatni dead-code i no-op audit.

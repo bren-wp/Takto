@@ -251,7 +251,10 @@ object ScheduleLogic {
     }
 
     fun isLeaveCode(code: String): Boolean =
-        code.equals("GO", true) || code.equals("BO", true) || code.equals("PD", true)
+        code.equals("GO", true) ||
+            code.equals("BO", true) ||
+            code.equals("PD", true) ||
+            code.equals("SD", true)
 
     private fun normalizeWhitespace(value: String): String =
         value.trim().replace(Regex("\\s+"), " ")

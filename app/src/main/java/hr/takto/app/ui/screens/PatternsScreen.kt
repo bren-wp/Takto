@@ -373,6 +373,7 @@ private fun PatternApplyDialog(
     var days by remember(pattern) { mutableIntStateOf(28) }
     var overwrite by remember(pattern) { mutableStateOf(false) }
     var startText by remember(pattern) { mutableStateOf(formatPatternDate(today)) }
+    var confirmOverwrite by remember(pattern) { mutableStateOf(false) }
     val startDate = parsePatternDate(startText)
 
     AlertDialog(
@@ -447,7 +448,10 @@ private fun PatternApplyDialog(
         },
         confirmButton = {
             Button(
-                onClick = { startDate?.let { onApply(it, days, overwrite) } },
+                onClick = {
+                    if (overwrite) confirmOverwrite = true
+                    else startDate?.let { onApply(it, days, false) }
+                },
                 enabled = startDate != null,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) {
@@ -456,6 +460,19 @@ private fun PatternApplyDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
     )
+
+    if (confirmOverwrite && startDate != null) {
+        ConfirmDeleteDialog(
+            title = "Prepiši postojeće unose?",
+            message = "Uzorak „${pattern.name}” može zamijeniti postojeće unose u rasponu od $days dana. Ovu radnju možeš vratiti jednim poništavanjem.",
+            confirmLabel = "Primijeni i prepiši",
+            onConfirm = {
+                confirmOverwrite = false
+                onApply(startDate, days, true)
+            },
+            onDismiss = { confirmOverwrite = false }
+        )
+    }
 }
 
 private val patternDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d.M.uuuu.")

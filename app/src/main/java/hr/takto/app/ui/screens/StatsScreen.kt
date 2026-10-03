@@ -202,10 +202,10 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TimeMetric(Modifier.weight(1f), "Redovni sati", regularMonthlyMinutes, Color(0xFF13D7A0))
-                    TimeMetric(Modifier.weight(1f), "Prekovremeni · fond", fundOvertimeMinutes, Color(0xFFFFB21D))
+                    TimeMetric(Modifier.weight(1f), "Višak iznad fonda", fundOvertimeMinutes, Color(0xFFFFB21D))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TimeMetric(Modifier.weight(1f), "Prekovremeno po danu", overtimeMinutes, Color(0xFFFFB21D))
+                    TimeMetric(Modifier.weight(1f), "Iznad dnevnog standarda", overtimeMinutes, Color(0xFFFFB21D))
                     TimeMetric(Modifier.weight(1f), "Prosjek radnog unosa", averageShiftMinutes, Color(0xFF22B8CF))
                 }
                 Text("Unosi s vremenom: ${timedEntries.size}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)

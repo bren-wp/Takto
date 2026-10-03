@@ -10,6 +10,8 @@ Veliki UI/UX i održavanje pass: tamni način potpuno je uklonjen, D/N postaju j
 - Android statusna i navigacijska traka usklađene su sa svijetlim izgledom
 - uklonjene su postavke i dijalog za izbor teme
 - ugrađene oznake u Postavkama prikazuju se u preglednoj mreži umjesto vodoravnog skrolanja
+- mreža oznaka automatski koristi 2 ili 3 stupca ovisno o širini zaslona i povećanju fonta
+- editor izreza rasporeda ima jasnije odvojene kontrole za pomicanje, zakretanje i vraćanje okvira na jedan red
 - D i N su prve početne brze oznake na novoj instalaciji
 - D, N, J, GO, SD, BO i PD imaju međusobno različite početne boje
 - D početno koristi 07:00–19:00, a N 19:00–07:00; korisnik vrijeme i pauzu može promijeniti
@@ -33,6 +35,9 @@ Veliki UI/UX i održavanje pass: tamni način potpuno je uklonjen, D/N postaju j
 - stari J/SD jednokratni seed zamijenjen je ugrađenim semantičkim oznakama
 - D/N 12-satni predlošci vremena postavljaju se samo jednom pa ih korisnik može trajno prilagoditi ili ukloniti
 - dodan je konzervativni `scripts/dead_code_audit.py --strict` i Android CI ga izvršava prije unit testova
+- strict audit sada blokira privatne i top-level Kotlin deklaracije bez reference te produkcijske `TODO`/`FIXME` markere
+- uklonjena su upozorenja za zastarjele directional ikone i nepotrebne nullable provjere u ključnim dijalozima
+- `windowLightNavigationBar` premješten je u API 27 resurse kako bi minSdk 26 ostao lint-kompatibilan
 - dodani su regresijski testovi za početni poredak oznaka, jedinstvene boje, SD semantiku i ključne koeficijente kataloga
 
 ### Verzija

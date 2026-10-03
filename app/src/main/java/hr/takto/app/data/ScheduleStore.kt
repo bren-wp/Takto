@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import hr.takto.app.model.AppThemeMode
 import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
@@ -60,7 +59,6 @@ class ScheduleStore(private val context: Context) {
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
     val payrollProfile = mutableStateOf(loadPayrollProfile())
-    val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
     private var lastCheckpointRevisionCount = 0

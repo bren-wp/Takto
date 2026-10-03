@@ -221,7 +221,6 @@ Takto 0.1.18 koristi aktualni stabilni Android toolchain:
 - **Material 3**
 - **AndroidX Core 1.19.1**
 - **Activity Compose 1.13.0**
-- **Lifecycle 2.11.0**
 - **compileSdk 37.1 — Android 17 SDK**
 - **targetSdk 37 — Android 17**
 - **minSdk 26 — Android 8.0**

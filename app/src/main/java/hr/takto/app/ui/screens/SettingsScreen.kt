@@ -10,7 +10,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -73,6 +71,7 @@ import androidx.core.content.ContextCompat
 import hr.takto.app.BuildConfig
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.model.PayrollRoleCatalog2026
 import hr.takto.app.model.EmploymentCatalog
 import hr.takto.app.model.UserProfile
 import hr.takto.app.reminders.ReminderScheduler
@@ -314,10 +313,14 @@ fun SettingsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
             icon = Icons.Default.Payments,
             title = "Obračun plaće",
             subtitle = if (!store.payrollProfile.value.enabled) {
-                "Postavi koeficijent, staž, porezne stope i osobni odbitak"
+                "Postavi radno mjesto, koeficijent, staž, porezne stope i osobni odbitak"
             } else {
                 buildString {
                     append(store.payrollProfile.value.system.label)
+                    PayrollRoleCatalog2026.role(store.payrollProfile.value.rolePresetId)?.let { role ->
+                        append(" · ")
+                        append(role.label)
+                    }
                     if (store.payrollProfile.value.coefficient > 0.0) {
                         append(" · koeficijent ")
                         append(store.payrollProfile.value.coefficient)

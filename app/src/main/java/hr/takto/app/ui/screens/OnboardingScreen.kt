@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -42,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.theme.TaktoAmber
 import hr.takto.app.ui.theme.TaktoBlue
 import hr.takto.app.ui.theme.TaktoCyan
@@ -72,7 +76,9 @@ fun OnboardingScreen(onFinish: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 22.dp, vertical = 34.dp),
+                .safeDrawingPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -111,7 +117,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 else -> CalendarPreviewPanel()
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(3) { index ->
                     Box(
@@ -228,7 +234,7 @@ private fun CalendarPreviewPanel() {
                         if (code.isNotBlank()) {
                             Text(
                                 code,
-                                color = if (code == "+") Color(0xFF07354A) else Color.White,
+                                color = readableContentColor(color),
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = if (code.length > 2) 12.sp else 16.sp
                             )

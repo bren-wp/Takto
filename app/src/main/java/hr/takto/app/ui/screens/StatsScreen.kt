@@ -60,6 +60,7 @@ import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
+import java.util.Locale
 
 private data class ScheduleCodeStat(
     val code: String,
@@ -543,8 +544,6 @@ private fun MoneyMetric(
     }
 }
 
-private fun formatEuro(value: Double): String =
-    String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable
 private fun TimeMetric(modifier: Modifier, label: String, minutes: Int, color: Color) {

@@ -458,7 +458,7 @@ fun CalendarScreen(
 
                 if (current != null) {
                     TextButton(
-                        onClick = { store.removeEntry(date); selectedDate = null },
+                        onClick = { pendingDeleteDate = date },
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)

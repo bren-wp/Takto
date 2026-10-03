@@ -57,14 +57,141 @@ class RosterScanParserTest {
     }
 
     @Test
+    fun conflictingCodesForSameDateAreMarkedAmbiguous() {
+        val result = RosterScanParser.parse(
+            "LISTOPAD 2026\n2 D\n2 N\n3 D",
+            LocalDate.of(2026, 10, 1)
+        )
+        assertEquals(1, result.ambiguousDateCount)
+        assertEquals(listOf(3), result.items.map { it.date.dayOfMonth })
+    }
+
+
+    @Test
+    fun horizontalTableIgnoresLeadingPersonNameAndPreservesFreeDay() {
+        val result = RosterScanParser.parse(
+            "LISTOPAD 2026\n1 2 3 4 5\nBRANKO HORVAT J J - N GO",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(5, result.items.size)
+        assertEquals(
+            listOf(
+                "J",
+                "J",
+                RosterScanParser.FREE_DAY_CODE,
+                "N",
+                "GO"
+            ),
+            result.items.map { it.code }
+        )
+        assertEquals(listOf(1, 2, 3, 4, 5), result.items.map { it.date.dayOfMonth })
+    }
+
+    @Test
+    fun lineBasedFreeDayIsRecognized() {
+        val result = RosterScanParser.parse(
+            "LISTOPAD 2026\n2 -\n3 D",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(RosterScanParser.FREE_DAY_CODE, result.items.first { it.date.dayOfMonth == 2 }.code)
+        assertEquals("D", result.items.first { it.date.dayOfMonth == 3 }.code)
+    }
+
+    @Test
     fun isolatesSelectedPersonFromMultiPersonRoster() {
         val result = RosterScanParser.parseForPerson(
             "LISTOPAD 2026\n1 2 3 4 5\nANA HORVAT J J N N GO\nMARKO MARIC N N J J BO",
             "Ana Horvat",
             LocalDate.of(2026, 10, 1)
         )
+
         assertEquals(5, result.items.size)
         assertEquals(listOf("J", "J", "N", "N", "GO"), result.items.map { it.code })
+        assertEquals(listOf(1, 2, 3, 4, 5), result.items.map { it.date.dayOfMonth })
+    }
+
+    @Test
+    fun selectedPersonMatchingIgnoresCroatianDiacritics() {
+        val result = RosterScanParser.parseForPerson(
+            "LISTOPAD 2026\n1 2 3\nŽELJKO ČORIĆ D N -\nIVAN HORVAT N D D",
+            "Željko Čorić",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(3, result.items.size)
+        assertEquals(
+            listOf("D", "N", RosterScanParser.FREE_DAY_CODE),
+            result.items.map { it.code }
+        )
+    }
+
+    @Test
+    fun supportsNameOnOneLineAndCodesOnFollowingLine() {
+        val result = RosterScanParser.parseForPerson(
+            "LISTOPAD 2026\n1 2 3 4\nANA HORVAT\nJ J N GO\nMARKO MARIC\nN N D BO",
+            "Ana Horvat",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(4, result.items.size)
+        assertEquals(listOf("J", "J", "N", "GO"), result.items.map { it.code })
+    }
+
+    @Test
+    fun nameInDocumentTitleDoesNotBreakSingleRowRoster() {
+        val result = RosterScanParser.parseForPerson(
+            "ANA HORVAT\nLISTOPAD 2026\n1 2 3\nJ N GO",
+            "Ana Horvat",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(3, result.items.size)
+        assertEquals(listOf("J", "N", "GO"), result.items.map { it.code })
+    }
+
+    @Test
+    fun croppedSingleRowStillWorksWhenNameIsOutsideCrop() {
+        val result = RosterScanParser.parseForPerson(
+            "LISTOPAD 2026\n1 2 3 4\nJ J N GO",
+            "Ana Horvat",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertEquals(4, result.items.size)
+        assertEquals(listOf("J", "J", "N", "GO"), result.items.map { it.code })
+    }
+
+    @Test
+    fun missingPersonDoesNotImportAnotherEmployeesRoster() {
+        val result = RosterScanParser.parseForPerson(
+            "LISTOPAD 2026\n1 2 3\nANA HORVAT J J N\nMARKO MARIC N N D",
+            "Ivana Novak",
+            LocalDate.of(2026, 10, 1)
+        )
+
+        assertTrue(result.items.isEmpty())
+        assertTrue(result.ambiguousDateCount > 0)
+    }
+
+    @Test
+    fun selectedPersonUsesExplicitFallbackMonthWhenHeaderIsMissing() {
+        val result = RosterScanParser.parseForPerson(
+            "1 2 3\nANA HORVAT J N GO\nMARKO MARIC N D BO",
+            "Ana Horvat",
+            LocalDate.of(2026, 12, 1)
+        )
+
+        assertTrue(result.usedReferenceMonth)
+        assertEquals(
+            listOf(
+                LocalDate.of(2026, 12, 1),
+                LocalDate.of(2026, 12, 2),
+                LocalDate.of(2026, 12, 3)
+            ),
+            result.items.map { it.date }
+        )
     }
 
     @Test

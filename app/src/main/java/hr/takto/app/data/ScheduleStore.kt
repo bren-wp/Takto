@@ -12,18 +12,19 @@ import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
 import hr.takto.app.model.SavedPattern
-import hr.takto.app.model.SalaryProfile
-import hr.takto.app.model.SalaryRegime
-import hr.takto.app.model.WorkOrganization
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.SchedulePersistencePolicy
 import hr.takto.app.model.ScheduleRecovery
 import hr.takto.app.model.ScannedScheduleItem
+import hr.takto.app.model.RosterScanParser
 import hr.takto.app.model.ScheduleSuggestions
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
 import hr.takto.app.model.WorkTimePreset
 import hr.takto.app.model.UserProfile
+import hr.takto.app.model.PayrollProfile
+import hr.takto.app.model.PayrollSystem
+import hr.takto.app.model.PensionMode
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.FileInputStream
@@ -58,7 +59,7 @@ class ScheduleStore(private val context: Context) {
     val workTimePresets = mutableStateMapOf<String, WorkTimePreset>()
     val monthlyTargetOverrides = mutableStateMapOf<String, Int>()
     val userProfile = mutableStateOf(loadUserProfile())
-    val salaryProfile = mutableStateOf(loadSalaryProfile())
+    val payrollProfile = mutableStateOf(loadPayrollProfile())
     val themeMode = mutableStateOf(AppThemeMode.fromPersisted(prefs.getString(KEY_THEME_MODE, null)))
     val archiveRevisionCount = mutableStateOf(0)
     private var persistedSnapshot: Map<LocalDate, ShiftEntry> = emptyMap()
@@ -260,7 +261,8 @@ class ScheduleStore(private val context: Context) {
             note = note.trim().take(MAX_NOTE_LENGTH),
             startMinute = current?.startMinute,
             endMinute = current?.endMinute,
-            breakMinutes = current?.breakMinutes ?: 0
+            breakMinutes = current?.breakMinutes ?: 0,
+            overtimeMinutes = current?.overtimeMinutes ?: 0
         )
         if (current == next) return
         entries[date] = next
@@ -278,15 +280,24 @@ class ScheduleStore(private val context: Context) {
         commitUndo(before)
     }
 
-    fun updateWorkTime(date: LocalDate, startMinute: Int, endMinute: Int, breakMinutes: Int): Boolean {
+    fun updateWorkTime(
+        date: LocalDate,
+        startMinute: Int,
+        endMinute: Int,
+        breakMinutes: Int,
+        overtimeMinutes: Int = 0
+    ): Boolean {
         val current = entries[date] ?: return false
         if (ScheduleLogic.isLeaveCode(current.code)) return false
         if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) return false
+        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes) ?: return false
+        if (overtimeMinutes !in 0..duration) return false
         val safeBreak = breakMinutes
         val next = current.copy(
             startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
             endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
-            breakMinutes = safeBreak
+            breakMinutes = safeBreak,
+            overtimeMinutes = overtimeMinutes
         )
         if (next == current) return true
         val before = captureUndo(listOf(date), "Radno vrijeme ${date}")
@@ -298,9 +309,14 @@ class ScheduleStore(private val context: Context) {
 
     fun clearWorkTime(date: LocalDate): Boolean {
         val current = entries[date] ?: return false
-        if (!current.hasWorkTime && current.breakMinutes == 0) return false
+        if (!current.hasWorkTime && current.breakMinutes == 0 && current.overtimeMinutes == 0) return false
         val before = captureUndo(listOf(date), "Uklanjanje radnog vremena ${date}")
-        entries[date] = current.copy(startMinute = null, endMinute = null, breakMinutes = 0)
+        entries[date] = current.copy(
+            startMinute = null,
+            endMinute = null,
+            breakMinutes = 0,
+            overtimeMinutes = 0
+        )
         persistEntries()
         commitUndo(before)
         return true
@@ -310,11 +326,15 @@ class ScheduleStore(private val context: Context) {
         dates: Collection<LocalDate>,
         startMinute: Int,
         endMinute: Int,
-        breakMinutes: Int
+        breakMinutes: Int,
+        overtimeMinutes: Int = 0
     ): BulkEditResult {
         if (!ScheduleLogic.isValidWorkTime(startMinute, endMinute, breakMinutes)) {
             return BulkEditResult(0, 0, 0)
         }
+        val duration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
+            ?: return BulkEditResult(0, 0, 0)
+        if (overtimeMinutes !in 0..duration) return BulkEditResult(0, 0, 0)
         val unique = dates.distinct().sorted().take(MAX_BULK_DAYS)
         val before = captureUndo(unique, "Radno vrijeme za ${unique.size} dana")
         val safeBreak = breakMinutes
@@ -329,7 +349,8 @@ class ScheduleStore(private val context: Context) {
             val next = current.copy(
                 startMinute = startMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
                 endMinute = endMinute.coerceIn(0, ScheduleLogic.MINUTES_PER_DAY - 1),
-                breakMinutes = safeBreak
+                breakMinutes = safeBreak,
+                overtimeMinutes = overtimeMinutes
             )
             if (next != current) {
                 entries[date] = next
@@ -417,7 +438,8 @@ class ScheduleStore(private val context: Context) {
                 note = normalizedNote,
                 startMinute = current?.startMinute,
                 endMinute = current?.endMinute,
-                breakMinutes = current?.breakMinutes ?: 0
+                breakMinutes = current?.breakMinutes ?: 0,
+                overtimeMinutes = current?.overtimeMinutes ?: 0
             )
             if (entries[date] != next) {
                 entries[date] = next
@@ -449,11 +471,21 @@ class ScheduleStore(private val context: Context) {
         val before = captureUndo(normalized.map { it.date }, "Uvoz skeniranog rasporeda")
         var imported = 0
         var skipped = 0
+        var freeDays = 0
 
         normalized.forEach { scanned ->
             val current = entries[scanned.date]
             if (!overwriteExisting && current != null) {
                 skipped++
+                return@forEach
+            }
+
+            if (scanned.code == RosterScanParser.FREE_DAY_CODE) {
+                freeDays++
+                imported++
+                if (overwriteExisting) {
+                    entries.remove(scanned.date)
+                }
                 return@forEach
             }
 
@@ -504,7 +536,7 @@ class ScheduleStore(private val context: Context) {
             persistEntries()
             commitUndo(before)
         }
-        return ImportResult(imported, skipped, 0)
+        return ImportResult(imported, skipped, freeDays)
     }
 
     /** Postavlja odabrane datume kao slobodne dane. */
@@ -596,18 +628,26 @@ class ScheduleStore(private val context: Context) {
         }.toString()).apply()
     }
 
-    fun saveSalaryProfile(profile: SalaryProfile) {
+    fun savePayrollProfile(profile: PayrollProfile) {
         val sanitized = profile.copy(
             coefficient = profile.coefficient.coerceIn(0.0, 20.0),
-            completedYearsOfService = profile.completedYearsOfService.coerceIn(0, 70),
+            yearsOfService = profile.yearsOfService.coerceIn(0, 70),
+            manualBaseEur = profile.manualBaseEur.coerceIn(0.0, 20_000.0),
             lowerTaxRatePercent = profile.lowerTaxRatePercent.coerceIn(0.0, 60.0),
             higherTaxRatePercent = profile.higherTaxRatePercent.coerceIn(0.0, 60.0),
-            personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 20_000.0),
-            regularShiftMinutes = profile.regularShiftMinutes.coerceIn(60, 24 * 60),
-            otherGrossAdditionsEur = profile.otherGrossAdditionsEur.coerceIn(0.0, 100_000.0)
+            personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 50_000.0),
+            additionalGrossEur = profile.additionalGrossEur.coerceIn(0.0, 100_000.0),
+            nonTaxableEur = profile.nonTaxableEur.coerceIn(0.0, 100_000.0),
+            overtimePercent = profile.overtimePercent.coerceIn(0.0, 300.0),
+            nightPercent = profile.nightPercent.coerceIn(0.0, 300.0),
+            saturdayPercent = profile.saturdayPercent.coerceIn(0.0, 300.0),
+            sundayPercent = profile.sundayPercent.coerceIn(0.0, 300.0),
+            holidayPercent = profile.holidayPercent.coerceIn(0.0, 300.0),
+            otherEmployersGrossEur = profile.otherEmployersGrossEur.coerceIn(0.0, 100_000.0),
+            allAdjustmentsConfirmed = profile.allAdjustmentsConfirmed
         )
-        salaryProfile.value = sanitized
-        prefs.edit().putString(KEY_SALARY_PROFILE, salaryProfileToJson(sanitized).toString()).apply()
+        payrollProfile.value = sanitized
+        prefs.edit().putString(KEY_PAYROLL_PROFILE, payrollProfileToJson(sanitized).toString()).apply()
     }
 
     fun exportArchiveJsonLines(): String =
@@ -702,6 +742,9 @@ class ScheduleStore(private val context: Context) {
         ScheduleLogic.holidayWorkMinutes(entry.date, entry.startMinute, entry.endMinute, entry.breakMinutes)
     }
 
+    fun totalConfirmedOvertimeMinutes(items: Collection<ShiftEntry>): Int =
+        items.sumOf { it.overtimeMinutes.coerceAtLeast(0) }
+
     fun totalOvertimeMinutes(items: Collection<ShiftEntry>): Int = items.sumOf { entry ->
         val minutes = entry.workMinutes ?: return@sumOf 0
         ScheduleLogic.overtimeMinutes(minutes, standardDailyMinutes.value)
@@ -786,7 +829,7 @@ class ScheduleStore(private val context: Context) {
     fun exportICalendar(): String = ICalendarExporter.export(entries.values)
 
     fun exportCsv(): String {
-        val sb = StringBuilder("datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min\n")
+        val sb = StringBuilder("datum,sifra,naziv,napomena,boja,pocetak,kraj,pauza_min,prekovremeno_min\n")
         entries.values.sortedBy { it.date }.forEach { item ->
             sb.append(csv(item.date.toString())).append(',')
                 .append(csv(item.code)).append(',')
@@ -795,7 +838,8 @@ class ScheduleStore(private val context: Context) {
                 .append(csv(formatColorArgb(item.colorArgb))).append(',')
                 .append(csv(item.startMinute?.let(ScheduleLogic::formatClock).orEmpty())).append(',')
                 .append(csv(item.endMinute?.let(ScheduleLogic::formatClock).orEmpty())).append(',')
-                .append(csv(item.breakMinutes.takeIf { item.hasWorkTime }?.toString().orEmpty())).append('\n')
+                .append(csv(item.breakMinutes.takeIf { item.hasWorkTime }?.toString().orEmpty())).append(',')
+                .append(csv(item.overtimeMinutes.takeIf { item.hasWorkTime && it > 0 }?.toString().orEmpty())).append('\n')
         }
         return sb.toString()
     }
@@ -847,8 +891,12 @@ class ScheduleStore(private val context: Context) {
             val startMinute = parts.getOrNull(5)?.takeIf { it.isNotBlank() }?.let(ScheduleLogic::parseClock)
             val endMinute = parts.getOrNull(6)?.takeIf { it.isNotBlank() }?.let(ScheduleLogic::parseClock)
             val breakMinutes = parts.getOrNull(7)?.trim()?.toIntOrNull()?.coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES) ?: 0
+            val workDuration = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
             val hasValidTime = startMinute != null && endMinute != null &&
-                ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)?.let { it > 0 } == true
+                workDuration?.let { it > 0 } == true
+            val overtimeMinutes = parts.getOrNull(8)?.trim()?.toIntOrNull()?.coerceAtLeast(0)
+                ?.takeIf { hasValidTime && workDuration != null && it <= workDuration }
+                ?: 0
             if (preset != null) {
                 entries[date] = ShiftEntry(
                     date = date,
@@ -858,7 +906,8 @@ class ScheduleStore(private val context: Context) {
                     note = note,
                     startMinute = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) startMinute else null,
                     endMinute = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) endMinute else null,
-                    breakMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) breakMinutes else 0
+                    breakMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) breakMinutes else 0,
+                    overtimeMinutes = if (hasValidTime && !ScheduleLogic.isLeaveCode(preset.code)) overtimeMinutes else 0
                 )
             } else {
                 val cleanCode = sanitizeCustomText(code)
@@ -879,7 +928,8 @@ class ScheduleStore(private val context: Context) {
                     date, cleanCode, label, color, note,
                     startMinute = if (hasValidTime) startMinute else null,
                     endMinute = if (hasValidTime) endMinute else null,
-                    breakMinutes = if (hasValidTime) breakMinutes else 0
+                    breakMinutes = if (hasValidTime) breakMinutes else 0,
+                    overtimeMinutes = if (hasValidTime) overtimeMinutes else 0
                 )
             }
             imported++
@@ -902,7 +952,7 @@ class ScheduleStore(private val context: Context) {
             put("organizationName", userProfile.value.organizationName)
             put("position", userProfile.value.position)
         })
-        put("salaryProfile", salaryProfileToJson(salaryProfile.value))
+        put("payroll", payrollProfileToJson(payrollProfile.value))
         put("settings", JSONObject().apply {
             put("remindersEnabled", remindersEnabled.value)
             put("reminderHour", reminderHour.value)
@@ -956,9 +1006,8 @@ class ScheduleStore(private val context: Context) {
                 )
             )
         }
-
-        root.optJSONObject("salaryProfile")?.let { salary ->
-            saveSalaryProfile(parseSalaryProfile(salary))
+        root.optJSONObject("payroll")?.let { payroll ->
+            savePayrollProfile(parsePayrollProfile(payroll))
         }
 
         root.optJSONObject("settings")?.let { settings ->
@@ -1077,6 +1126,11 @@ class ScheduleStore(private val context: Context) {
                 isLeave -> 0
                 keepCurrentTime -> current?.breakMinutes ?: 0
                 else -> defaultTime?.breakMinutes ?: 0
+            },
+            overtimeMinutes = when {
+                isLeave -> 0
+                keepCurrentTime -> current?.overtimeMinutes ?: 0
+                else -> 0
             }
         )
     }
@@ -1490,9 +1544,14 @@ class ScheduleStore(private val context: Context) {
         val start = obj.optInt("startMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY }
         val end = obj.optInt("endMinute", -1).takeIf { it in 0 until ScheduleLogic.MINUTES_PER_DAY }
         val breakMinutes = obj.optInt("breakMinutes", 0).coerceIn(0, ScheduleLogic.MAX_BREAK_MINUTES)
+        val duration = ScheduleLogic.workDurationMinutes(start, end, breakMinutes)
         val validTime = start != null && end != null &&
-            ScheduleLogic.workDurationMinutes(start, end, breakMinutes)?.let { it > 0 } == true &&
+            duration?.let { it > 0 } == true &&
             !ScheduleLogic.isLeaveCode(code)
+        val overtimeMinutes = obj.optInt("overtimeMinutes", 0)
+            .coerceAtLeast(0)
+            .takeIf { validTime && duration != null && it <= duration }
+            ?: 0
         return ShiftEntry(
             date = date,
             code = code,
@@ -1501,7 +1560,8 @@ class ScheduleStore(private val context: Context) {
             note = obj.optString("note", "").take(MAX_NOTE_LENGTH),
             startMinute = if (validTime) start else null,
             endMinute = if (validTime) end else null,
-            breakMinutes = if (validTime) breakMinutes else 0
+            breakMinutes = if (validTime) breakMinutes else 0,
+            overtimeMinutes = overtimeMinutes
         )
     }
 
@@ -1617,37 +1677,6 @@ class ScheduleStore(private val context: Context) {
             .apply()
     }
 
-    private fun loadSalaryProfile(): SalaryProfile {
-        val raw = prefs.getString(KEY_SALARY_PROFILE, null) ?: return SalaryProfile()
-        return runCatching { parseSalaryProfile(JSONObject(raw)) }.getOrDefault(SalaryProfile())
-    }
-
-    private fun parseSalaryProfile(obj: JSONObject): SalaryProfile = SalaryProfile(
-        regime = SalaryRegime.fromPersisted(obj.optString("regime", null)),
-        workOrganization = WorkOrganization.fromPersisted(obj.optString("workOrganization", null)),
-        coefficient = obj.optDouble("coefficient", 0.0),
-        completedYearsOfService = obj.optInt("completedYearsOfService", 0),
-        lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0),
-        higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0),
-        personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0),
-        regularShiftMinutes = obj.optInt("regularShiftMinutes", 8 * 60),
-        secondShiftEligible = obj.optBoolean("secondShiftEligible", false),
-        otherGrossAdditionsEur = obj.optDouble("otherGrossAdditionsEur", 0.0)
-    )
-
-    private fun salaryProfileToJson(profile: SalaryProfile): JSONObject = JSONObject().apply {
-        put("regime", profile.regime.persistedValue)
-        put("workOrganization", profile.workOrganization.persistedValue)
-        put("coefficient", profile.coefficient)
-        put("completedYearsOfService", profile.completedYearsOfService)
-        put("lowerTaxRatePercent", profile.lowerTaxRatePercent)
-        put("higherTaxRatePercent", profile.higherTaxRatePercent)
-        put("personalAllowanceEur", profile.personalAllowanceEur)
-        put("regularShiftMinutes", profile.regularShiftMinutes)
-        put("secondShiftEligible", profile.secondShiftEligible)
-        put("otherGrossAdditionsEur", profile.otherGrossAdditionsEur)
-    }
-
     private fun loadUserProfile(): UserProfile {
         val raw = prefs.getString(KEY_USER_PROFILE, null) ?: return UserProfile()
         return runCatching {
@@ -1663,6 +1692,53 @@ class ScheduleStore(private val context: Context) {
         }.getOrDefault(UserProfile())
     }
 
+    private fun loadPayrollProfile(): PayrollProfile {
+        val raw = prefs.getString(KEY_PAYROLL_PROFILE, null) ?: return PayrollProfile()
+        return runCatching { parsePayrollProfile(JSONObject(raw)) }.getOrDefault(PayrollProfile())
+    }
+
+    private fun parsePayrollProfile(obj: JSONObject): PayrollProfile = PayrollProfile(
+        enabled = obj.optBoolean("enabled", false),
+        system = PayrollSystem.fromPersisted(obj.optString("system", null)),
+        coefficient = obj.optDouble("coefficient", 0.0).coerceIn(0.0, 20.0),
+        yearsOfService = obj.optInt("yearsOfService", 0).coerceIn(0, 70),
+        manualBaseEur = obj.optDouble("manualBaseEur", 0.0).coerceIn(0.0, 20_000.0),
+        lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
+        higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
+        personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0).coerceIn(0.0, 50_000.0),
+        pensionMode = PensionMode.fromPersisted(obj.optString("pensionMode", null)),
+        additionalGrossEur = obj.optDouble("additionalGrossEur", 0.0).coerceIn(0.0, 100_000.0),
+        nonTaxableEur = obj.optDouble("nonTaxableEur", 0.0).coerceIn(0.0, 100_000.0),
+        overtimePercent = obj.optDouble("overtimePercent", 0.0).coerceIn(0.0, 300.0),
+        nightPercent = obj.optDouble("nightPercent", 0.0).coerceIn(0.0, 300.0),
+        saturdayPercent = obj.optDouble("saturdayPercent", 0.0).coerceIn(0.0, 300.0),
+        sundayPercent = obj.optDouble("sundayPercent", 0.0).coerceIn(0.0, 300.0),
+        holidayPercent = obj.optDouble("holidayPercent", 0.0).coerceIn(0.0, 300.0),
+        otherEmployersGrossEur = obj.optDouble("otherEmployersGrossEur", 0.0).coerceIn(0.0, 100_000.0),
+        allAdjustmentsConfirmed = obj.optBoolean("allAdjustmentsConfirmed", false)
+    )
+
+    private fun payrollProfileToJson(profile: PayrollProfile): JSONObject = JSONObject().apply {
+        put("enabled", profile.enabled)
+        put("system", profile.system.persistedValue)
+        put("coefficient", profile.coefficient)
+        put("yearsOfService", profile.yearsOfService)
+        put("manualBaseEur", profile.manualBaseEur)
+        put("lowerTaxRatePercent", profile.lowerTaxRatePercent)
+        put("higherTaxRatePercent", profile.higherTaxRatePercent)
+        put("personalAllowanceEur", profile.personalAllowanceEur)
+        put("pensionMode", profile.pensionMode.persistedValue)
+        put("additionalGrossEur", profile.additionalGrossEur)
+        put("nonTaxableEur", profile.nonTaxableEur)
+        put("overtimePercent", profile.overtimePercent)
+        put("nightPercent", profile.nightPercent)
+        put("saturdayPercent", profile.saturdayPercent)
+        put("sundayPercent", profile.sundayPercent)
+        put("holidayPercent", profile.holidayPercent)
+        put("otherEmployersGrossEur", profile.otherEmployersGrossEur)
+        put("allAdjustmentsConfirmed", profile.allAdjustmentsConfirmed)
+    }
+
     private fun entryToJsonObject(item: ShiftEntry): JSONObject = JSONObject().apply {
         put("date", item.date.toString())
         put("code", item.code)
@@ -1672,6 +1748,7 @@ class ScheduleStore(private val context: Context) {
         if (item.startMinute != null) put("startMinute", item.startMinute)
         if (item.endMinute != null) put("endMinute", item.endMinute)
         put("breakMinutes", item.breakMinutes)
+        put("overtimeMinutes", item.overtimeMinutes)
     }
 
     private fun entriesToJson(): JSONArray = JSONArray().apply {
@@ -1804,7 +1881,7 @@ class ScheduleStore(private val context: Context) {
         private const val MAX_UNDO_DAYS = 1_000
         private const val MAX_PROFILE_TEXT = 120
         private const val SUGGESTION_LOOKBACK_DAYS = 90L
-        private const val DATA_SCHEMA_VERSION = 8
+        private const val DATA_SCHEMA_VERSION = 10
         private const val ARCHIVE_SCHEMA_VERSION = 1
         private const val CURRENT_SNAPSHOT_SCHEMA_VERSION = 2
         private const val MAX_SNAPSHOT_BYTES = 64L * 1024L * 1024L
@@ -1828,7 +1905,7 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
-        private const val KEY_SALARY_PROFILE = "salary_profile_json"
+        private const val KEY_PAYROLL_PROFILE = "payroll_profile_json"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
         private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"

@@ -84,6 +84,14 @@ class ScheduleLogicTest {
     }
 
     @Test
+    fun regularWorkMinutesSubtractsOnlyConfirmedOvertime() {
+        assertEquals(8 * 60, ScheduleLogic.regularWorkMinutes(10 * 60, 2 * 60))
+        assertEquals(10 * 60, ScheduleLogic.regularWorkMinutes(10 * 60, 0))
+        assertEquals(0, ScheduleLogic.regularWorkMinutes(60, 120))
+        assertEquals(0, ScheduleLogic.regularWorkMinutes(-30, 0))
+    }
+
+    @Test
     fun automaticMonthlyTarget_usesWeekdays() {
         val month = YearMonth.of(2026, 10)
         assertEquals(ScheduleLogic.monthWeekdays(month).size * 8 * 60, ScheduleLogic.automaticMonthlyTargetMinutes(month, 8 * 60))

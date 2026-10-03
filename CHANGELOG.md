@@ -1,5 +1,66 @@
 # Changelog
 
+## 0.1.15
+
+Daljnje poboljšanje skeniranja stvarnih rasporeda s više zaposlenika, sigurniji odabir mjeseca, ručna korekcija pronađenih unosa i brži unos potvrđenih prekovremenih sati.
+
+### Novo i poboljšano
+
+- skener može koristiti ime i prezime iz radnog profila te izdvojiti samo red odabrane osobe iz rasporeda s više zaposlenika
+- podudaranje imena tolerira hrvatske dijakritičke znakove
+- ako osoba nije sigurno pronađena, Takto ne uvozi raspored druge osobe
+- podržan je slučaj kada je ime u jednom retku, a oznake smjena u sljedećem retku
+- ako mjesec nije prepoznat na slici, uvoz je blokiran dok korisnik ručno ne odabere i potvrdi točan mjesec
+- pronađeni unos sada se može urediti prije uvoza: oznaka smjene, početak, kraj, pauza ili slobodan dan
+- pogrešno pronađen unos može se ukloniti iz pregleda bez ponovnog skeniranja cijele slike
+- galerijske slike zadržavaju više detalja za sitni tekst u velikim tablicama
+- dijalog za korekciju skena prilagođen je malim ekranima i većem fontu
+- dodani su brzi izbori za potvrđene prekovremene sate: 0, 30, 60 i 120 minuta
+- brzi izbori prekovremenih raspoređuju se u čitljiv 2 × 2 raspored na manjim ekranima
+- svi pronađeni dani iz skena prikazuju se prije uvoza; nema skrivenih unosa nakon prvih 18
+- redovni sati sada izričito isključuju potvrđene prekovremene kako se isti sati ne bi prikazivali u obje kategorije
+- Početna prikazuje potvrđene prekovremene, a kada je obračun potpun i procjenu isplate, neto i bruto iznosa
+- tekst za standardni radni dan jasno razlikuje kontrolnu metriku od prekovremenih koji stvarno ulaze u obračun plaće
+- dodani regresijski testovi za izdvajanje jedne osobe, hrvatske dijakritike, odvojeni red imena i oznaka te ručno zadani mjesec
+
+### Verzija
+
+- `versionName`: `0.1.15`
+- `versionCode`: `16`
+
+
+## 0.1.14
+
+Pouzdanije skeniranje rasporeda, potvrđeni prekovremeni sati i precizniji obračun plaće za državne i javne službe, uz završno poliranje mobilnog UX-a.
+
+### Novo i poboljšano
+
+- skeniranje kamerom i uvoz iz galerije koriste isti postupak označavanja područja prije prepoznavanja
+- korisnik može izrezati samo svoj red rasporeda, pomicati okvir prstom i mijenjati mu veličinu
+- dodane su zasebne kontrole **Lijevo**, **Gore**, **Dolje** i **Desno** za precizno pomicanje područja na malom ekranu
+- dodana rotacija slike u oba smjera: **−90°** i **+90°**
+- gumb **Jedan red** vraća praktični početni okvir, a **Označi cijelu sliku** ostaje dostupan kada je raspored samo za jednu osobu
+- dvosmisleni rezultati za isti datum blokiraju uvoz umjesto da miješaju podatke više osoba
+- pregled prepoznatog rasporeda ostaje obavezan prije upisa u Kalendar
+- slobodni dani iz skeniranog rasporeda obrađuju se kao slobodni dani, bez stvaranja lažnih oznaka
+- svaki radni unos može sadržavati potvrđene prekovremene minute
+- potvrđeni prekovremeni prikazuju se u Kalendaru i zasebno u Statistici
+- samo potvrđeni prekovremeni ulaze u obračun plaće; duga smjena se ne proglašava automatski prekovremenom
+- obračun plaće podržava državnu službu, javne službe i ostale sustave s vlastitim pravilima
+- za 2026. koriste se službene osnovice po razdobljima, uz dodatak za navršene godine staža
+- obračun podržava noćni rad, subotu, nedjelju, blagdan i potvrđeni prekovremeni rad
+- za ostale sustave postotci se ne pretpostavljaju nego ih korisnik unosi
+- potpuni neto izračun se ne prikazuje kada nedostaju porezni podaci, radno vrijeme, podaci o bolovanju ili potvrda svih primjenjivih dodataka
+- podržani su MIO I./II. stup, zakonsko umanjenje osnovice i bruto kod drugih poslodavaca
+- uklonjeni su preostali tehnički izrazi iz korisničkih tekstova za sigurnosne kopije i povijest promjena
+- verzija i CI artefakti ispravljeni su na stvarni **0.1.14**
+
+### Verzija
+
+- `versionName`: `0.1.14`
+- `versionCode`: `15`
+
+
 ## 0.1.13
 
 Veliki UX/IA završni zahvat prema testiranju na stvarnim Android uređajima: uravnotežene teme, fokusirana Početna, veći Kalendar, čišći Uzorci i lokalni uvoz rasporeda sa slike.

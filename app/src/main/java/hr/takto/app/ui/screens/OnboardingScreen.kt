@@ -159,7 +159,7 @@ private fun WelcomePanel() {
             FeatureLine(
                 Icons.Default.Schedule,
                 "Sati i mjesečni fond",
-                "Prati evidentirano vrijeme, redovne sate i prekovremene."
+                "Prati evidentirano vrijeme, redovne sate i potvrđene prekovremene."
             )
             FeatureLine(
                 Icons.Default.AddPhotoAlternate,

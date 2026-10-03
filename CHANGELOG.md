@@ -25,6 +25,7 @@ Daljnje poliranje interakcija, pristupačnosti i sigurnosti uvoza rasporeda, uz 
 - uklonjen neupotrebljivi `exportArchiveJsonLines()` helper
 - uklonjene neupotrebljive izravne Lifecycle ovisnosti koje aplikacijski kod ne koristi
 - uklonjena neupotrebljiva Compose preview ovisnost iz produkcijskog classpatha
+- uklonjena neupotrebljiva Compose UI test-manifest ovisnost jer projekt nema instrumentacijske UI testove
 - slobodni dan iz skena koji je već prazan više ne stvara lažni "uvezeni" unos ni nepotrebnu Undo reviziju
 - poruka nakon skeniranog uvoza sada govori koliko je datuma stvarno promijenjeno
 

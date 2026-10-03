@@ -625,6 +625,7 @@ class ScheduleStore(private val context: Context) {
 
     fun savePayrollProfile(profile: PayrollProfile) {
         val sanitized = profile.copy(
+            rolePresetId = profile.rolePresetId.trim().take(80),
             coefficient = profile.coefficient.coerceIn(0.0, 20.0),
             yearsOfService = profile.yearsOfService.coerceIn(0, 70),
             manualBaseEur = profile.manualBaseEur.coerceIn(0.0, 20_000.0),
@@ -951,7 +952,6 @@ class ScheduleStore(private val context: Context) {
             put("shiftRemindersEnabled", shiftRemindersEnabled.value)
             put("shiftReminderLeadMinutes", shiftReminderLeadMinutes.value)
             put("standardDailyMinutes", standardDailyMinutes.value)
-            put("themeMode", themeMode.value.persistedValue)
             put("monthlyTargetOverrides", JSONObject().apply {
                 monthlyTargetOverrides.forEach { (month, minutes) -> put(month, minutes) }
             })
@@ -1059,7 +1059,6 @@ class ScheduleStore(private val context: Context) {
                 .putBoolean(KEY_SHIFT_REMINDERS, shiftRemindersEnabled.value)
                 .putInt(KEY_SHIFT_REMINDER_LEAD_MINUTES, shiftReminderLeadMinutes.value)
                 .putInt(KEY_STANDARD_DAILY_MINUTES, standardDailyMinutes.value)
-                .putString(KEY_THEME_MODE, themeMode.value.persistedValue)
                 .apply()
             persistShiftColors()
             persistCustomShiftPresets()
@@ -1203,6 +1202,8 @@ class ScheduleStore(private val context: Context) {
     }
 
     private fun seedDefaultWorkTimePresets() {
+        if (prefs.getBoolean(KEY_DEFAULT_WORK_TIMES_SEEDED, false)) return
+
         val defaults = listOf(
             WorkTimePreset("D", 7 * 60, 19 * 60, 0),
             WorkTimePreset("N", 19 * 60, 7 * 60, 0)
@@ -1215,6 +1216,7 @@ class ScheduleStore(private val context: Context) {
             }
         }
         if (changed) persistWorkTimePresets()
+        prefs.edit().putBoolean(KEY_DEFAULT_WORK_TIMES_SEEDED, true).apply()
     }
 
     private fun persistWorkTimePresets() {
@@ -1683,6 +1685,7 @@ class ScheduleStore(private val context: Context) {
     private fun parsePayrollProfile(obj: JSONObject): PayrollProfile = PayrollProfile(
         enabled = obj.optBoolean("enabled", false),
         system = PayrollSystem.fromPersisted(obj.optString("system").takeIf { it.isNotBlank() }),
+        rolePresetId = obj.optString("rolePresetId", "").trim().take(80),
         coefficient = obj.optDouble("coefficient", 0.0).coerceIn(0.0, 20.0),
         yearsOfService = obj.optInt("yearsOfService", 0).coerceIn(0, 70),
         manualBaseEur = obj.optDouble("manualBaseEur", 0.0).coerceIn(0.0, 20_000.0),
@@ -1704,6 +1707,7 @@ class ScheduleStore(private val context: Context) {
     private fun payrollProfileToJson(profile: PayrollProfile): JSONObject = JSONObject().apply {
         put("enabled", profile.enabled)
         put("system", profile.system.persistedValue)
+        put("rolePresetId", profile.rolePresetId)
         put("coefficient", profile.coefficient)
         put("yearsOfService", profile.yearsOfService)
         put("manualBaseEur", profile.manualBaseEur)
@@ -1884,12 +1888,12 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_STANDARD_DAILY_MINUTES = "standard_daily_minutes"
         private const val KEY_MONTHLY_TARGET_OVERRIDES = "monthly_target_overrides_json"
         private const val KEY_WORK_TIME_PRESETS = "work_time_presets_json"
+        private const val KEY_DEFAULT_WORK_TIMES_SEEDED = "default_work_times_seeded_v1"
         private const val KEY_SHIFT_COLORS = "shift_colors_json"
         private const val KEY_CUSTOM_SHIFT_PRESETS = "custom_shift_presets_json"
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
         private const val KEY_PAYROLL_PROFILE = "payroll_profile_json"
-        private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
         private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"
         private const val KEY_ARCHIVE_FILE_LENGTH = "archive_file_length"

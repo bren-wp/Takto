@@ -59,20 +59,14 @@ class MainActivity : ComponentActivity() {
         consumeNavigationIntent(intent)
         val store = (application as TaktoApplication).scheduleStore
         setContent {
-            val systemDark = isSystemInDarkTheme()
-            val darkAppearance = when (store.themeMode.value) {
-                AppThemeMode.DARK -> true
-                AppThemeMode.LIGHT -> false
-                AppThemeMode.SYSTEM -> systemDark
-            }
             val view = LocalView.current
             SideEffect {
                 val controller = WindowCompat.getInsetsController(window, view)
-                controller.isAppearanceLightStatusBars = !darkAppearance
-                controller.isAppearanceLightNavigationBars = !darkAppearance
+                controller.isAppearanceLightStatusBars = true
+                controller.isAppearanceLightNavigationBars = true
             }
 
-            TaktoTheme(mode = store.themeMode.value) {
+            TaktoTheme {
                 TaktoRoot(
                     store = store,
                     requestedDate = openDateRequest.value,

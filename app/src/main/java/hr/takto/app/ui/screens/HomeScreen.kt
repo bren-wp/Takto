@@ -42,6 +42,7 @@ import hr.takto.app.model.PayrollInputs
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
+import hr.takto.app.ui.components.formatEuro
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
@@ -53,7 +54,6 @@ import hr.takto.app.ui.theme.TaktoGreen
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
-import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -417,7 +417,7 @@ fun HomeScreen(
                 if (store.payrollProfile.value.enabled) {
                     if (payroll.complete) {
                         Text(
-                            "Procjena isplate: ${homeEuro(payroll.payoutEur)} · neto ${homeEuro(payroll.netSalaryEur)} · bruto ${homeEuro(payroll.grossEur)}",
+                            "Procjena isplate: ${formatEuro(payroll.payoutEur)} · neto ${formatEuro(payroll.netSalaryEur)} · bruto ${formatEuro(payroll.grossEur)}",
                             color = colors.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
@@ -488,7 +488,7 @@ private fun TodayQuickButton(
     }
 }
 
-private fun homeEuro(value: Double): String =
+private fun formatEuro(value: Double): String =
     String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable

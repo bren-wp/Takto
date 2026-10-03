@@ -1244,7 +1244,7 @@ private fun WorkTimePresetDialog(
     val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
     val grossDuration = ScheduleLogic.grossWorkDurationMinutes(start, end)
     val valid = pause != null && ScheduleLogic.isValidWorkTime(start, end, pause)
-    val duration = if (valid) ScheduleLogic.workDurationMinutes(start, end, pause ?: 0) else null
+    val duration = if (valid) ScheduleLogic.workDurationMinutes(start, end, pause) else null
     val overnight = valid && ScheduleLogic.isOvernightWork(start, end)
 
     AlertDialog(
@@ -1331,7 +1331,7 @@ private fun WorkTimePresetDialog(
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(start!!, end!!, pause!!) },
+                onClick = { if (valid) onSave(start, end, pause) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }
@@ -1396,12 +1396,12 @@ private fun StandardDayDialog(
                         singleLine = true
                     )
                 }
-                if (valid) Text("Standard: ${ScheduleLogic.formatDuration(total ?: 0)}", color = TaktoBlue, fontWeight = FontWeight.Bold)
+                if (valid) Text("Standard: ${ScheduleLogic.formatDuration(total)}", color = TaktoBlue, fontWeight = FontWeight.Bold)
             }
         },
         confirmButton = {
             Button(
-                onClick = { if (valid) onSave(total!!) },
+                onClick = { if (valid) onSave(total) },
                 enabled = valid,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) { Text("Spremi") }

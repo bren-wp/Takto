@@ -488,8 +488,6 @@ private fun TodayQuickButton(
     }
 }
 
-private fun formatEuro(value: Double): String =
-    String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable
 private fun MiniMetric(

@@ -73,6 +73,7 @@ import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.PayrollRoleCatalog2026
 import hr.takto.app.model.EmploymentCatalog
+import hr.takto.app.model.DefaultWorkTimePresets
 import hr.takto.app.model.UserProfile
 import hr.takto.app.reminders.ReminderScheduler
 import hr.takto.app.ui.components.ConfirmDeleteDialog
@@ -1227,12 +1228,9 @@ private fun WorkTimePresetDialog(
     onSave: (Int, Int, Int) -> Unit,
     onClear: () -> Unit
 ) {
-    val defaultStartMinute = if (code.equals("N", ignoreCase = true)) 19 * 60 else 7 * 60
-    val defaultEndMinute = when {
-        code.equals("D", ignoreCase = true) -> 19 * 60
-        code.equals("N", ignoreCase = true) -> 7 * 60
-        else -> 15 * 60
-    }
+    val defaultPreset = DefaultWorkTimePresets.forCode(code)
+    val defaultStartMinute = defaultPreset?.startMinute ?: 7 * 60
+    val defaultEndMinute = defaultPreset?.endMinute ?: 15 * 60
     var startText by remember(code, preset) {
         mutableStateOf(preset?.startMinute?.let(ScheduleLogic::formatClock) ?: ScheduleLogic.formatClock(defaultStartMinute))
     }

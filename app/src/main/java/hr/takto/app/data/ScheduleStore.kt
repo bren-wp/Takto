@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.toArgb
 import hr.takto.app.model.CustomShiftPreset
 import hr.takto.app.model.ICalendarExporter
 import hr.takto.app.model.DefaultShiftTypes
+import hr.takto.app.model.DefaultWorkTimePresets
 import hr.takto.app.model.SavedPattern
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.SchedulePersistencePolicy
@@ -1203,12 +1204,8 @@ class ScheduleStore(private val context: Context) {
     private fun seedDefaultWorkTimePresets() {
         if (prefs.getBoolean(KEY_DEFAULT_WORK_TIMES_SEEDED, false)) return
 
-        val defaults = listOf(
-            WorkTimePreset("D", 7 * 60, 19 * 60, 0),
-            WorkTimePreset("N", 19 * 60, 7 * 60, 0)
-        )
         var changed = false
-        defaults.forEach { preset ->
+        DefaultWorkTimePresets.presets.forEach { preset ->
             if (workTimePresets.keys.none { it.equals(preset.code, ignoreCase = true) }) {
                 workTimePresets[preset.code] = preset
                 changed = true

@@ -8,6 +8,8 @@ package hr.takto.app.ui.screens
 internal object CalendarUiLogic {
     private const val SINGLE_COLUMN_WIDTH_DP = 360f
     private const val LARGE_FONT_SCALE = 1.30f
+    private const val TOOLBAR_TWO_ROW_WIDTH_DP = 390f
+    private const val TOOLBAR_LARGE_FONT_SCALE = 1.18f
 
     fun shouldStack(availableWidthDp: Float, fontScale: Float): Boolean {
         val safeWidth = availableWidthDp.takeIf { it.isFinite() } ?: 0f
@@ -17,4 +19,10 @@ internal object CalendarUiLogic {
 
     fun shiftChoiceColumns(availableWidthDp: Float, fontScale: Float): Int =
         if (shouldStack(availableWidthDp, fontScale)) 1 else 2
+
+    fun toolbarUsesTwoRows(availableWidthDp: Float, fontScale: Float): Boolean {
+        val safeWidth = availableWidthDp.takeIf { it.isFinite() } ?: 0f
+        val safeFontScale = fontScale.takeIf { it.isFinite() && it > 0f } ?: 1f
+        return safeWidth < TOOLBAR_TWO_ROW_WIDTH_DP || safeFontScale >= TOOLBAR_LARGE_FONT_SCALE
+    }
 }

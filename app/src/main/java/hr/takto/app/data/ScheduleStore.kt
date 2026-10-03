@@ -482,9 +482,9 @@ class ScheduleStore(private val context: Context) {
 
             if (scanned.code == RosterScanParser.FREE_DAY_CODE) {
                 freeDays++
-                imported++
-                if (overwriteExisting) {
+                if (overwriteExisting && current != null) {
                     entries.remove(scanned.date)
+                    imported++
                 }
                 return@forEach
             }
@@ -649,10 +649,6 @@ class ScheduleStore(private val context: Context) {
         payrollProfile.value = sanitized
         prefs.edit().putString(KEY_PAYROLL_PROFILE, payrollProfileToJson(sanitized).toString()).apply()
     }
-
-    fun exportArchiveJsonLines(): String =
-        runCatching { context.getFileStreamPath(HISTORY_FILE).takeIf { it.exists() }?.readText().orEmpty() }
-            .getOrDefault("")
 
     fun writeArchiveTo(output: OutputStream) {
         val file = context.getFileStreamPath(HISTORY_FILE)

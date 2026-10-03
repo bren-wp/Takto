@@ -141,55 +141,68 @@ fun CalendarScreen(
             .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Kalendar",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = { scannerDialog = true }) {
-                Icon(
-                    Icons.Default.AddPhotoAlternate,
-                    contentDescription = "Uvezi raspored sa slike",
-                    tint = TaktoBlue
-                )
-            }
-            IconButton(onClick = { searchDialog = true }) {
-                Icon(Icons.Default.Search, contentDescription = "Pretraži raspored", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            IconButton(
-                onClick = {
-                    val restored = store.undoLastChange()
-                    if (restored > 0) Toast.makeText(context, "Vraćena je zadnja promjena.", Toast.LENGTH_SHORT).show()
-                },
-                enabled = store.canUndo.value
-            ) {
-                Icon(
-                    Icons.Default.Undo,
-                    contentDescription = if (store.canUndo.value) "Vrati: ${store.undoLabel.value}" else "Nema promjene za vratiti",
-                    tint = if (store.canUndo.value) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-                )
-            }
-            IconButton(
-                onClick = {
-                    multiSelect = !multiSelect
-                    selectedDateIso = null
-                    if (!multiSelect) selectedDates = emptySet()
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val fontScale = LocalDensity.current.fontScale
+            val twoRows = CalendarUiLogic.toolbarUsesTwoRows(maxWidth.value, fontScale)
+            val onUndo = {
+                val restored = store.undoLastChange()
+                if (restored > 0) {
+                    Toast.makeText(context, "Vraćena je zadnja promjena.", Toast.LENGTH_SHORT).show()
                 }
-            ) {
-                Icon(
-                    Icons.Default.Checklist,
-                    contentDescription = "Odaberi više dana",
-                    tint = if (multiSelect) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-            IconButton(onClick = {
+            val onToggleMultiSelect = {
+                multiSelect = !multiSelect
+                selectedDateIso = null
+                if (!multiSelect) selectedDates = emptySet()
+            }
+            val onToday = {
                 val today = LocalDate.now()
                 monthIso = YearMonth.from(today).toString()
                 if (multiSelect) selectedDates = setOf(today) else selectedDateIso = today.toString()
-            }) {
-                Icon(Icons.Default.Today, contentDescription = "Idi na danas", tint = TaktoBlue)
+            }
+
+            if (twoRows) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "Kalendar",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    CalendarToolbarActions(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        canUndo = store.canUndo.value,
+                        undoDescription = store.undoLabel.value,
+                        multiSelect = multiSelect,
+                        onScan = { scannerDialog = true },
+                        onSearch = { searchDialog = true },
+                        onUndo = onUndo,
+                        onToggleMultiSelect = onToggleMultiSelect,
+                        onToday = onToday
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Kalendar",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Spacer(Modifier.weight(1f))
+                    CalendarToolbarActions(
+                        canUndo = store.canUndo.value,
+                        undoDescription = store.undoLabel.value,
+                        multiSelect = multiSelect,
+                        onScan = { scannerDialog = true },
+                        onSearch = { searchDialog = true },
+                        onUndo = onUndo,
+                        onToggleMultiSelect = onToggleMultiSelect,
+                        onToday = onToday
+                    )
+                }
             }
         }
 
@@ -207,6 +220,10 @@ fun CalendarScreen(
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
                         .weight(1f)
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = "Odaberi drugi mjesec"
+                        }
                         .clickable { jumpDialog = true },
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
@@ -749,6 +766,74 @@ fun CalendarScreen(
                 selectedDateIso = null
             }
         )
+    }
+}
+
+@Composable
+private fun CalendarToolbarActions(
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    canUndo: Boolean,
+    undoDescription: String,
+    multiSelect: Boolean,
+    onScan: () -> Unit,
+    onSearch: () -> Unit,
+    onUndo: () -> Unit,
+    onToggleMultiSelect: () -> Unit,
+    onToday: () -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onScan) {
+            Icon(
+                Icons.Default.AddPhotoAlternate,
+                contentDescription = "Uvezi raspored sa slike",
+                tint = TaktoBlue
+            )
+        }
+        IconButton(onClick = onSearch) {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = "Pretraži raspored",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onUndo, enabled = canUndo) {
+            Icon(
+                Icons.Default.Undo,
+                contentDescription = if (canUndo) {
+                    "Vrati: $undoDescription"
+                } else {
+                    "Nema promjene za vratiti"
+                },
+                tint = if (canUndo) {
+                    TaktoBlue
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                }
+            )
+        }
+        IconButton(onClick = onToggleMultiSelect) {
+            Icon(
+                Icons.Default.Checklist,
+                contentDescription = if (multiSelect) {
+                    "Isključi odabir više dana"
+                } else {
+                    "Odaberi više dana"
+                },
+                tint = if (multiSelect) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onToday) {
+            Icon(
+                Icons.Default.Today,
+                contentDescription = "Idi na danas",
+                tint = TaktoBlue
+            )
+        }
     }
 }
 

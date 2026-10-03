@@ -31,6 +31,18 @@ class CalendarUiLogicTest {
     }
 
     @Test
+    fun toolbarUsesTwoRowsOnNarrowWidth() {
+        assertTrue(CalendarUiLogic.toolbarUsesTwoRows(389f, 1f))
+        assertFalse(CalendarUiLogic.toolbarUsesTwoRows(390f, 1f))
+    }
+
+    @Test
+    fun toolbarUsesTwoRowsWithLargeFont() {
+        assertTrue(CalendarUiLogic.toolbarUsesTwoRows(480f, 1.18f))
+        assertFalse(CalendarUiLogic.toolbarUsesTwoRows(480f, 1.17f))
+    }
+
+    @Test
     fun invalidMeasurementsUseSafeFallbacks() {
         assertTrue(CalendarUiLogic.shouldStack(Float.NaN, 1f))
         assertFalse(CalendarUiLogic.shouldStack(420f, Float.NaN))

@@ -39,7 +39,13 @@ object ScheduleSuggestions {
                 .thenByDescending {
                     lastUsedByCode[it.code.uppercase(Locale.ROOT)]?.toEpochDay() ?: Long.MIN_VALUE
                 }
-                .thenBy { if (it.isPreset) 1 else 0 }
+                .thenBy { type ->
+                    when (type.code.uppercase(Locale.ROOT)) {
+                        "D" -> 0
+                        "N" -> 1
+                        else -> if (type.isPreset) 3 else 2
+                    }
+                }
                 .thenBy { it.name.lowercase(Locale.forLanguageTag("hr")) }
         )
     }

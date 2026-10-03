@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.1.17
+
+Daljnje poliranje interakcija, pristupačnosti i sigurnosti uvoza rasporeda, uz dodatni dead-code i no-op audit.
+
+### UI i UX
+
+- alatna traka Kalendara automatski prelazi u dva retka na uskim ekranima i pri povećanom fontu
+- svih pet akcija Kalendara ostaje dostupno bez horizontalnog sabijanja ili rezanja
+- stanje višestrukog odabira ima jasniji opis uključivanja i isključivanja
+- naslov mjeseca izložen je pristupačnim alatima kao eksplicitna akcija za odabir drugog mjeseca
+
+### Skeniranje rasporeda
+
+- postojeći kalendarski unosi više se ne prepisuju po zadanim postavkama
+- prije uvoza se prikazuje broj novih i već popunjenih datuma
+- svaki već popunjeni datum jasno je označen u pregledu skena
+- gumb za završni uvoz jasno razlikuje siguran uvoz bez zamjene od uvoza s prepisivanjem
+- prepisivanje postojećih datuma traži dodatnu potvrdu
+- skenirane oznake automatski koriste svijetli ili tamni tekst ovisno o boji oznake
+
+### Stabilnost i dead-code audit
+
+- uklonjen neupotrebljivi `exportArchiveJsonLines()` helper
+- slobodni dan iz skena koji je već prazan više ne stvara lažni "uvezeni" unos ni nepotrebnu Undo reviziju
+- poruka nakon skeniranog uvoza sada govori koliko je datuma stvarno promijenjeno
+
+### Testovi
+
+- dodani regresijski testovi za responzivnu alatnu traku Kalendara na uskim ekranima i pri velikom fontu
+
+### Verzija
+
+- `versionName`: `0.1.17`
+- `versionCode`: `18`
+
+
 ## 0.1.16
 
 Veliki UI/UX i dead-code polish: bolja responzivnost, sigurnije destruktivne radnje, pristupačniji kontrast vlastitih boja, precizniji editor skeniranja i čišći kod.

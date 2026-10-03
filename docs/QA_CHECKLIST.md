@@ -128,13 +128,13 @@
 - [ ] GO / BO / PD iz CSV-a ignoriraju slučajno unesene sate
 - [ ] stariji CSV bez `boja/pocetak/kraj/pauza_min` i dalje radi
 - [ ] JSON backup se može izvesti i vratiti
-- [ ] JSON sigurnosna kopija schema v10 vraća radno vrijeme, potvrđene prekovremene, standardni radni dan, mjesečne fondove, profil plaće i predloške vremena
-- [ ] schema v10 vraća vlastite brze oznake, vlastite uzorke, boje, profil i postavke podsjetnika prije smjene
+- [ ] JSON sigurnosna kopija schema v11 vraća radno vrijeme, potvrđene prekovremene, standardni radni dan, mjesečne fondove, profil plaće i predloške vremena
+- [ ] schema v11 vraća vlastite brze oznake, vlastite uzorke, boje, profil i postavke podsjetnika prije smjene
 - [ ] starije podržane JSON sheme 1–9 i dalje se prihvaćaju
 - [ ] CSV uvoz nudi čuvanje ili prepisivanje postojećih datuma
 - [ ] povrat sigurnosne kopije nudi spajanje bez prepisivanja ili spajanje uz ažuriranje datuma koji postoje u kopiji
 - [ ] malformed CSV s nezatvorenim navodnicima odbija se
-- [ ] novija nepodržana JSON schema (> v10) odbija se
+- [ ] novija nepodržana JSON schema (> v11) odbija se
 - [ ] Android Share izbornik dobiva CSV tekst rasporeda
 - [ ] iCalendar izvoz stvara valjanu `.ics` datoteku s `VCALENDAR` i `VEVENT` zapisima
 - [ ] radna smjena s vremenom izvozi `DTSTART` / `DTEND`

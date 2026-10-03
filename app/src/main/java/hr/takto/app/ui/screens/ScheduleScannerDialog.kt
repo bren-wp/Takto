@@ -365,7 +365,7 @@ fun ScheduleScannerDialog(
                     )
                     Text(
                         buildString {
-                            append("Novi datumi: ").append(newCount)
+                            append("Prazni u kalendaru: ").append(newCount)
                             append(" · već popunjeni: ").append(existingCount)
                         },
                         color = if (existingCount > 0) {

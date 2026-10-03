@@ -78,7 +78,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--strict", action="store_true")
 args = parser.parse_args()
 
-if args.strict and dead_private:
-    raise SystemExit(
-        "Dead-code audit failed: private Kotlin symbols referenced only at declaration."
-    )
+if args.strict and (dead_private or top_level_candidates or markers):
+    reasons = []
+    if dead_private:
+        reasons.append("private Kotlin symbols referenced only at declaration")
+    if top_level_candidates:
+        reasons.append("top-level Kotlin declarations with no source references")
+    if markers:
+        reasons.append("TODO/FIXME markers in production Kotlin")
+    raise SystemExit("Dead-code audit failed: " + "; ".join(reasons) + ".")

@@ -482,9 +482,9 @@ class ScheduleStore(private val context: Context) {
 
             if (scanned.code == RosterScanParser.FREE_DAY_CODE) {
                 freeDays++
-                imported++
-                if (overwriteExisting) {
+                if (overwriteExisting && current != null) {
                     entries.remove(scanned.date)
+                    imported++
                 }
                 return@forEach
             }

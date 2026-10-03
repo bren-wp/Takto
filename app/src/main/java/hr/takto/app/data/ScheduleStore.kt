@@ -1152,16 +1152,23 @@ class ScheduleStore(private val context: Context) {
 
     private fun loadCustomShiftPresets() {
         val raw = prefs.getString(KEY_CUSTOM_SHIFT_PRESETS, null) ?: return
+        var cleanedLegacyCollisions = false
         runCatching {
             val array = JSONArray(raw)
             repeat(array.length().coerceAtMost(MAX_CUSTOM_PRESETS)) { index ->
                 parseCustomShiftPreset(array.optJSONObject(index))?.let { preset ->
                     if (DefaultShiftTypes.presets.none { it.code.equals(preset.code, ignoreCase = true) }) {
                         customShiftPresets[preset.code] = preset
+                    } else {
+                        cleanedLegacyCollisions = true
                     }
                 }
             }
-        }.onFailure { customShiftPresets.clear() }
+        }.onSuccess {
+            if (cleanedLegacyCollisions) persistCustomShiftPresets()
+        }.onFailure {
+            customShiftPresets.clear()
+        }
     }
 
     private fun persistCustomShiftPresets() {
@@ -1189,16 +1196,26 @@ class ScheduleStore(private val context: Context) {
 
     private fun loadWorkTimePresets() {
         val raw = prefs.getString(KEY_WORK_TIME_PRESETS, null) ?: return
+        var cleanedInvalidPresets = false
         runCatching {
             val array = JSONArray(raw)
             repeat(array.length().coerceAtMost(MAX_WORK_TIME_PRESETS)) { index ->
-                parseWorkTimePreset(array.optJSONObject(index))?.let { preset ->
-                    if (shiftType(preset.code) != null && !ScheduleLogic.isLeaveCode(preset.code)) {
-                        workTimePresets[preset.code] = preset
-                    }
+                val parsed = parseWorkTimePreset(array.optJSONObject(index))
+                if (
+                    parsed != null &&
+                    shiftType(parsed.code) != null &&
+                    !ScheduleLogic.isLeaveCode(parsed.code)
+                ) {
+                    workTimePresets[parsed.code] = parsed
+                } else {
+                    cleanedInvalidPresets = true
                 }
             }
-        }.onFailure { workTimePresets.clear() }
+        }.onSuccess {
+            if (cleanedInvalidPresets) persistWorkTimePresets()
+        }.onFailure {
+            workTimePresets.clear()
+        }
     }
 
     private fun seedDefaultWorkTimePresets() {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -261,7 +262,13 @@ private fun CustomPatternDialog(
         onDismissRequest = onDismiss,
         title = { Text("Novi vlastiti uzorak") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(ScheduleLogic.MAX_PATTERN_NAME_LENGTH) },
@@ -284,7 +291,7 @@ private fun CustomPatternDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium
                 )
-                quickTypes.chunked(3).forEach { row ->
+                quickTypes.chunked(2).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -300,7 +307,7 @@ private fun CustomPatternDialog(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 Row(
@@ -372,7 +379,13 @@ private fun PatternApplyDialog(
         onDismissRequest = onDismiss,
         title = { Text("Primijeni: ${pattern.name}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Text("Odaberi datum od kojeg uzorak počinje.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = startText,
@@ -404,14 +417,19 @@ private fun PatternApplyDialog(
                     }
                 }
                 Text("Koliko dana popuniti?", fontWeight = FontWeight.SemiBold)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(7, 14, 28, 56).forEach { option ->
-                        FilterChip(
-                            selected = days == option,
-                            onClick = { days = option },
-                            label = { Text(option.toString()) },
-                            modifier = Modifier.weight(1f)
-                        )
+                listOf(7, 14, 28, 56).chunked(2).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        row.forEach { option ->
+                            FilterChip(
+                                selected = days == option,
+                                onClick = { days = option },
+                                label = { Text("$option dana") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {

@@ -29,6 +29,7 @@ enum class PensionMode(val persistedValue: String, val label: String) {
 data class PayrollProfile(
     val enabled: Boolean = false,
     val system: PayrollSystem = PayrollSystem.OTHER,
+    val rolePresetId: String = "",
     val coefficient: Double = 0.0,
     val yearsOfService: Int = 0,
     val manualBaseEur: Double = 0.0,
@@ -46,6 +47,104 @@ data class PayrollProfile(
     val otherEmployersGrossEur: Double = 0.0,
     val allAdjustmentsConfirmed: Boolean = false
 )
+
+data class PayrollRolePreset(
+    val id: String,
+    val system: PayrollSystem,
+    val sector: String,
+    val label: String,
+    val officialName: String,
+    val code: String,
+    val coefficient: Double
+)
+
+/**
+ * Referentni katalog koeficijenata prenesen iz projekta bren-wp/RASPORED.
+ *
+ * Katalog služi za brži i manje pogrešan unos koeficijenta. Ne zamjenjuje službeni
+ * akt poslodavca: ako konkretno radno mjesto ili posebni uvjeti odstupaju, korisnik
+ * i dalje može ručno promijeniti koeficijent i dodatke.
+ */
+object PayrollRoleCatalog2026 {
+    const val SOURCE_LABEL =
+        "Katalog koeficijenata: bren-wp/RASPORED · izvori u tom projektu: NN 22/2024 i pripadajući službeni akti"
+
+    val roles: List<PayrollRolePreset> = listOf(
+        PayrollRolePreset("health-transport-sss", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Nosač bolesnika / transportni radnik — Radnik III. vrste", "Radnik III. vrste", "10.1.23", 1.25),
+        PayrollRolePreset("health-transport-nss", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Nosač bolesnika / pomoćni radnik — posebni uvjeti", "Pomoćni radnik u sustavu s posebnim uvjetima rada", "10.1.24", 1.15),
+        PayrollRolePreset("health-portir", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Portir / stručni radnik na tehničkom održavanju", "Stručni radnik na tehničkom održavanju", "10.1.20", 1.39),
+        PayrollRolePreset("health-cleaner-special", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Spremač/čistač — posebni uvjeti", "Čistač – spremač u sustavu s posebnim uvjetima rada", "10.1.25", 1.15),
+        PayrollRolePreset("health-cleaner", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Spremač/čistač", "Čistač – spremač", "10.1.26", 1.06),
+        PayrollRolePreset("health-caregiver", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Njegovatelj / njegovateljica", "Njegovatelj", "16.15.1", 1.35),
+        PayrollRolePreset("health-bolnicar", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Bolničar / bolničarka", "Bolničar", "16.15.2", 1.35),
+        PayrollRolePreset("health-nurse-sss-1", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Medicinska sestra/tehničar — bolnica 1", "Medicinska sestra/medicinski tehničar / zdravstveni radnik u bolnici 1", "16.13.1", 1.78),
+        PayrollRolePreset("health-nurse-sss-2", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Medicinska sestra/tehničar — bolnica 2", "Medicinska sestra/medicinski tehničar / zdravstveni radnik u bolnici 2", "16.13.2", 1.70),
+        PayrollRolePreset("health-nurse-bacc-1", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Viša medicinska sestra / prvostupnik sestrinstva — bolnica 1", "Zdravstveni radnik prvostupnik u bolnici 1", "16.11.1", 1.95),
+        PayrollRolePreset("health-nurse-bacc-2", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Viša medicinska sestra / prvostupnik sestrinstva — bolnica 2", "Zdravstveni radnik prvostupnik u bolnici 2", "16.11.2", 1.87),
+        PayrollRolePreset("health-nurse-master", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Magistra sestrinstva / dipl. medicinska sestra — posebni poslovi", "Magistra sestrinstva/diplomirana medicinska sestra na propisanim posebnim poslovima", "16.10.1", 2.45),
+        PayrollRolePreset("health-physio-1", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Viši fizioterapeut / prvostupnik fizioterapije — bolnica 1", "Zdravstveni radnik prvostupnik u bolnici 1", "16.11.1", 1.95),
+        PayrollRolePreset("health-physio-2", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Viši fizioterapeut / prvostupnik fizioterapije — bolnica 2", "Zdravstveni radnik prvostupnik u bolnici 2", "16.11.2", 1.87),
+        PayrollRolePreset("health-doctor-1", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine — 1", "Doktor medicine i doktor dentalne medicine 1", "16.4.3", 2.92),
+        PayrollRolePreset("health-doctor-2", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine — 2", "Doktor medicine i doktor dentalne medicine 2", "16.4.6", 2.83),
+        PayrollRolePreset("health-doctor-3", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine — 3", "Doktor medicine i doktor dentalne medicine 3", "16.4.9", 2.81),
+        PayrollRolePreset("health-doctor-specialization", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine na specijalizaciji", "Doktor medicine/dentalne medicine na specijalizaciji", "16.4.10", 2.81),
+        PayrollRolePreset("health-doctor-specialist-1", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine specijalist — 1", "Doktor medicine specijalist 1", "16.4.2", 3.82),
+        PayrollRolePreset("health-doctor-specialist-2", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine specijalist — 2", "Doktor medicine specijalist 2", "16.4.5", 3.74),
+        PayrollRolePreset("health-doctor-specialist-3", PayrollSystem.PUBLIC_SERVICE, "Zdravstvo", "Doktor medicine specijalist — 3", "Doktor medicine specijalist 3", "16.4.8", 3.65),
+
+        PayrollRolePreset("edu-teacher", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Učitelj", "Učitelj", "12.5.22", 2.01),
+        PayrollRolePreset("edu-secondary-teacher", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Nastavnik", "Nastavnik", "12.5.21", 2.01),
+        PayrollRolePreset("edu-educator", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Odgajatelj u učeničkom domu", "Odgajatelj", "12.5.20", 2.01),
+        PayrollRolePreset("edu-professional", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Stručni suradnik", "Stručni suradnik", "12.5.23", 2.01),
+        PayrollRolePreset("edu-mentor", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Učitelj/nastavnik/odgajatelj — mentor", "Mentor", "12.5.15–18", 2.17),
+        PayrollRolePreset("edu-adviser", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Učitelj/nastavnik/odgajatelj — savjetnik", "Savjetnik", "12.5.8–11", 2.38),
+        PayrollRolePreset("edu-secretary-1", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Tajnik školske ustanove 1", "Tajnik školske ustanove 1", "12.5.25", 2.01),
+        PayrollRolePreset("edu-secretary-2", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Tajnik školske ustanove 2", "Tajnik školske ustanove 2", "12.5.32", 1.77),
+        PayrollRolePreset("edu-accounting-1", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Voditelj računovodstva u školi 1", "Voditelj računovodstva u školi 1", "12.5.26", 2.01),
+        PayrollRolePreset("edu-night-watch", PayrollSystem.PUBLIC_SERVICE, "Školstvo i obrazovanje", "Noćni pazitelj u učeničkom domu", "Noćni pazitelj u učeničkom domu", "12.5.38", 1.30),
+
+        PayrollRolePreset("state-senior-adviser", PayrollSystem.STATE_SERVICE, "Državna služba", "Viši savjetnik", "Viši savjetnik", "JRM", 2.10),
+        PayrollRolePreset("state-associate", PayrollSystem.STATE_SERVICE, "Državna služba", "Suradnik", "Suradnik", "JRM", 1.80),
+        PayrollRolePreset("state-senior-referent", PayrollSystem.STATE_SERVICE, "Državna služba", "Viši referent", "Viši referent", "JRM", 1.70),
+        PayrollRolePreset("state-it-technician", PayrollSystem.STATE_SERVICE, "Državna služba", "Informatički tehničar", "Informatički tehničar", "JRM", 1.50),
+        PayrollRolePreset("state-admin-secretary", PayrollSystem.STATE_SERVICE, "Državna služba", "Administrativni tajnik čelnika tijela", "Administrativni tajnik čelnika tijela", "JRM", 1.44),
+        PayrollRolePreset("state-referent", PayrollSystem.STATE_SERVICE, "Državna služba", "Referent", "Referent", "JRM", 1.43),
+        PayrollRolePreset("state-driver", PayrollSystem.STATE_SERVICE, "Državna služba", "Vozač", "Vozač", "JRM", 1.37),
+        PayrollRolePreset("state-employee-iii", PayrollSystem.STATE_SERVICE, "Državna služba", "Namještenik III. vrste", "Namještenik – III. vrste", "JRM", 1.25),
+        PayrollRolePreset("state-caretaker", PayrollSystem.STATE_SERVICE, "Državna služba", "Domar", "Domar", "JRM", 1.25),
+        PayrollRolePreset("state-doorman", PayrollSystem.STATE_SERVICE, "Državna služba", "Portir", "Portir", "JRM", 1.06),
+        PayrollRolePreset("state-cleaner", PayrollSystem.STATE_SERVICE, "Državna služba", "Spremač", "Spremač", "JRM", 1.06),
+
+        PayrollRolePreset("police-station", PayrollSystem.STATE_SERVICE, "Policija", "Policijski službenik u policijskoj postaji", "Policijski službenik u policijskoj postaji", "MUP", 1.70),
+        PayrollRolePreset("police-intervention", PayrollSystem.STATE_SERVICE, "Policija", "Policijski službenik interventne policije", "Policijski službenik interventne policije", "MUP", 1.70),
+        PayrollRolePreset("police-contact", PayrollSystem.STATE_SERVICE, "Policija", "Kontakt policajac", "Kontakt policajac", "MUP", 1.70),
+        PayrollRolePreset("police-patrol-lead", PayrollSystem.STATE_SERVICE, "Policija", "Vođa ophodnje u policijskoj postaji", "Vođa ophodnje u policijskoj postaji", "MUP", 1.65),
+        PayrollRolePreset("police-border", PayrollSystem.STATE_SERVICE, "Policija", "Policijski službenik granične policije", "Policijski službenik granične policije", "MUP", 1.65),
+        PayrollRolePreset("police-motorcycle", PayrollSystem.STATE_SERVICE, "Policija", "Policijski službenik — motociklist", "Policijski službenik – motociklist", "MUP", 1.75),
+        PayrollRolePreset("police-dispatcher", PayrollSystem.STATE_SERVICE, "Policija", "Policijski službenik — dispečer", "Policijski službenik – dispečer", "MUP", 1.75)
+    )
+
+    fun rolesFor(system: PayrollSystem): List<PayrollRolePreset> =
+        roles.filter { it.system == system }
+
+    fun role(id: String?): PayrollRolePreset? =
+        id?.takeIf { it.isNotBlank() }?.let { wanted -> roles.firstOrNull { it.id == wanted } }
+
+    fun search(system: PayrollSystem, query: String, limit: Int = 8): List<PayrollRolePreset> {
+        val needle = query.trim().lowercase()
+        return rolesFor(system)
+            .asSequence()
+            .filter { role ->
+                needle.isBlank() ||
+                    role.label.lowercase().contains(needle) ||
+                    role.officialName.lowercase().contains(needle) ||
+                    role.sector.lowercase().contains(needle) ||
+                    role.code.lowercase().contains(needle)
+            }
+            .take(limit.coerceIn(1, 20))
+            .toList()
+    }
+}
 
 data class PayrollInputs(
     val month: YearMonth,

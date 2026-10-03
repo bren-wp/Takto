@@ -48,6 +48,9 @@ jobs:
       - name: Set up Gradle cache
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Dead-code audit
+        run: python3 scripts/dead_code_audit.py --strict
+
       - name: Unit tests
         run: ./gradlew --no-daemon --stacktrace testDebugUnitTest
 

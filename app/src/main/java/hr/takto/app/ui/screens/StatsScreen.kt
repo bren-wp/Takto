@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +70,7 @@ private data class ScheduleCodeStat(
 
 @Composable
 fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    var month by rememberSaveable { mutableStateOf(YearMonth.now()) }
     var monthlyTargetDialog by remember { mutableStateOf(false) }
     val monthEntries = store.entriesForMonth(month)
     val distribution = monthEntries

@@ -101,7 +101,7 @@ fun ScheduleScannerDialog(
     var scanning by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf<ScheduleScanParseResult?>(null) }
-    var overwrite by remember { mutableStateOf(true) }
+    var overwrite by remember { mutableStateOf(false) }
     var sourceBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var editingBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var personHint by remember { mutableStateOf(store.userProfile.value.fullName) }
@@ -336,9 +336,24 @@ fun ScheduleScannerDialog(
                 }
 
                 result?.takeIf { it.items.isNotEmpty() }?.let { parsed ->
+                    val existingCount = parsed.items.count { store.entryFor(it.date) != null }
+                    val newCount = parsed.items.size - existingCount
                     Text(
                         "Pronađeno ${parsed.items.size} unosa",
                         fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        buildString {
+                            append("Novi datumi: ").append(newCount)
+                            append(" · već popunjeni: ").append(existingCount)
+                        },
+                        color = if (existingCount > 0) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (existingCount > 0) FontWeight.SemiBold else FontWeight.Normal
                     )
                     if (!parsed.usedReferenceMonth && parsed.detectedMonth != null) {
                         Text(
@@ -410,6 +425,7 @@ fun ScheduleScannerDialog(
                         ScanPreviewRow(
                             store = store,
                             item = item,
+                            hasExistingEntry = store.entryFor(item.date) != null,
                             onEdit = { editingItem = item }
                         )
                     }
@@ -418,9 +434,16 @@ fun ScheduleScannerDialog(
                         Column(Modifier.weight(1f)) {
                             Text("Prepiši postojeće dane", fontWeight = FontWeight.SemiBold)
                             Text(
-                                if (overwrite) "Prepoznati raspored ima prednost na pronađenim datumima."
-                                else "Već popunjeni datumi ostaju nepromijenjeni.",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                if (overwrite) {
+                                    "Postojeći unosi na pronađenim datumima bit će zamijenjeni."
+                                } else {
+                                    "Sigurniji način: postojeći unosi ostaju nepromijenjeni."
+                                },
+                                color = if (overwrite && existingCount > 0) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -459,7 +482,14 @@ fun ScheduleScannerDialog(
                     !scanning,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) {
-                Text("Uvezi u kalendar")
+                val existingCount = items.count { store.entryFor(it.date) != null }
+                Text(
+                    when {
+                        overwrite && existingCount > 0 -> "Uvezi i zamijeni ${existingCount}"
+                        existingCount > 0 -> "Uvezi bez zamjene"
+                        else -> "Uvezi u kalendar"
+                    }
+                )
             }
         },
         dismissButton = {
@@ -483,6 +513,7 @@ fun ScheduleScannerDialog(
 private fun ScanPreviewRow(
     store: ScheduleStore,
     item: ScannedScheduleItem,
+    hasExistingEntry: Boolean,
     onEdit: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
@@ -522,7 +553,17 @@ private fun ScanPreviewRow(
                 .weight(1f)
                 .padding(start = 10.dp)
         ) {
-            Text(croatianDate(item.date), fontWeight = FontWeight.SemiBold)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(croatianDate(item.date), fontWeight = FontWeight.SemiBold)
+                if (hasExistingEntry) {
+                    Text(
+                        " · postojeći unos",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
             if (freeDay) {
                 Text(
                     "Slobodno",

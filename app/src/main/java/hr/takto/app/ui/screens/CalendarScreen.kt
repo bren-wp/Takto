@@ -91,8 +91,12 @@ fun CalendarScreen(
     initialDate: LocalDate? = null
 ) {
     val context = LocalContext.current
-    var month by rememberSaveable(initialDate) { mutableStateOf(initialDate?.let(YearMonth::from) ?: YearMonth.now()) }
-    var selectedDate by rememberSaveable(initialDate) { mutableStateOf(initialDate) }
+    var monthIso by rememberSaveable(initialDate) {
+        mutableStateOf((initialDate?.let(YearMonth::from) ?: YearMonth.now()).toString())
+    }
+    var selectedDateIso by rememberSaveable(initialDate) { mutableStateOf(initialDate?.toString()) }
+    val month = YearMonth.parse(monthIso)
+    val selectedDate = selectedDateIso?.let(LocalDate::parse)
     var customDialog by remember { mutableStateOf(false) }
     var searchDialog by remember { mutableStateOf(false) }
     var scannerDialog by remember { mutableStateOf(false) }
@@ -170,7 +174,7 @@ fun CalendarScreen(
             IconButton(
                 onClick = {
                     multiSelect = !multiSelect
-                    selectedDate = null
+                    selectedDateIso = null
                     if (!multiSelect) selectedDates = emptySet()
                 }
             ) {
@@ -182,8 +186,8 @@ fun CalendarScreen(
             }
             IconButton(onClick = {
                 val today = LocalDate.now()
-                month = YearMonth.from(today)
-                if (multiSelect) selectedDates = setOf(today) else selectedDate = today
+                monthIso = YearMonth.from(today).toString()
+                if (multiSelect) selectedDates = setOf(today) else selectedDateIso = today.toString()
             }) {
                 Icon(Icons.Default.Today, contentDescription = "Idi na danas", tint = TaktoBlue)
             }
@@ -192,8 +196,8 @@ fun CalendarScreen(
         GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = 4.dp, vertical = 3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
-                    month = month.minusMonths(1)
-                    selectedDate = null
+                    monthIso = month.minusMonths(1).toString()
+                    selectedDateIso = null
                     selectedDates = emptySet()
                 }) {
                     Icon(Icons.Default.ChevronLeft, "Prethodni mjesec")
@@ -207,8 +211,8 @@ fun CalendarScreen(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 IconButton(onClick = {
-                    month = month.plusMonths(1)
-                    selectedDate = null
+                    monthIso = month.plusMonths(1).toString()
+                    selectedDateIso = null
                     selectedDates = emptySet()
                 }) {
                     Icon(Icons.Default.ChevronRight, "Sljedeći mjesec")
@@ -226,7 +230,7 @@ fun CalendarScreen(
                 if (multiSelect) {
                     selectedDates = if (date in selectedDates) selectedDates - date else selectedDates + date
                 } else {
-                    selectedDate = date
+                    selectedDateIso = date.toString()
                 }
             }
         )
@@ -290,7 +294,7 @@ fun CalendarScreen(
             confirmLabel = "Ukloni unos",
             onConfirm = {
                 store.removeEntry(date)
-                if (selectedDate == date) selectedDate = null
+                if (selectedDate == date) selectedDateIso = null
                 pendingDeleteDate = null
             },
             onDismiss = { pendingDeleteDate = null }
@@ -305,7 +309,7 @@ fun CalendarScreen(
         val visibleTypes = if (showAllTypes) rankedTypes else rankedTypes.take(6)
 
         ModalBottomSheet(
-            onDismissRequest = { selectedDate = null },
+            onDismissRequest = { selectedDateIso = null },
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
@@ -379,7 +383,7 @@ fun CalendarScreen(
                                 }
                             }
                             if (!ScheduleLogic.isLeaveCode(current.code)) {
-                                TextButton(onClick = { workTimeDate = date; selectedDate = null }) {
+                                TextButton(onClick = { workTimeDate = date; selectedDateIso = null }) {
                                     Text(if (current.hasWorkTime) "Uredi" else "Dodaj")
                                 }
                             }
@@ -394,7 +398,7 @@ fun CalendarScreen(
                 )
                 ShiftTypeGrid(types = visibleTypes) { type ->
                     store.setEntry(date, type, note)
-                    selectedDate = null
+                    selectedDateIso = null
                 }
                 if (rankedTypes.size > 6) {
                     TextButton(
@@ -409,7 +413,7 @@ fun CalendarScreen(
                         customPendingNote = note
                         customDate = date
                         customDialog = true
-                        selectedDate = null
+                        selectedDateIso = null
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -430,7 +434,7 @@ fun CalendarScreen(
                                 "Tjedan je kopiran (${copiedWeek.count { it != null }} unosa).",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            selectedDate = null
+                            selectedDateIso = null
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -441,7 +445,7 @@ fun CalendarScreen(
                     Button(
                         onClick = {
                             pasteWeekDate = date
-                            selectedDate = null
+                            selectedDateIso = null
                         },
                         enabled = copiedWeek.size == 7,
                         modifier = Modifier.weight(1f),
@@ -701,10 +705,10 @@ fun CalendarScreen(
             store = store,
             onDismiss = { searchDialog = false },
             onSelect = { date ->
-                month = YearMonth.from(date)
+                monthIso = YearMonth.from(date).toString()
                 selectedDates = emptySet()
                 multiSelect = false
-                selectedDate = date
+                selectedDateIso = date.toString()
                 searchDialog = false
             }
         )
@@ -715,8 +719,8 @@ fun CalendarScreen(
             current = month,
             onDismiss = { jumpDialog = false },
             onSelect = { target ->
-                month = target
-                selectedDate = target.atDay(1)
+                monthIso = target.toString()
+                selectedDateIso = target.atDay(1).toString()
                 selectedDates = emptySet()
                 multiSelect = false
                 jumpDialog = false
@@ -742,7 +746,7 @@ fun CalendarScreen(
                 customDialog = false
                 customDate = null
                 customPendingNote = ""
-                selectedDate = null
+                selectedDateIso = null
             }
         )
     }

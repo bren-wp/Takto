@@ -643,7 +643,7 @@ fun CalendarScreen(
                         pasteWeekDate = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
-                ) { Text("Zalijepi") }
+                ) { Text(if (overwrite) "Zalijepi i prepiši" else "Zalijepi bez prepisivanja") }
             },
             dismissButton = { TextButton(onClick = { pasteWeekDate = null }) { Text("Odustani") } }
         )

@@ -21,6 +21,7 @@ Takto 0.1.17 nastavlja završno poliranje aplikacije s fokusom na sigurniji uvoz
 ## Stabilnost i održavanje
 
 - uklonjen je neupotrebljivi helper za izvoz arhive u memorijski string; streaming izvoz ostaje jedini put
+- uklonjene su neupotrebljive izravne Lifecycle ovisnosti i neupotrebljiva Compose preview ovisnost iz produkcijskog classpatha
 - skenirani slobodan dan koji je već prazan više ne proizvodi lažnu promjenu niti nepotrebnu Undo reviziju
 - rezultat uvoza koristi jasniji pojam "Promijenjeno" umjesto da sve pronađene slobodne dane prikazuje kao uvezene
 

@@ -141,55 +141,100 @@ fun CalendarScreen(
             .padding(horizontal = 8.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "Kalendar",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold
-            )
-            Spacer(Modifier.weight(1f))
-            IconButton(onClick = { scannerDialog = true }) {
-                Icon(
-                    Icons.Default.AddPhotoAlternate,
-                    contentDescription = "Uvezi raspored sa slike",
-                    tint = TaktoBlue
-                )
-            }
-            IconButton(onClick = { searchDialog = true }) {
-                Icon(Icons.Default.Search, contentDescription = "Pretraži raspored", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            IconButton(
-                onClick = {
-                    val restored = store.undoLastChange()
-                    if (restored > 0) Toast.makeText(context, "Vraćena je zadnja promjena.", Toast.LENGTH_SHORT).show()
-                },
-                enabled = store.canUndo.value
-            ) {
-                Icon(
-                    Icons.Default.Undo,
-                    contentDescription = if (store.canUndo.value) "Vrati: ${store.undoLabel.value}" else "Nema promjene za vratiti",
-                    tint = if (store.canUndo.value) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
-                )
-            }
-            IconButton(
-                onClick = {
-                    multiSelect = !multiSelect
-                    selectedDateIso = null
-                    if (!multiSelect) selectedDates = emptySet()
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val fontScale = LocalDensity.current.fontScale
+            val twoRows = CalendarUiLogic.toolbarUsesTwoRows(maxWidth.value, fontScale)
+            val toolbarActions = @Composable {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = if (twoRows) Arrangement.SpaceEvenly else Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { scannerDialog = true }) {
+                        Icon(
+                            Icons.Default.AddPhotoAlternate,
+                            contentDescription = "Uvezi raspored sa slike",
+                            tint = TaktoBlue
+                        )
+                    }
+                    IconButton(onClick = { searchDialog = true }) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Pretraži raspored",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            val restored = store.undoLastChange()
+                            if (restored > 0) {
+                                Toast.makeText(context, "Vraćena je zadnja promjena.", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        enabled = store.canUndo.value
+                    ) {
+                        Icon(
+                            Icons.Default.Undo,
+                            contentDescription = if (store.canUndo.value) {
+                                "Vrati: ${store.undoLabel.value}"
+                            } else {
+                                "Nema promjene za vratiti"
+                            },
+                            tint = if (store.canUndo.value) {
+                                TaktoBlue
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                            }
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            multiSelect = !multiSelect
+                            selectedDateIso = null
+                            if (!multiSelect) selectedDates = emptySet()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Checklist,
+                            contentDescription = if (multiSelect) {
+                                "Isključi odabir više dana"
+                            } else {
+                                "Odaberi više dana"
+                            },
+                            tint = if (multiSelect) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = {
+                        val today = LocalDate.now()
+                        monthIso = YearMonth.from(today).toString()
+                        if (multiSelect) selectedDates = setOf(today) else selectedDateIso = today.toString()
+                    }) {
+                        Icon(Icons.Default.Today, contentDescription = "Idi na danas", tint = TaktoBlue)
+                    }
                 }
-            ) {
-                Icon(
-                    Icons.Default.Checklist,
-                    contentDescription = "Odaberi više dana",
-                    tint = if (multiSelect) TaktoBlue else MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-            IconButton(onClick = {
-                val today = LocalDate.now()
-                monthIso = YearMonth.from(today).toString()
-                if (multiSelect) selectedDates = setOf(today) else selectedDateIso = today.toString()
-            }) {
-                Icon(Icons.Default.Today, contentDescription = "Idi na danas", tint = TaktoBlue)
+
+            if (twoRows) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "Kalendar",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    toolbarActions()
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Kalendar",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Spacer(Modifier.weight(1f))
+                    Box(Modifier.weight(1f)) {
+                        toolbarActions()
+                    }
+                }
             }
         }
 

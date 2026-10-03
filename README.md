@@ -11,14 +11,14 @@
 > **Dodirni. Označi. Radi.**  
 > Moderan Android planer rada i rasporeda za jasan pregled mjeseca, radnih sati, obveza i odsutnosti.
 
-![Version](https://img.shields.io/badge/verzija-0.1.17-2488FF)
+![Version](https://img.shields.io/badge/verzija-0.1.18-2488FF)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-13D7A0)
 ![Target](https://img.shields.io/badge/target-Android%2017-8B46F6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF)
 ![Compose](https://img.shields.io/badge/Jetpack%20Compose-2026.09.00-1DE1E8)
 ![License](https://img.shields.io/badge/license-MIT-0F172A)
 
-Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi pogled**. Velike kalendarske ćelije, vlastite oznake, radni sati, fond sati, podsjetnici, uzorci i statistika spojeni su u čisto sučelje koje radi u tamnom, svijetlom ili sistemskom načinu prikaza.
+Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi pogled**. Velike kalendarske ćelije, vlastite oznake, radni sati, fond sati, podsjetnici, uzorci i statistika spojeni su u čisto svijetlo sučelje s visokim kontrastom i dosljednim izgledom na svim uređajima.
 
 <p align="center">
   <img src="docs/assets/takto-ui-preview.svg" alt="Takto pregled kalendara, fonda sati i statistike" width="100%">
@@ -55,10 +55,10 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - polja početka i kraja rada slažu se vertikalno kada bi dva stupca bila pretijesna
 - vlastiti izbor boje koristi pristupačne 48 dp kontrole, a tekst automatski bira svijetlu ili tamnu boju prema kontrastu
 - prilagodljivi brzi odabir koji prioritizira nedavno korištene oznake
-- ugrađene oznake D, N, GO, BO i PD ostaju dostupne
+- ugrađene oznake **D, N, J, GO, SD, BO i PD** imaju zasebne početne boje
+- **D** i **N** su prve početne brze oznake na novoj instalaciji
 - vlastiti tekst, naziv i boja
 - vlastite oznake automatski ulaze u brzi odabir
-- dodatne kratice poput **J** i **SD** iz stvarnog referentnog rasporeda
 - sve nepoznate kratice iz CSV uvoza automatski se čuvaju kao vlastite brze oznake
 - napomena za svaki datum
 - današnji datum i aktivni datum jasno istaknuti
@@ -96,6 +96,7 @@ Takto je aplikacija za svakoga tko želi svoj radni mjesec razumjeti **na prvi p
 - brzi unos potvrđenih prekovremenih: 0 / 30 / 60 / 120 min
 - zasebna kontrolna metrika rada iznad standardnog dana i mjesečnog fonda
 - početak i kraj radnog unosa uz unos poput **07:30**, **7.30** ili **730**
+- početno vrijeme za **D** je **07:00–19:00**, a za **N** **19:00–07:00** — obje smjene traju 12 sati i mogu se prilagoditi
 - pauza u minutama s brzim izborom 0 / 15 / 30 / 45 / 60
 - stroga provjera da pauza ne može biti dulja od samog radnog raspona
 - radni unosi preko ponoći uz jasnu oznaku završetka sljedeći dan
@@ -131,6 +132,15 @@ U postavkama se može spremiti osobni radni profil koji ostaje na uređaju:
 - potpuno slobodan unos za ustanove i radna mjesta koja nisu na popisu
 
 Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-kalendara i dugog feeda, dok backup čuva i profil zajedno s rasporedom i postavkama.
+
+### Plaća i koeficijenti
+
+- obračun za državne i javne službe koristi provjerljive osnovice 2026. kada su primjenjive
+- pretraživ katalog radnih mjesta i koeficijenata prenesen je iz projekta **bren-wp/RASPORED**
+- katalog uključuje odabrana radna mjesta u zdravstvu, školstvu, državnoj službi i policiji
+- odabrani koeficijent može se ručno korigirati; katalog nije zamjena za službeni akt konkretnog poslodavca
+- za ostale sustave ostaje ručni unos bez izmišljanja osnovice ili dodataka
+- Takto ne prikazuje potpunu procjenu neta dok nisu uneseni nužni porezni i obračunski podaci
 
 ### Podsjetnici
 
@@ -180,18 +190,19 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 
 ## Vizualni identitet
 
-Takto koristi prepoznatljiv premium sustav boja s poboljšanim kontrastom. Korisnik može odabrati **tamni**, **svijetli** ili **sistemski** izgled:
+Takto koristi jedan produkcijski **svijetli** vizualni sustav. Tamni i sistemski način uklonjeni su kako bi kontrast, raspored i QA bili predvidljivi na svim uređajima.
 
 | Element | Boja |
 | --- | --- |
-| Tamna pozadina | `#17263A` |
-| Tamna površina | `#203249` |
-| D / primarna plava | `#2488FF` |
-| N / ljubičasta | `#8B46F6` |
-| GO / zelena | `#13D7A0` |
-| BO / jantarna | `#FFB21D` |
-| PD / crvena | `#FF4B55` |
-| Cijan akcent | `#1DE1E8` |
+| Pozadina | `#F3F6F9` |
+| Površina kartice | `#FFFFFF` |
+| D / dnevna smjena | `#2563EB` |
+| N / noćna smjena | `#7C3AED` |
+| J / jutarnja smjena | `#0891B2` |
+| GO / godišnji odmor | `#16A34A` |
+| SD / slobodan dan | `#64748B` |
+| BO / bolovanje | `#F59E0B` |
+| PD / plaćeni dopust | `#DC2626` |
 
 Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implementirani su stvarnim Jetpack Compose komponentama: onboarding, početni pregled, veliki kalendar, brzi unos, statistika, uzorci, personalizacija i donja navigacija.
 
@@ -199,7 +210,7 @@ Dizajn nije statična slika. Svi glavni elementi iz referentnih vizuala implemen
 
 ## Tehnologija
 
-Takto 0.1.17 koristi aktualni stabilni Android toolchain:
+Takto 0.1.18 koristi aktualni stabilni Android toolchain:
 
 - **Kotlin 2.4.20**
 - **Android Gradle Plugin 9.4.1**
@@ -222,21 +233,22 @@ Aplikacija je pisana u Kotlinu i Jetpack Composeu bez WebView sloja i bez INTERN
 
 GitHub Actions pri svakom pull requestu prema `main` izvodi:
 
-1. `testDebugUnitTest`
-2. `lintDebug`
-3. `lintRelease`
-4. `assembleDebug`
-5. `assembleRelease`
-6. `bundleRelease`
-7. provjeru da APK i AAB datoteke stvarno postoje i nisu prazne
-8. SHA-256 izračun za sve build artefakte
+1. strogi `dead_code_audit.py --strict`
+2. `testDebugUnitTest`
+3. `lintDebug`
+4. `lintRelease`
+5. `assembleDebug`
+6. `assembleRelease`
+7. `bundleRelease`
+8. provjeru da APK i AAB datoteke stvarno postoje i nisu prazne
+9. SHA-256 izračun za sve build artefakte
 
 Nakon uspješnog workflowa dostupni su Actions artefakti:
 
-- **Takto-0.1.17-debug-apk** — instalabilni debug APK
-- **Takto-0.1.17-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
-- **Takto-0.1.17-release-aab-unsigned** — release Android App Bundle
-- **Takto-0.1.17-SHA256** — checksum datoteka
+- **Takto-0.1.18-debug-apk** — instalabilni debug APK
+- **Takto-0.1.18-release-apk-unsigned** — optimizirani release APK bez produkcijskog potpisa
+- **Takto-0.1.18-release-aab-unsigned** — release Android App Bundle
+- **Takto-0.1.18-SHA256** — checksum datoteka
 
 > Za objavu na Google Playu release AAB mora biti potpisan trajnim produkcijskim ključem. Ključ se namjerno ne pohranjuje u repozitorij.
 

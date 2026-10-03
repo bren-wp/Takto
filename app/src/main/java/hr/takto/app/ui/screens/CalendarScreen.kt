@@ -111,6 +111,7 @@ fun CalendarScreen(
     var workTimeDate by remember { mutableStateOf<LocalDate?>(null) }
     var pendingDeleteDate by remember { mutableStateOf<LocalDate?>(null) }
     var bulkWorkTimeDialog by remember { mutableStateOf(false) }
+    var pendingBulkDelete by remember { mutableStateOf(false) }
 
     fun resetMultiSelection() {
         selectedDates = emptySet()
@@ -562,11 +563,7 @@ fun CalendarScreen(
                 }
 
                 TextButton(
-                    onClick = {
-                        val result = store.removeEntries(selectedDates)
-                        showBulkResult(result)
-                        resetMultiSelection()
-                    },
+                    onClick = { pendingBulkDelete = true },
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
@@ -574,6 +571,21 @@ fun CalendarScreen(
                 }
             }
         }
+    }
+
+    if (pendingBulkDelete && selectedDates.isNotEmpty()) {
+        ConfirmDeleteDialog(
+            title = "Ukloni odabrane unose?",
+            message = "Uklonit će se unosi s ${selectedDates.size} odabranih dana. Cijelu promjenu možeš vratiti jednim poništavanjem.",
+            confirmLabel = "Ukloni ${selectedDates.size} dana",
+            onConfirm = {
+                val result = store.removeEntries(selectedDates)
+                pendingBulkDelete = false
+                showBulkResult(result)
+                resetMultiSelection()
+            },
+            onDismiss = { pendingBulkDelete = false }
+        )
     }
 
     if (bulkCustomDialog && selectedDates.isNotEmpty()) {

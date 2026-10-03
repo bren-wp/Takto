@@ -1,7 +1,6 @@
 package hr.takto.app.ui.screens
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RosterImageEditorLogicTest {
@@ -33,7 +32,7 @@ class RosterImageEditorLogicTest {
         val top = updateCrop(start, CropDragMode.TOP, 0f, 0.50f)
         val bottom = updateCrop(start, CropDragMode.BOTTOM, 0f, -0.50f)
 
-        assertTrue(top.height >= 0.08f)
-        assertTrue(bottom.height >= 0.08f)
+        assertEquals(0.08f, top.height, 0.0001f)
+        assertEquals(0.08f, bottom.height, 0.0001f)
     }
 }

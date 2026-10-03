@@ -1,4 +1,4 @@
 <resources>
-    <color name="takto_surface">#0F172A</color>
-    <color name="takto_background">#06101F</color>
+    <color name="takto_surface">#FFFFFF</color>
+    <color name="takto_background">#F3F6F9</color>
 </resources>

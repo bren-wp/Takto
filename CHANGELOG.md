@@ -23,6 +23,8 @@ Daljnje poliranje interakcija, pristupačnosti i sigurnosti uvoza rasporeda, uz 
 ### Stabilnost i dead-code audit
 
 - uklonjen neupotrebljivi `exportArchiveJsonLines()` helper
+- uklonjene neupotrebljive izravne Lifecycle ovisnosti koje aplikacijski kod ne koristi
+- uklonjena neupotrebljiva Compose preview ovisnost iz produkcijskog classpatha
 - slobodni dan iz skena koji je već prazan više ne stvara lažni "uvezeni" unos ni nepotrebnu Undo reviziju
 - poruka nakon skeniranog uvoza sada govori koliko je datuma stvarno promijenjeno
 

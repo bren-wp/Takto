@@ -5,6 +5,14 @@ import org.junit.Test
 
 class RosterImageEditorLogicTest {
     @Test
+    fun defaultCropTargetsOneRosterRow() {
+        val crop = CropSelection()
+        assertEquals(0.16f, crop.height, 0.0001f)
+        assertEquals(0.04f, crop.left, 0.0001f)
+        assertEquals(0.96f, crop.right, 0.0001f)
+    }
+
+    @Test
     fun moveKeepsCropInsideImageBounds() {
         val start = CropSelection(left = 0.10f, top = 0.20f, right = 0.90f, bottom = 0.60f)
         val moved = updateCrop(start, CropDragMode.MOVE, 0.50f, 0.60f)

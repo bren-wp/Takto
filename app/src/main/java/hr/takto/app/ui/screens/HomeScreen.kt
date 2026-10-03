@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -40,9 +42,11 @@ import hr.takto.app.model.PayrollInputs
 import hr.takto.app.model.ScheduleLogic
 import hr.takto.app.model.ShiftType
 import hr.takto.app.ui.components.GlassCard
+import hr.takto.app.ui.components.formatEuro
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoAmber
 import hr.takto.app.ui.theme.TaktoBlue
@@ -50,7 +54,6 @@ import hr.takto.app.ui.theme.TaktoGreen
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
-import java.util.Locale
 
 @Composable
 fun HomeScreen(
@@ -115,6 +118,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(contentPadding)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -205,7 +209,7 @@ fun HomeScreen(
                         ) {
                             Text(
                                 todayEntry.code,
-                                color = Color.White,
+                                color = readableContentColor(todayEntry.color),
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = shiftCodeCompactFontSize(todayEntry.code),
                                 maxLines = 1
@@ -343,25 +347,61 @@ fun HomeScreen(
                     }
                 }
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MiniMetric(
-                        modifier = Modifier.weight(1f),
-                        label = "Redovni",
-                        value = ScheduleLogic.formatDuration(monthRegularMinutes),
-                        accent = TaktoGreen
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val fontScale = LocalDensity.current.fontScale
+                    val stacked = HomeTodayUiLogic.shouldStackMetrics(
+                        availableWidthDp = maxWidth.value,
+                        fontScale = fontScale
                     )
-                    MiniMetric(
-                        modifier = Modifier.weight(1f),
-                        label = "Prekovremeni",
-                        value = ScheduleLogic.formatDuration(confirmedOvertimeMinutes),
-                        accent = TaktoAmber
-                    )
-                    MiniMetric(
-                        modifier = Modifier.weight(1f),
-                        label = "Unosi",
-                        value = monthEntries.size.toString(),
-                        accent = TaktoBlue
-                    )
+                    if (stacked) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            MiniMetric(
+                                modifier = Modifier.fillMaxWidth(),
+                                label = "Redovni",
+                                value = ScheduleLogic.formatDuration(monthRegularMinutes),
+                                accent = TaktoGreen
+                            )
+                            MiniMetric(
+                                modifier = Modifier.fillMaxWidth(),
+                                label = "Prekovremeni",
+                                value = ScheduleLogic.formatDuration(confirmedOvertimeMinutes),
+                                accent = TaktoAmber
+                            )
+                            MiniMetric(
+                                modifier = Modifier.fillMaxWidth(),
+                                label = "Unosi",
+                                value = monthEntries.size.toString(),
+                                accent = TaktoBlue
+                            )
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            MiniMetric(
+                                modifier = Modifier.weight(1f),
+                                label = "Redovni",
+                                value = ScheduleLogic.formatDuration(monthRegularMinutes),
+                                accent = TaktoGreen
+                            )
+                            MiniMetric(
+                                modifier = Modifier.weight(1f),
+                                label = "Prekovremeni",
+                                value = ScheduleLogic.formatDuration(confirmedOvertimeMinutes),
+                                accent = TaktoAmber
+                            )
+                            MiniMetric(
+                                modifier = Modifier.weight(1f),
+                                label = "Unosi",
+                                value = monthEntries.size.toString(),
+                                accent = TaktoBlue
+                            )
+                        }
+                    }
                 }
 
                 Text(
@@ -377,7 +417,7 @@ fun HomeScreen(
                 if (store.payrollProfile.value.enabled) {
                     if (payroll.complete) {
                         Text(
-                            "Procjena isplate: ${homeEuro(payroll.payoutEur)} · neto ${homeEuro(payroll.netSalaryEur)} · bruto ${homeEuro(payroll.grossEur)}",
+                            "Procjena isplate: ${formatEuro(payroll.payoutEur)} · neto ${formatEuro(payroll.netSalaryEur)} · bruto ${formatEuro(payroll.grossEur)}",
                             color = colors.primary,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
@@ -404,8 +444,7 @@ fun HomeScreen(
             Text("Otvori kalendar", fontWeight = FontWeight.Bold)
         }
 
-
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -422,13 +461,16 @@ private fun TodayQuickButton(
                 contentDescription = HomeTodayUiLogic.quickActionDescription(type.code, type.name)
             }
             .heightIn(min = 52.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = type.color),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = type.color,
+            contentColor = readableContentColor(type.color)
+        ),
         shape = RoundedCornerShape(14.dp),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Text(
             text = type.code,
-            color = Color.White,
+            color = readableContentColor(type.color),
             fontWeight = FontWeight.ExtraBold,
             fontSize = shiftCodeCompactFontSize(type.code),
             maxLines = 1
@@ -437,7 +479,7 @@ private fun TodayQuickButton(
             Spacer(Modifier.size(7.dp))
             Text(
                 text = type.name,
-                color = Color.White,
+                color = readableContentColor(type.color).copy(alpha = 0.88f),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 fontSize = 11.sp
@@ -446,8 +488,6 @@ private fun TodayQuickButton(
     }
 }
 
-private fun homeEuro(value: Double): String =
-    String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable
 private fun MiniMetric(

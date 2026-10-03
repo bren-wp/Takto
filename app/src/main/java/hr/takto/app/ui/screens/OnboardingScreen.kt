@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
@@ -21,7 +24,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,27 +33,26 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.theme.TaktoAmber
 import hr.takto.app.ui.theme.TaktoBlue
 import hr.takto.app.ui.theme.TaktoCyan
 import hr.takto.app.ui.theme.TaktoGreen
 import hr.takto.app.ui.theme.TaktoPurple
-import hr.takto.app.ui.theme.TaktoRed
 
 @Composable
 fun OnboardingScreen(onFinish: () -> Unit) {
-    var page by remember { mutableIntStateOf(0) }
+    var page by rememberSaveable { mutableIntStateOf(0) }
     val colors = MaterialTheme.colorScheme
     val title = when (page) {
         0 -> "Dobrodošli u Takto"
@@ -72,7 +73,9 @@ fun OnboardingScreen(onFinish: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 22.dp, vertical = 34.dp),
+                .safeDrawingPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -111,7 +114,7 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 else -> CalendarPreviewPanel()
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(28.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 repeat(3) { index ->
                     Box(
@@ -152,7 +155,7 @@ private fun WelcomePanel() {
             FeatureLine(
                 Icons.Default.Schedule,
                 "Sati i mjesečni fond",
-                "Prati evidentirano vrijeme, redovne sate i prekovremene."
+                "Prati evidentirano vrijeme, redovne sate i potvrđene prekovremene."
             )
             FeatureLine(
                 Icons.Default.AddPhotoAlternate,
@@ -228,7 +231,7 @@ private fun CalendarPreviewPanel() {
                         if (code.isNotBlank()) {
                             Text(
                                 code,
-                                color = if (code == "+") Color(0xFF07354A) else Color.White,
+                                color = readableContentColor(color),
                                 fontWeight = FontWeight.ExtraBold,
                                 fontSize = if (code.length > 2) 12.sp else 16.sp
                             )

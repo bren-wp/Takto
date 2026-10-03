@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -26,6 +27,7 @@ import hr.takto.app.model.ShiftType
 
 @Composable
 fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val contentColor = readableContentColor(type.color)
     Box(
         modifier = modifier
             .heightIn(min = 84.dp)
@@ -41,7 +43,7 @@ fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> U
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(
                 text = type.code,
-                color = Color.White,
+                color = contentColor,
                 fontSize = if (type.code.length <= 1) 30.sp else 24.sp,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center
@@ -49,7 +51,7 @@ fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> U
             if (!type.name.equals(type.code, ignoreCase = true)) {
                 Text(
                     text = type.name,
-                    color = Color.White.copy(alpha = 0.95f),
+                    color = contentColor.copy(alpha = 0.88f),
                     style = MaterialTheme.typography.labelMedium,
                     maxLines = 2,
                     textAlign = TextAlign.Center
@@ -58,6 +60,9 @@ fun ShiftChoice(type: ShiftType, modifier: Modifier = Modifier, onClick: () -> U
         }
     }
 }
+
+fun readableContentColor(background: Color): Color =
+    if (background.luminance() >= 0.48f) Color(0xFF071018) else Color.White
 
 fun shiftCodeFontSize(code: String): androidx.compose.ui.unit.TextUnit = when {
     code.length <= 1 -> 28.sp

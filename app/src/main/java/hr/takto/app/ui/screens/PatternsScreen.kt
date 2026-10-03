@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -39,12 +39,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import hr.takto.app.data.ScheduleStore
 import hr.takto.app.model.ScheduleLogic
+import hr.takto.app.ui.components.ConfirmDeleteDialog
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.croatianDate
@@ -125,6 +125,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
     }
     var selectedPattern by remember { mutableStateOf<PatternDef?>(null) }
     var customPatternDialog by remember { mutableStateOf(false) }
+    var pendingDeletePattern by remember { mutableStateOf<PatternDef?>(null) }
 
     Column(
         modifier = Modifier
@@ -160,7 +161,7 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         Icon(Icons.Default.Replay, null, tint = TaktoBlue)
                         Text(pattern.name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 10.dp).weight(1f))
                         pattern.id?.let { id ->
-                            IconButton(onClick = { store.removeSavedPattern(id) }) {
+                            IconButton(onClick = { pendingDeletePattern = pattern }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Obriši uzorak", tint = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -190,6 +191,19 @@ fun PatternsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
             }
         }
+    }
+
+    pendingDeletePattern?.let { pattern ->
+        ConfirmDeleteDialog(
+            title = "Obriši uzorak?",
+            message = "Uzorak „${pattern.name}” uklonit će se iz spremljenih uzoraka. Već primijenjeni dani u kalendaru ostaju nepromijenjeni.",
+            confirmLabel = "Obriši uzorak",
+            onConfirm = {
+                pattern.id?.let(store::removeSavedPattern)
+                pendingDeletePattern = null
+            },
+            onDismiss = { pendingDeletePattern = null }
+        )
     }
 
     if (customPatternDialog) {
@@ -246,7 +260,13 @@ private fun CustomPatternDialog(
         onDismissRequest = onDismiss,
         title = { Text("Novi vlastiti uzorak") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(ScheduleLogic.MAX_PATTERN_NAME_LENGTH) },
@@ -269,7 +289,7 @@ private fun CustomPatternDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium
                 )
-                quickTypes.chunked(3).forEach { row ->
+                quickTypes.chunked(2).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -285,7 +305,7 @@ private fun CustomPatternDialog(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 Row(
@@ -351,13 +371,20 @@ private fun PatternApplyDialog(
     var days by remember(pattern) { mutableIntStateOf(28) }
     var overwrite by remember(pattern) { mutableStateOf(false) }
     var startText by remember(pattern) { mutableStateOf(formatPatternDate(today)) }
+    var confirmOverwrite by remember(pattern) { mutableStateOf(false) }
     val startDate = parsePatternDate(startText)
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Primijeni: ${pattern.name}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 520.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Text("Odaberi datum od kojeg uzorak počinje.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedTextField(
                     value = startText,
@@ -389,14 +416,19 @@ private fun PatternApplyDialog(
                     }
                 }
                 Text("Koliko dana popuniti?", fontWeight = FontWeight.SemiBold)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    listOf(7, 14, 28, 56).forEach { option ->
-                        FilterChip(
-                            selected = days == option,
-                            onClick = { days = option },
-                            label = { Text(option.toString()) },
-                            modifier = Modifier.weight(1f)
-                        )
+                listOf(7, 14, 28, 56).chunked(2).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        row.forEach { option ->
+                            FilterChip(
+                                selected = days == option,
+                                onClick = { days = option },
+                                label = { Text("$option dana") },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -414,7 +446,10 @@ private fun PatternApplyDialog(
         },
         confirmButton = {
             Button(
-                onClick = { startDate?.let { onApply(it, days, overwrite) } },
+                onClick = {
+                    if (overwrite) confirmOverwrite = true
+                    else startDate?.let { onApply(it, days, false) }
+                },
                 enabled = startDate != null,
                 colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
             ) {
@@ -423,6 +458,19 @@ private fun PatternApplyDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
     )
+
+    if (confirmOverwrite && startDate != null) {
+        ConfirmDeleteDialog(
+            title = "Prepiši postojeće unose?",
+            message = "Uzorak „${pattern.name}” može zamijeniti postojeće unose u rasponu od $days dana. Ovu radnju možeš vratiti jednim poništavanjem.",
+            confirmLabel = "Primijeni i prepiši",
+            onConfirm = {
+                confirmOverwrite = false
+                onApply(startDate, days, true)
+            },
+            onDismiss = { confirmOverwrite = false }
+        )
+    }
 }
 
 private val patternDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("d.M.uuuu.")

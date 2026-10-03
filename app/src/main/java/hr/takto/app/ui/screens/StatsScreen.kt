@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,8 +53,10 @@ import hr.takto.app.model.PayrollCalculator
 import hr.takto.app.model.PayrollInputs
 import hr.takto.app.model.StatsChartLogic
 import hr.takto.app.ui.components.GlassCard
+import hr.takto.app.ui.components.formatEuro
 import hr.takto.app.ui.components.TaktoLogo
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.components.shiftCodeCompactFontSize
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.YearMonth
@@ -68,7 +71,8 @@ private data class ScheduleCodeStat(
 
 @Composable
 fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    var monthIso by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
+    val month = YearMonth.parse(monthIso)
     var monthlyTargetDialog by remember { mutableStateOf(false) }
     val monthEntries = store.entriesForMonth(month)
     val distribution = monthEntries
@@ -136,9 +140,9 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(7.dp), corner = 17.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { month = month.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "Prethodni mjesec") }
+                IconButton(onClick = { monthIso = month.minusMonths(1).toString() }) { Icon(Icons.Default.ChevronLeft, "Prethodni mjesec") }
                 Text(monthTitle(month), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                IconButton(onClick = { month = month.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, "Sljedeći mjesec") }
+                IconButton(onClick = { monthIso = month.plusMonths(1).toString() }) { Icon(Icons.Default.ChevronRight, "Sljedeći mjesec") }
             }
         }
 
@@ -200,10 +204,10 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     TimeMetric(Modifier.weight(1f), "Redovni sati", regularMonthlyMinutes, Color(0xFF13D7A0))
-                    TimeMetric(Modifier.weight(1f), "Prekovremeni · fond", fundOvertimeMinutes, Color(0xFFFFB21D))
+                    TimeMetric(Modifier.weight(1f), "Višak iznad fonda", fundOvertimeMinutes, Color(0xFFFFB21D))
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    TimeMetric(Modifier.weight(1f), "Prekovremeno po danu", overtimeMinutes, Color(0xFFFFB21D))
+                    TimeMetric(Modifier.weight(1f), "Iznad dnevnog standarda", overtimeMinutes, Color(0xFFFFB21D))
                     TimeMetric(Modifier.weight(1f), "Prosjek radnog unosa", averageShiftMinutes, Color(0xFF22B8CF))
                 }
                 Text("Unosi s vremenom: ${timedEntries.size}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
@@ -302,42 +306,70 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         )
                     }
                     else -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            MoneyMetric(
-                                modifier = Modifier.weight(1f),
-                                label = "Isplata",
-                                value = payroll.payoutEur,
-                                color = Color(0xFF13D7A0)
-                            )
-                            MoneyMetric(
-                                modifier = Modifier.weight(1f),
-                                label = "Neto",
-                                value = payroll.netSalaryEur,
-                                color = TaktoBlue
-                            )
-                            MoneyMetric(
-                                modifier = Modifier.weight(1f),
-                                label = "Bruto",
-                                value = payroll.grossEur,
-                                color = Color(0xFF8B46F6)
-                            )
+                        BoxWithConstraints(Modifier.fillMaxWidth()) {
+                            if (maxWidth < 420.dp) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    MoneyMetric(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = "Isplata",
+                                        value = payroll.payoutEur,
+                                        color = Color(0xFF13D7A0)
+                                    )
+                                    MoneyMetric(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = "Neto",
+                                        value = payroll.netSalaryEur,
+                                        color = TaktoBlue
+                                    )
+                                    MoneyMetric(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = "Bruto",
+                                        value = payroll.grossEur,
+                                        color = Color(0xFF8B46F6)
+                                    )
+                                }
+                            } else {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    MoneyMetric(
+                                        modifier = Modifier.weight(1f),
+                                        label = "Isplata",
+                                        value = payroll.payoutEur,
+                                        color = Color(0xFF13D7A0)
+                                    )
+                                    MoneyMetric(
+                                        modifier = Modifier.weight(1f),
+                                        label = "Neto",
+                                        value = payroll.netSalaryEur,
+                                        color = TaktoBlue
+                                    )
+                                    MoneyMetric(
+                                        modifier = Modifier.weight(1f),
+                                        label = "Bruto",
+                                        value = payroll.grossEur,
+                                        color = Color(0xFF8B46F6)
+                                    )
+                                }
+                            }
                         }
                         Text(
-                            "Sat: ${statsEuro(payroll.hourlyRateEur)} · osnovna plaća: ${statsEuro(payroll.baseSalaryEur)} · staž: ${statsEuro(payroll.seniorityEur)}",
+                            "Sat: ${formatEuro(payroll.hourlyRateEur)} · osnovna plaća: ${formatEuro(payroll.baseSalaryEur)} · staž: ${formatEuro(payroll.seniorityEur)}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                         Text(
-                            "Prekovremeni: ${statsEuro(payroll.overtimePayEur)} · noć: ${statsEuro(payroll.nightSupplementEur)} · subota: ${statsEuro(payroll.saturdaySupplementEur)} · nedjelja: ${statsEuro(payroll.sundaySupplementEur)} · blagdan: ${statsEuro(payroll.holidaySupplementEur)}",
+                            "Prekovremeni: ${formatEuro(payroll.overtimePayEur)} · noć: ${formatEuro(payroll.nightSupplementEur)} · subota: ${formatEuro(payroll.saturdaySupplementEur)} · nedjelja: ${formatEuro(payroll.sundaySupplementEur)} · blagdan: ${formatEuro(payroll.holidaySupplementEur)}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )
                         if (payroll.additionalGrossEur > 0.0 || payroll.nonTaxableEur > 0.0) {
                             Text(
-                                "Ostali bruto dodaci: ${statsEuro(payroll.additionalGrossEur)} · neoporezivo: ${statsEuro(payroll.nonTaxableEur)}",
+                                "Ostali bruto dodaci: ${formatEuro(payroll.additionalGrossEur)} · neoporezivo: ${formatEuro(payroll.nonTaxableEur)}",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp
                             )
@@ -361,21 +393,33 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    distribution.take(6).chunked(2).forEach { pair ->
-                        Row(
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        val singleColumn = maxWidth < 360.dp
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            pair.forEach { stat ->
-                                StatTile(
-                                    modifier = Modifier.weight(1f),
-                                    code = stat.code,
-                                    label = stat.label,
-                                    count = stat.count,
-                                    color = stat.color
-                                )
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            distribution.take(6)
+                                .chunked(if (singleColumn) 1 else 2)
+                                .forEach { pair ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        pair.forEach { stat ->
+                                            StatTile(
+                                                modifier = Modifier.weight(1f),
+                                                code = stat.code,
+                                                label = stat.label,
+                                                count = stat.count,
+                                                color = stat.color
+                                            )
+                                        }
+                                        if (!singleColumn && pair.size == 1) {
+                                            Spacer(Modifier.weight(1f))
+                                        }
+                                    }
+                                }
                         }
                     }
                     if (distribution.size > 6) {
@@ -496,13 +540,11 @@ private fun MoneyMetric(
             .padding(horizontal = 10.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(statsEuro(value), color = color, fontWeight = FontWeight.ExtraBold, maxLines = 1)
+        Text(formatEuro(value), color = color, fontWeight = FontWeight.ExtraBold, maxLines = 1)
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
     }
 }
 
-private fun statsEuro(value: Double): String =
-    String.format(Locale("hr", "HR"), "%,.2f €", value)
 
 @Composable
 private fun TimeMetric(modifier: Modifier, label: String, minutes: Int, color: Color) {
@@ -568,22 +610,20 @@ private fun MonthlyTargetDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text("Automatski: ${ScheduleLogic.formatDuration(automaticMinutes)}", color = Color(0xFF22B8CF), fontWeight = FontWeight.SemiBold)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedTextField(
-                        value = hours,
-                        onValueChange = { hours = it.filter(Char::isDigit).take(3) },
-                        label = { Text("Sati") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                    OutlinedTextField(
-                        value = minutes,
-                        onValueChange = { minutes = it.filter(Char::isDigit).take(2) },
-                        label = { Text("Minute") },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-                }
+                OutlinedTextField(
+                    value = hours,
+                    onValueChange = { hours = it.filter(Char::isDigit).take(3) },
+                    label = { Text("Sati") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = minutes,
+                    onValueChange = { minutes = it.filter(Char::isDigit).take(2) },
+                    label = { Text("Minute") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
                 Text("Ručni fond vrijedi samo za odabrani mjesec i ulazi u sigurnosnu kopiju.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         },
@@ -602,8 +642,20 @@ private fun MonthlyTargetDialog(
 @Composable
 private fun StatTile(modifier: Modifier, code: String, label: String, count: Int, color: Color) {
     GlassCard(modifier = modifier, padding = PaddingValues(12.dp), corner = 17.dp) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(code, color = color, fontSize = shiftCodeCompactFontSize(code), fontWeight = FontWeight.ExtraBold, maxLines = 1)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(
+                modifier = Modifier
+                    .background(color, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 8.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    code,
+                    color = readableContentColor(color),
+                    fontSize = shiftCodeCompactFontSize(code),
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1
+                )
+            }
             Text(count.toString(), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold)
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, maxLines = 2)
         }

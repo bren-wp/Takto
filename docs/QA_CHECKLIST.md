@@ -1,4 +1,4 @@
-# Takto 0.1.0 — QA checklist
+# Takto 0.1.16 — QA checklist
 
 ## Build
 - [ ] Gradle sync prolazi bez greške
@@ -37,7 +37,8 @@
 - [ ] promjena između radnih oznaka čuva postojeće radno vrijeme kada je to predviđeno
 - [ ] bulk radno vrijeme mijenja samo popunjene ne-odsutne dane
 - [ ] bulk radno vrijeme preskače prazne dane i GO / BO / PD
-- [ ] promjena standardnog radnog dana odmah mijenja obračun prekovremenog rada
+- [ ] promjena standardnog radnog dana mijenja samo kontrolnu metriku rada iznad standarda
+- [ ] samo izričito potvrđeni prekovremeni ulaze u obračun plaće
 
 ## Fond sati i posebni sati
 - [ ] automatski mjesečni fond odgovara broju dana pon–pet × standardni radni dan
@@ -127,13 +128,13 @@
 - [ ] GO / BO / PD iz CSV-a ignoriraju slučajno unesene sate
 - [ ] stariji CSV bez `boja/pocetak/kraj/pauza_min` i dalje radi
 - [ ] JSON backup se može izvesti i vratiti
-- [ ] JSON backup schema v6 vraća radno vrijeme, standardni radni dan, mjesečne fondove i predloške vremena
-- [ ] schema v6 vraća vlastite brze oznake, vlastite uzorke i postavke podsjetnika prije smjene
-- [ ] stariji JSON backup schema 1/2/3/4/5 i dalje se prihvaća
+- [ ] JSON sigurnosna kopija schema v10 vraća radno vrijeme, potvrđene prekovremene, standardni radni dan, mjesečne fondove, profil plaće i predloške vremena
+- [ ] schema v10 vraća vlastite brze oznake, vlastite uzorke, boje, profil i postavke podsjetnika prije smjene
+- [ ] starije podržane JSON sheme 1–9 i dalje se prihvaćaju
 - [ ] CSV uvoz nudi čuvanje ili prepisivanje postojećih datuma
-- [ ] JSON restore nudi spajanje ili potpunu zamjenu
+- [ ] povrat sigurnosne kopije nudi spajanje bez prepisivanja ili spajanje uz ažuriranje datuma koji postoje u kopiji
 - [ ] malformed CSV s nezatvorenim navodnicima odbija se
-- [ ] novija nepodržana JSON schema odbija se
+- [ ] novija nepodržana JSON schema (> v10) odbija se
 - [ ] Android Share izbornik dobiva CSV tekst rasporeda
 - [ ] iCalendar izvoz stvara valjanu `.ics` datoteku s `VCALENDAR` i `VEVENT` zapisima
 - [ ] radna smjena s vremenom izvozi `DTSTART` / `DTEND`
@@ -147,7 +148,10 @@
 - [ ] slobodni dani računaju se iz praznih datuma u mjesecu
 - [ ] vlastite oznake imaju ukupni brojač i breakdown po kodu
 - [ ] ukupni radni sati zbrajaju samo dane s evidentiranim vremenom
-- [ ] prekovremeno se računa prema standardnom dnevnom fondu
+- [ ] "Iznad dnevnog standarda" ostaje samo kontrolna metrika
+- [ ] "Višak iznad fonda" ostaje samo kontrolna metrika
+- [ ] kartica "Priznati prekovremeni" prikazuje samo minute izričito spremljene uz radne dane
+- [ ] redovni sati ne uključuju potvrđene prekovremene
 - [ ] prosječno trajanje smjene koristi samo dane s evidentiranim vremenom
 - [ ] godišnji trend sati prikazuje 12 mjeseci i odgovara evidenciji
 
@@ -180,3 +184,35 @@
 - [ ] dijalog Radno vrijeme ostaje upotrebljiv pri većem system font scaleu
 - [ ] Undo ikona ima jasan disabled/enabled status i pristupačan opis
 - [ ] tamna tema ostaje čitljiva pri većem system font scaleu
+
+## UI/UX 0.1.16 regresija
+- [ ] Početna se može skrolati na manjim ekranima i pri velikom fontu
+- [ ] mjesečne metrike na Početnoj prelaze u jedan stupac kada nema dovoljno širine
+- [ ] onboarding je skrolabilan, poštuje safe drawing insets i ne vraća korisnika na prvu stranicu nakon rekreacije Activityja
+- [ ] odabrana donja kartica ostaje ista nakon rekreacije Activityja
+- [ ] Kalendar čuva mjesec i odabrani datum nakon rekreacije Activityja
+- [ ] Statistika čuva odabrani mjesec nakon rekreacije Activityja
+- [ ] vrlo svijetle vlastite boje koriste tamni tekst, a tamne boje svijetli tekst
+- [ ] tekst ostaje čitljiv na vlastitim bojama u Kalendaru, Početnoj, pretrazi, Statistici i Postavkama
+- [ ] ugrađene oznake u Postavkama ne sabijaju se kada ih ima više, nego se vodoravno skrolaju
+- [ ] brisanje jednog kalendarskog unosa traži potvrdu
+- [ ] brisanje više odabranih dana traži potvrdu i može se vratiti jednim Undo korakom
+- [ ] brisanje vlastite brze oznake traži potvrdu i ne briše postojeće kalendarske zapise
+- [ ] brisanje spremljenog uzorka traži potvrdu i ne mijenja već primijenjene dane
+- [ ] uklanjanje zadanog radnog vremena traži potvrdu
+- [ ] uklanjanje radnog vremena s pojedinog dana traži potvrdu i ne briše oznaku/napomenu
+- [ ] primjena uzorka s prepisivanjem traži dodatnu potvrdu
+- [ ] lijepljenje tjedna jasno razlikuje "bez prepisivanja" i "prepiši"
+- [ ] skener rasporeda omogućuje pomicanje izreza po 2 % radi preciznog poravnanja
+- [ ] skener rasporeda omogućuje promjenu veličine preko sva četiri ruba i sva četiri kuta
+- [ ] editor slike ostaje skrolabilan na manjim ekranima i pri većem fontu
+- [ ] rotacija −90°/+90°, "Jedan red" i "Označi cijelu sliku" i dalje rade
+- [ ] svi pronađeni dani skena mogu se pregledati i ispraviti prije uvoza
+- [ ] raspored s više osoba ne uvozi drugu osobu kada ciljna osoba nije sigurno pronađena
+
+## Dead-code / održavanje 0.1.16
+- [ ] nema referenci na uklonjeni TaktoAmbientBackground
+- [ ] MonthCalendar nema neupotrebljivi compact način prikaza
+- [ ] formatiranje eura koristi zajednički helper umjesto tri duplicirane funkcije
+- [ ] nema nepotrebnih UI importa otkrivenih auditom
+- [ ] novi helperi za kontrast, crop i responzivni layout imaju unit testove

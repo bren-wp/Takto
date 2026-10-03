@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -49,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,11 +72,13 @@ import hr.takto.app.model.ScheduleSearch
 import hr.takto.app.model.ScheduleSearchFilter
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
+import hr.takto.app.ui.components.ConfirmDeleteDialog
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.MonthCalendar
 import hr.takto.app.ui.components.ShiftChoice
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.LocalDate
 import java.time.YearMonth
@@ -87,8 +91,12 @@ fun CalendarScreen(
     initialDate: LocalDate? = null
 ) {
     val context = LocalContext.current
-    var month by remember(initialDate) { mutableStateOf(initialDate?.let(YearMonth::from) ?: YearMonth.now()) }
-    var selectedDate by remember(initialDate) { mutableStateOf(initialDate) }
+    var monthIso by rememberSaveable(initialDate) {
+        mutableStateOf((initialDate?.let(YearMonth::from) ?: YearMonth.now()).toString())
+    }
+    var selectedDateIso by rememberSaveable(initialDate) { mutableStateOf(initialDate?.toString()) }
+    val month = YearMonth.parse(monthIso)
+    val selectedDate = selectedDateIso?.let(LocalDate::parse)
     var customDialog by remember { mutableStateOf(false) }
     var searchDialog by remember { mutableStateOf(false) }
     var scannerDialog by remember { mutableStateOf(false) }
@@ -105,7 +113,9 @@ fun CalendarScreen(
     var copiedWeek by remember { mutableStateOf<List<ShiftEntry?>>(emptyList()) }
     var pasteWeekDate by remember { mutableStateOf<LocalDate?>(null) }
     var workTimeDate by remember { mutableStateOf<LocalDate?>(null) }
+    var pendingDeleteDate by remember { mutableStateOf<LocalDate?>(null) }
     var bulkWorkTimeDialog by remember { mutableStateOf(false) }
+    var pendingBulkDelete by remember { mutableStateOf(false) }
 
     fun resetMultiSelection() {
         selectedDates = emptySet()
@@ -164,7 +174,7 @@ fun CalendarScreen(
             IconButton(
                 onClick = {
                     multiSelect = !multiSelect
-                    selectedDate = null
+                    selectedDateIso = null
                     if (!multiSelect) selectedDates = emptySet()
                 }
             ) {
@@ -176,8 +186,8 @@ fun CalendarScreen(
             }
             IconButton(onClick = {
                 val today = LocalDate.now()
-                month = YearMonth.from(today)
-                if (multiSelect) selectedDates = setOf(today) else selectedDate = today
+                monthIso = YearMonth.from(today).toString()
+                if (multiSelect) selectedDates = setOf(today) else selectedDateIso = today.toString()
             }) {
                 Icon(Icons.Default.Today, contentDescription = "Idi na danas", tint = TaktoBlue)
             }
@@ -186,8 +196,8 @@ fun CalendarScreen(
         GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = 4.dp, vertical = 3.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = {
-                    month = month.minusMonths(1)
-                    selectedDate = null
+                    monthIso = month.minusMonths(1).toString()
+                    selectedDateIso = null
                     selectedDates = emptySet()
                 }) {
                     Icon(Icons.Default.ChevronLeft, "Prethodni mjesec")
@@ -201,8 +211,8 @@ fun CalendarScreen(
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 IconButton(onClick = {
-                    month = month.plusMonths(1)
-                    selectedDate = null
+                    monthIso = month.plusMonths(1).toString()
+                    selectedDateIso = null
                     selectedDates = emptySet()
                 }) {
                     Icon(Icons.Default.ChevronRight, "Sljedeći mjesec")
@@ -220,7 +230,7 @@ fun CalendarScreen(
                 if (multiSelect) {
                     selectedDates = if (date in selectedDates) selectedDates - date else selectedDates + date
                 } else {
-                    selectedDate = date
+                    selectedDateIso = date.toString()
                 }
             }
         )
@@ -277,6 +287,20 @@ fun CalendarScreen(
         )
     }
 
+    pendingDeleteDate?.let { date ->
+        ConfirmDeleteDialog(
+            title = "Ukloni unos?",
+            message = "Unos za ${croatianDate(date)} uklonit će se iz kalendara. Promjenu možeš vratiti opcijom za poništavanje zadnje promjene.",
+            confirmLabel = "Ukloni unos",
+            onConfirm = {
+                store.removeEntry(date)
+                if (selectedDate == date) selectedDateIso = null
+                pendingDeleteDate = null
+            },
+            onDismiss = { pendingDeleteDate = null }
+        )
+    }
+
     selectedDate?.let { date ->
         var note by remember(date) { mutableStateOf(store.entryFor(date)?.note.orEmpty()) }
         var showAllTypes by remember(date) { mutableStateOf(false) }
@@ -285,7 +309,7 @@ fun CalendarScreen(
         val visibleTypes = if (showAllTypes) rankedTypes else rankedTypes.take(6)
 
         ModalBottomSheet(
-            onDismissRequest = { selectedDate = null },
+            onDismissRequest = { selectedDateIso = null },
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             Column(
@@ -301,14 +325,11 @@ fun CalendarScreen(
                     Column(Modifier.weight(1f)) {
                         Text(if (current == null) "Odaberi oznaku" else "Promijeni oznaku", style = MaterialTheme.typography.headlineMedium)
                         if (current != null) {
-                            Text("Trenutno: ${current.code} · ${current.label}", color = current.color, fontWeight = FontWeight.SemiBold)
+                            Text("Trenutno: ${current.code} · ${current.label}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     if (current != null) {
-                        IconButton(onClick = {
-                            store.removeEntry(date)
-                            selectedDate = null
-                        }) {
+                        IconButton(onClick = { pendingDeleteDate = date }) {
                             Icon(Icons.Default.Delete, contentDescription = "Ukloni unos", tint = MaterialTheme.colorScheme.error)
                         }
                     }
@@ -362,7 +383,7 @@ fun CalendarScreen(
                                 }
                             }
                             if (!ScheduleLogic.isLeaveCode(current.code)) {
-                                TextButton(onClick = { workTimeDate = date; selectedDate = null }) {
+                                TextButton(onClick = { workTimeDate = date; selectedDateIso = null }) {
                                     Text(if (current.hasWorkTime) "Uredi" else "Dodaj")
                                 }
                             }
@@ -377,7 +398,7 @@ fun CalendarScreen(
                 )
                 ShiftTypeGrid(types = visibleTypes) { type ->
                     store.setEntry(date, type, note)
-                    selectedDate = null
+                    selectedDateIso = null
                 }
                 if (rankedTypes.size > 6) {
                     TextButton(
@@ -392,7 +413,7 @@ fun CalendarScreen(
                         customPendingNote = note
                         customDate = date
                         customDialog = true
-                        selectedDate = null
+                        selectedDateIso = null
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
@@ -413,7 +434,7 @@ fun CalendarScreen(
                                 "Tjedan je kopiran (${copiedWeek.count { it != null }} unosa).",
                                 Toast.LENGTH_SHORT
                             ).show()
-                            selectedDate = null
+                            selectedDateIso = null
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -424,7 +445,7 @@ fun CalendarScreen(
                     Button(
                         onClick = {
                             pasteWeekDate = date
-                            selectedDate = null
+                            selectedDateIso = null
                         },
                         enabled = copiedWeek.size == 7,
                         modifier = Modifier.weight(1f),
@@ -444,7 +465,7 @@ fun CalendarScreen(
 
                 if (current != null) {
                     TextButton(
-                        onClick = { store.removeEntry(date); selectedDate = null },
+                        onClick = { pendingDeleteDate = date },
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
@@ -546,11 +567,7 @@ fun CalendarScreen(
                 }
 
                 TextButton(
-                    onClick = {
-                        val result = store.removeEntries(selectedDates)
-                        showBulkResult(result)
-                        resetMultiSelection()
-                    },
+                    onClick = { pendingBulkDelete = true },
                     modifier = Modifier.align(Alignment.End)
                 ) {
                     Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
@@ -558,6 +575,21 @@ fun CalendarScreen(
                 }
             }
         }
+    }
+
+    if (pendingBulkDelete && selectedDates.isNotEmpty()) {
+        ConfirmDeleteDialog(
+            title = "Ukloni odabrane unose?",
+            message = "Uklonit će se unosi s ${selectedDates.size} odabranih dana. Cijelu promjenu možeš vratiti jednim poništavanjem.",
+            confirmLabel = "Ukloni ${selectedDates.size} dana",
+            onConfirm = {
+                val result = store.removeEntries(selectedDates)
+                pendingBulkDelete = false
+                showBulkResult(result)
+                resetMultiSelection()
+            },
+            onDismiss = { pendingBulkDelete = false }
+        )
     }
 
     if (bulkCustomDialog && selectedDates.isNotEmpty()) {
@@ -615,7 +647,7 @@ fun CalendarScreen(
                         pasteWeekDate = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = TaktoBlue)
-                ) { Text("Zalijepi") }
+                ) { Text(if (overwrite) "Zalijepi i prepiši" else "Zalijepi bez prepisivanja") }
             },
             dismissButton = { TextButton(onClick = { pasteWeekDate = null }) { Text("Odustani") } }
         )
@@ -673,10 +705,10 @@ fun CalendarScreen(
             store = store,
             onDismiss = { searchDialog = false },
             onSelect = { date ->
-                month = YearMonth.from(date)
+                monthIso = YearMonth.from(date).toString()
                 selectedDates = emptySet()
                 multiSelect = false
-                selectedDate = date
+                selectedDateIso = date.toString()
                 searchDialog = false
             }
         )
@@ -687,8 +719,8 @@ fun CalendarScreen(
             current = month,
             onDismiss = { jumpDialog = false },
             onSelect = { target ->
-                month = target
-                selectedDate = target.atDay(1)
+                monthIso = target.toString()
+                selectedDateIso = target.atDay(1).toString()
                 selectedDates = emptySet()
                 multiSelect = false
                 jumpDialog = false
@@ -714,7 +746,7 @@ fun CalendarScreen(
                 customDialog = false
                 customDate = null
                 customPendingNote = ""
-                selectedDate = null
+                selectedDateIso = null
             }
         )
     }
@@ -860,7 +892,7 @@ private fun ScheduleSearchDialog(
                                 ) {
                                     Text(
                                         entry.code,
-                                        color = Color.White,
+                                        color = readableContentColor(entry.color),
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = if (entry.code.length <= 2) 16.sp else 11.sp,
                                         maxLines = 1
@@ -955,6 +987,7 @@ private fun WorkTimeDialog(
     var overtimeText by remember(initialOvertimeMinutes) {
         mutableStateOf(initialOvertimeMinutes.takeIf { it > 0 }?.toString().orEmpty())
     }
+    var confirmClearTime by remember(title, showClear) { mutableStateOf(false) }
     val start = ScheduleLogic.parseClock(startText)
     val end = ScheduleLogic.parseClock(endText)
     val pause = breakText.trim().ifBlank { "0" }.toIntOrNull()
@@ -970,7 +1003,13 @@ private fun WorkTimeDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 540.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Text(
                     "Vrijeme možeš upisati kao 07:30, 7.30 ili 730. Ako je završetak ranije od početka, rad završava sljedeći dan.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1054,7 +1093,7 @@ private fun WorkTimeDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium
                 )
-                listOf(0, 15, 30, 45, 60).chunked(3).forEach { row ->
+                listOf(0, 15, 30, 45, 60).chunked(2).forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -1067,7 +1106,7 @@ private fun WorkTimeDialog(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                        repeat(2 - row.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
                 OutlinedTextField(
@@ -1152,7 +1191,7 @@ private fun WorkTimeDialog(
                     )
                 }
                 if (showClear) {
-                    TextButton(onClick = onClear) {
+                    TextButton(onClick = { confirmClearTime = true }) {
                         Text("Ukloni radno vrijeme", color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -1167,7 +1206,21 @@ private fun WorkTimeDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Odustani") } }
     )
+
+    if (confirmClearTime) {
+        ConfirmDeleteDialog(
+            title = "Ukloni radno vrijeme?",
+            message = "Početak, kraj, pauza i potvrđeni prekovremeni uklonit će se iz ovog unosa. Oznaka i napomena ostat će spremljene.",
+            confirmLabel = "Ukloni vrijeme",
+            onConfirm = {
+                confirmClearTime = false
+                onClear()
+            },
+            onDismiss = { confirmClearTime = false }
+        )
+    }
 }
+
 @Composable
 private fun CustomEntryDialog(
     initialText: String,
@@ -1227,14 +1280,14 @@ private fun CustomEntryDialog(
                                     .background(Color(option), RoundedCornerShape(10.dp))
                                     .border(
                                         if (colorArgb == option) 2.dp else 0.dp,
-                                        if (colorArgb == option) Color.White else Color.Transparent,
+                                        if (colorArgb == option) readableContentColor(Color(option)) else Color.Transparent,
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable { colorArgb = option },
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (colorArgb == option) {
-                                    Text("✓", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                                    Text("✓", color = readableContentColor(Color(option)), fontWeight = FontWeight.ExtraBold)
                                 }
                             }
                         }

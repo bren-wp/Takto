@@ -1699,14 +1699,14 @@ class ScheduleStore(private val context: Context) {
 
     private fun parsePayrollProfile(obj: JSONObject): PayrollProfile = PayrollProfile(
         enabled = obj.optBoolean("enabled", false),
-        system = PayrollSystem.fromPersisted(obj.optString("system", null)),
+        system = PayrollSystem.fromPersisted(obj.optString("system").takeIf { it.isNotBlank() }),
         coefficient = obj.optDouble("coefficient", 0.0).coerceIn(0.0, 20.0),
         yearsOfService = obj.optInt("yearsOfService", 0).coerceIn(0, 70),
         manualBaseEur = obj.optDouble("manualBaseEur", 0.0).coerceIn(0.0, 20_000.0),
         lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
         higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
         personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0).coerceIn(0.0, 50_000.0),
-        pensionMode = PensionMode.fromPersisted(obj.optString("pensionMode", null)),
+        pensionMode = PensionMode.fromPersisted(obj.optString("pensionMode").takeIf { it.isNotBlank() }),
         additionalGrossEur = obj.optDouble("additionalGrossEur", 0.0).coerceIn(0.0, 100_000.0),
         nonTaxableEur = obj.optDouble("nonTaxableEur", 0.0).coerceIn(0.0, 100_000.0),
         overtimePercent = obj.optDouble("overtimePercent", 0.0).coerceIn(0.0, 300.0),

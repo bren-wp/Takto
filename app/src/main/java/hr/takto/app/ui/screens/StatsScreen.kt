@@ -71,7 +71,8 @@ private data class ScheduleCodeStat(
 
 @Composable
 fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
-    var month by rememberSaveable { mutableStateOf(YearMonth.now()) }
+    var monthIso by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
+    val month = YearMonth.parse(monthIso)
     var monthlyTargetDialog by remember { mutableStateOf(false) }
     val monthEntries = store.entriesForMonth(month)
     val distribution = monthEntries
@@ -139,9 +140,9 @@ fun StatsScreen(store: ScheduleStore, contentPadding: PaddingValues) {
 
         GlassCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(7.dp), corner = 17.dp) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { month = month.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "Prethodni mjesec") }
+                IconButton(onClick = { monthIso = month.minusMonths(1).toString() }) { Icon(Icons.Default.ChevronLeft, "Prethodni mjesec") }
                 Text(monthTitle(month), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                IconButton(onClick = { month = month.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, "Sljedeći mjesec") }
+                IconButton(onClick = { monthIso = month.plusMonths(1).toString() }) { Icon(Icons.Default.ChevronRight, "Sljedeći mjesec") }
             }
         }
 

@@ -41,19 +41,18 @@ fun MonthCalendar(
     modifier: Modifier = Modifier,
     selectedDate: LocalDate? = null,
     selectedDates: Set<LocalDate> = emptySet(),
-    compact: Boolean = false,
     onDayClick: (LocalDate) -> Unit
 ) {
     val days = daysForMonthGrid(month)
     val today = LocalDate.now()
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 3.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
             weekDayShort.forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier.weight(1f),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = if (compact) 9.sp else 12.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
@@ -62,7 +61,7 @@ fun MonthCalendar(
         repeat(6) { rowIndex ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 3.dp)
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 repeat(7) { colIndex ->
                     val date = days[rowIndex * 7 + colIndex]
@@ -74,7 +73,6 @@ fun MonthCalendar(
                             isSelected = date == selectedDate || date in selectedDates,
                             today = date == today,
                             enabled = inCurrentMonth,
-                            compact = compact,
                             onClick = { if (inCurrentMonth) onDayClick(date) }
                         )
                     }
@@ -91,11 +89,11 @@ private fun CalendarDayCell(
     isSelected: Boolean,
     today: Boolean,
     enabled: Boolean,
-    compact: Boolean,
     onClick: () -> Unit
 ) {
-    val shape = RoundedCornerShape(if (compact) 8.dp else 13.dp)
+    val shape = RoundedCornerShape(13.dp)
     val colors = MaterialTheme.colorScheme
+    val entryContentColor = entry?.let { readableContentColor(it.color) }
     val bg = when {
         !enabled -> colors.surface.copy(alpha = 0.32f)
         entry != null -> entry.color
@@ -112,7 +110,7 @@ private fun CalendarDayCell(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(if (compact) 0.93f else 0.70f)
+            .aspectRatio(0.70f)
             .background(bg, shape)
             .border(borderWidth, borderColor, shape)
             .semantics {
@@ -135,16 +133,16 @@ private fun CalendarDayCell(
                 }
             }
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(if (compact) 3.dp else 4.dp)
+            .padding(4.dp)
     ) {
         Text(
             text = date.dayOfMonth.toString(),
             color = when {
                 !enabled -> colors.onSurfaceVariant.copy(alpha = 0.38f)
-                entry != null -> Color.White.copy(alpha = 0.94f)
+                entry != null -> entryContentColor?.copy(alpha = 0.92f) ?: colors.onSurface
                 else -> colors.onSurfaceVariant
             },
-            fontSize = if (compact) 8.sp else 12.sp,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.align(Alignment.TopStart)
         )
@@ -152,33 +150,33 @@ private fun CalendarDayCell(
         if (entry != null && enabled) {
             Text(
                 text = entry.code,
-                color = Color.White,
-                fontSize = if (compact) shiftCodeCompactFontSize(entry.code) else shiftCodeFontSize(entry.code),
+                color = entryContentColor ?: colors.onSurface,
+                fontSize = shiftCodeFontSize(entry.code),
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(top = if (compact) 5.dp else 8.dp, start = 1.dp, end = 1.dp)
+                    .padding(top = 8.dp, start = 1.dp, end = 1.dp)
             )
             if (entry.note.isNotBlank() || entry.hasWorkTime) {
                 Row(
                     modifier = Modifier.align(Alignment.BottomCenter),
-                    horizontalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 3.dp)
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     if (entry.hasWorkTime) {
                         Box(
                             Modifier
-                                .size(if (compact) 4.dp else 5.dp)
+                                .size(5.dp)
                                 .background(TaktoCyan.copy(alpha = 0.95f), CircleShape)
                         )
                     }
                     if (entry.note.isNotBlank()) {
                         Box(
                             Modifier
-                                .size(if (compact) 4.dp else 5.dp)
-                                .background(Color.White.copy(alpha = 0.88f), CircleShape)
+                                .size(5.dp)
+                                .background((entryContentColor ?: colors.onSurface).copy(alpha = 0.88f), CircleShape)
                         )
                     }
                 }

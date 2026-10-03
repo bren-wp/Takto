@@ -178,12 +178,12 @@
 
 ## Vizualni QA
 - [ ] nema preklapanja na manjim zaslonima
-- [ ] veliki fontovi ne režu D / N / GO / BO / PD
+- [ ] veliki fontovi ne režu D / N / J / GO / SD / BO / PD
 - [ ] vlastite oznake od 4+ znakova ostaju čitljive u kalendaru
 - [ ] promjena boja vidljiva je u kalendaru, statistici i novim unosima
 - [ ] dijalog Radno vrijeme ostaje upotrebljiv pri većem system font scaleu
 - [ ] Undo ikona ima jasan disabled/enabled status i pristupačan opis
-- [ ] tamna tema ostaje čitljiva pri većem system font scaleu
+- [ ] jedini svijetli izgled ostaje čitljiv pri većem system font scaleu i pri jakom ambijentalnom svjetlu
 
 ## UI/UX 0.1.16 regresija
 - [ ] Početna se može skrolati na manjim ekranima i pri velikom fontu
@@ -194,7 +194,7 @@
 - [ ] Statistika čuva odabrani mjesec nakon rekreacije Activityja
 - [ ] vrlo svijetle vlastite boje koriste tamni tekst, a tamne boje svijetli tekst
 - [ ] tekst ostaje čitljiv na vlastitim bojama u Kalendaru, Početnoj, pretrazi, Statistici i Postavkama
-- [ ] ugrađene oznake u Postavkama ne sabijaju se kada ih ima više, nego se vodoravno skrolaju
+- [ ] ugrađene oznake u Postavkama prikazuju se u preglednoj mreži bez horizontalnog skrolanja i bez rezanja naziva
 - [ ] brisanje jednog kalendarskog unosa traži potvrdu
 - [ ] brisanje više odabranih dana traži potvrdu i može se vratiti jednim Undo korakom
 - [ ] brisanje vlastite brze oznake traži potvrdu i ne briše postojeće kalendarske zapise
@@ -216,3 +216,17 @@
 - [ ] formatiranje eura koristi zajednički helper umjesto tri duplicirane funkcije
 - [ ] nema nepotrebnih UI importa otkrivenih auditom
 - [ ] novi helperi za kontrast, crop i responzivni layout imaju unit testove
+
+
+## UI/UX 0.1.18 regresija
+- [ ] aplikacija nema tamni, sistemski ni automatski način teme
+- [ ] statusna i navigacijska traka koriste svijetli izgled
+- [ ] na novoj instalaciji prve brze oznake su D i N
+- [ ] D, N, J, GO, SD, BO i PD imaju međusobno različite početne boje
+- [ ] D dobiva zadano vrijeme 07:00–19:00, a N 19:00–07:00
+- [ ] korisnik može promijeniti ili ukloniti zadano D/N vrijeme bez ponovnog automatskog vraćanja
+- [ ] SD ne dobiva radno vrijeme niti se računa kao odrađena smjena
+- [ ] mjesečni fond ostaje zasebna postavka i ne postaje automatski 12 h po radnom danu
+- [ ] pretraga radnog mjesta u obračunu plaće filtrira samo odgovarajući javni/državni katalog
+- [ ] odabir radnog mjesta popunjava koeficijent, a ručna izmjena koeficijenta uklanja vezu s presetom
+- [ ] dead-code audit prolazi u strict načinu prije testova

@@ -252,6 +252,10 @@ fun CalendarScreen(
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
                         .weight(1f)
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = "Odaberi drugi mjesec"
+                        }
                         .clickable { jumpDialog = true },
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )

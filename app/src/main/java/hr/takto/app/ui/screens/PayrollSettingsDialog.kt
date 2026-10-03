@@ -322,5 +322,3 @@ private fun parseDecimal(value: String): Double =
 private fun decimalText(value: Double): String =
     if (value == 0.0) "" else String.format(Locale.US, "%.2f", value).trimEnd('0').trimEnd('.')
 
-private fun formatEuro(value: Double): String =
-    String.format(Locale("hr", "HR"), "%,.2f €", value)

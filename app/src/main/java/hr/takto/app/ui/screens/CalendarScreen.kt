@@ -70,11 +70,13 @@ import hr.takto.app.model.ScheduleSearch
 import hr.takto.app.model.ScheduleSearchFilter
 import hr.takto.app.model.ShiftEntry
 import hr.takto.app.model.ShiftType
+import hr.takto.app.ui.components.ConfirmDeleteDialog
 import hr.takto.app.ui.components.GlassCard
 import hr.takto.app.ui.components.MonthCalendar
 import hr.takto.app.ui.components.ShiftChoice
 import hr.takto.app.ui.components.croatianDate
 import hr.takto.app.ui.components.monthTitle
+import hr.takto.app.ui.components.readableContentColor
 import hr.takto.app.ui.theme.TaktoBlue
 import java.time.LocalDate
 import java.time.YearMonth
@@ -105,6 +107,7 @@ fun CalendarScreen(
     var copiedWeek by remember { mutableStateOf<List<ShiftEntry?>>(emptyList()) }
     var pasteWeekDate by remember { mutableStateOf<LocalDate?>(null) }
     var workTimeDate by remember { mutableStateOf<LocalDate?>(null) }
+    var pendingDeleteDate by remember { mutableStateOf<LocalDate?>(null) }
     var bulkWorkTimeDialog by remember { mutableStateOf(false) }
 
     fun resetMultiSelection() {
@@ -277,6 +280,20 @@ fun CalendarScreen(
         )
     }
 
+    pendingDeleteDate?.let { date ->
+        ConfirmDeleteDialog(
+            title = "Ukloni unos?",
+            message = "Unos za ${croatianDate(date)} uklonit će se iz kalendara. Promjenu možeš vratiti opcijom za poništavanje zadnje promjene.",
+            confirmLabel = "Ukloni unos",
+            onConfirm = {
+                store.removeEntry(date)
+                if (selectedDate == date) selectedDate = null
+                pendingDeleteDate = null
+            },
+            onDismiss = { pendingDeleteDate = null }
+        )
+    }
+
     selectedDate?.let { date ->
         var note by remember(date) { mutableStateOf(store.entryFor(date)?.note.orEmpty()) }
         var showAllTypes by remember(date) { mutableStateOf(false) }
@@ -301,14 +318,11 @@ fun CalendarScreen(
                     Column(Modifier.weight(1f)) {
                         Text(if (current == null) "Odaberi oznaku" else "Promijeni oznaku", style = MaterialTheme.typography.headlineMedium)
                         if (current != null) {
-                            Text("Trenutno: ${current.code} · ${current.label}", color = current.color, fontWeight = FontWeight.SemiBold)
+                            Text("Trenutno: ${current.code} · ${current.label}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     if (current != null) {
-                        IconButton(onClick = {
-                            store.removeEntry(date)
-                            selectedDate = null
-                        }) {
+                        IconButton(onClick = { pendingDeleteDate = date }) {
                             Icon(Icons.Default.Delete, contentDescription = "Ukloni unos", tint = MaterialTheme.colorScheme.error)
                         }
                     }
@@ -860,7 +874,7 @@ private fun ScheduleSearchDialog(
                                 ) {
                                     Text(
                                         entry.code,
-                                        color = Color.White,
+                                        color = readableContentColor(entry.color),
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = if (entry.code.length <= 2) 16.sp else 11.sp,
                                         maxLines = 1
@@ -1227,14 +1241,14 @@ private fun CustomEntryDialog(
                                     .background(Color(option), RoundedCornerShape(10.dp))
                                     .border(
                                         if (colorArgb == option) 2.dp else 0.dp,
-                                        if (colorArgb == option) Color.White else Color.Transparent,
+                                        if (colorArgb == option) readableContentColor(Color(option)) else Color.Transparent,
                                         RoundedCornerShape(10.dp)
                                     )
                                     .clickable { colorArgb = option },
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (colorArgb == option) {
-                                    Text("✓", color = Color.White, fontWeight = FontWeight.ExtraBold)
+                                    Text("✓", color = readableContentColor(Color(option)), fontWeight = FontWeight.ExtraBold)
                                 }
                             }
                         }

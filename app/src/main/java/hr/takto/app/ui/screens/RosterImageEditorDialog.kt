@@ -58,9 +58,9 @@ import kotlin.math.abs
 
 internal data class CropSelection(
     val left: Float = 0.04f,
-    val top: Float = 0.34f,
+    val top: Float = 0.42f,
     val right: Float = 0.96f,
-    val bottom: Float = 0.66f
+    val bottom: Float = 0.58f
 ) {
     val width: Float get() = right - left
     val height: Float get() = bottom - top

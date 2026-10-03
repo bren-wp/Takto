@@ -88,8 +88,8 @@ class ScheduleStore(private val context: Context) {
     init {
         loadShiftColors()
         loadCustomShiftPresets()
-        seedReferenceShortcutsOnce()
         loadWorkTimePresets()
+        seedDefaultWorkTimePresets()
         loadMonthlyTargetOverrides()
         loadSavedPatterns()
         archiveRevisionCount.value = loadArchiveRevisionCount()
@@ -1892,7 +1892,6 @@ class ScheduleStore(private val context: Context) {
         private const val KEY_SAVED_PATTERNS = "saved_patterns_json"
         private const val KEY_USER_PROFILE = "user_profile_json"
         private const val KEY_PAYROLL_PROFILE = "payroll_profile_json"
-        private const val KEY_REFERENCE_SHORTCUTS_SEEDED = "reference_shortcuts_seeded"
         private const val KEY_ARCHIVE_REVISION_COUNT = "archive_revision_count"
         private const val KEY_ARCHIVE_FILE_LENGTH = "archive_file_length"
 

@@ -24,4 +24,14 @@ class DefaultShiftTypesTest {
             assertTrue("$code should be treated as non-working status", ScheduleLogic.isLeaveCode(code))
         }
     }
+    @Test
+    fun defaultDayAndNightWorkTimesAreTwelveHours() {
+        assertEquals(12 * 60, DefaultWorkTimePresets.day.durationMinutes)
+        assertEquals(12 * 60, DefaultWorkTimePresets.night.durationMinutes)
+        assertEquals(7 * 60, DefaultWorkTimePresets.day.startMinute)
+        assertEquals(19 * 60, DefaultWorkTimePresets.day.endMinute)
+        assertEquals(19 * 60, DefaultWorkTimePresets.night.startMinute)
+        assertEquals(7 * 60, DefaultWorkTimePresets.night.endMinute)
+    }
+
 }

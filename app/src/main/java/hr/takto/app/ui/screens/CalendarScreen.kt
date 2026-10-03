@@ -144,7 +144,7 @@ fun CalendarScreen(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val fontScale = LocalDensity.current.fontScale
             val twoRows = CalendarUiLogic.toolbarUsesTwoRows(maxWidth.value, fontScale)
-            val toolbarActions = @Composable {
+            val toolbarActions: @Composable () -> Unit = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = if (twoRows) Arrangement.SpaceEvenly else Arrangement.End,

@@ -628,7 +628,7 @@ private fun MonthlyTargetDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (valid) onSave(total!!) }, enabled = valid) { Text("Spremi") }
+            TextButton(onClick = { if (valid) onSave(total) }, enabled = valid) { Text("Spremi") }
         },
         dismissButton = {
             Row {

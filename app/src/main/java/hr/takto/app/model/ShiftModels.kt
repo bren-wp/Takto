@@ -60,3 +60,12 @@ data class WorkTimePreset(
     val durationMinutes: Int?
         get() = ScheduleLogic.workDurationMinutes(startMinute, endMinute, breakMinutes)
 }
+
+object DefaultWorkTimePresets {
+    val day = WorkTimePreset("D", 7 * 60, 19 * 60)
+    val night = WorkTimePreset("N", 19 * 60, 7 * 60)
+    val presets = listOf(day, night)
+
+    fun forCode(code: String): WorkTimePreset? =
+        presets.firstOrNull { it.code.equals(code, ignoreCase = true) }
+}

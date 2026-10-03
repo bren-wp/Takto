@@ -139,6 +139,8 @@ Početna koristi ime iz profila za osobni pozdrav i sažet dashboard bez mini-ka
 - pretraživ katalog radnih mjesta i koeficijenata prenesen je iz projekta **bren-wp/RASPORED**
 - katalog uključuje odabrana radna mjesta u zdravstvu, školstvu, državnoj službi i policiji
 - odabrani koeficijent može se ručno korigirati; katalog nije zamjena za službeni akt konkretnog poslodavca
+- dodan je i pretraživ referentni katalog poreznih lokaliteta 2026.; izbor mjesta automatski popunjava nižu i višu stopu
+- porezne stope se i dalje mogu ručno promijeniti kada se na korisnika primjenjuje drugačija stopa
 - za ostale sustave ostaje ručni unos bez izmišljanja osnovice ili dodataka
 - Takto ne prikazuje potpunu procjenu neta dok nisu uneseni nužni porezni i obračunski podaci
 

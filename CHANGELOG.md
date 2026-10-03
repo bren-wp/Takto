@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.1.18
+
+Veliki UI/UX i održavanje pass: tamni način potpuno je uklonjen, D/N postaju jasne početne 12-satne smjene, ugrađene oznake dobivaju zasebne boje, a obračun plaće dobiva pretraživ katalog koeficijenata iz projekta RASPORED.
+
+### UI i UX
+
+- aplikacija sada ima jedan dosljedan svijetli produkcijski izgled; uklonjeni su tamni, sistemski i automatski način teme
+- Android statusna i navigacijska traka usklađene su sa svijetlim izgledom
+- uklonjene su postavke i dijalog za izbor teme
+- ugrađene oznake u Postavkama prikazuju se u preglednoj mreži umjesto vodoravnog skrolanja
+- D i N su prve početne brze oznake na novoj instalaciji
+- D, N, J, GO, SD, BO i PD imaju međusobno različite početne boje
+- D početno koristi 07:00–19:00, a N 19:00–07:00; korisnik vrijeme i pauzu može promijeniti
+- SD je eksplicitno neradni status i ne dobiva radno vrijeme
+- mjesečni fond ostaje zasebna postavka i nije automatski promijenjen na 12 sati po radnom danu
+
+### Plaća i koeficijenti
+
+- dodan je pretraživ katalog odabranih radnih mjesta i koeficijenata iz projekta `bren-wp/RASPORED`
+- katalog uključuje zdravstvo, školstvo, opću državnu službu i policiju
+- odabir radnog mjesta automatski popunjava referentni koeficijent i prikazuje službeni naziv/kod iz kataloga
+- ručni unos koeficijenta ostaje dostupan i prekida vezu s presetom kako se ne bi prikazivala netočna oznaka radnog mjesta
+- odabrano radno mjesto sprema se u lokalni profil obračuna i sigurnosnu kopiju
+- izračun i dalje ne prikazuje potpunu procjenu kada nedostaju nužni porezni ili obračunski podaci
+
+### Kod, migracija i QA
+
+- uklonjeni su model, testovi, UI i perzistencija za stare načine teme
+- stari J/SD jednokratni seed zamijenjen je ugrađenim semantičkim oznakama
+- D/N 12-satni predlošci vremena postavljaju se samo jednom pa ih korisnik može trajno prilagoditi ili ukloniti
+- dodan je konzervativni `scripts/dead_code_audit.py --strict` i Android CI ga izvršava prije unit testova
+- dodani su regresijski testovi za početni poredak oznaka, jedinstvene boje, SD semantiku i ključne koeficijente kataloga
+
+### Verzija
+
+- `versionName`: `0.1.18`
+- `versionCode`: `19`
+
+
 ## 0.1.17
 
 Daljnje poliranje interakcija, pristupačnosti i sigurnosti uvoza rasporeda, uz dodatni dead-code i no-op audit.

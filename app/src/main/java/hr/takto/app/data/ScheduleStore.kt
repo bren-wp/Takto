@@ -627,6 +627,7 @@ class ScheduleStore(private val context: Context) {
             coefficient = profile.coefficient.coerceIn(0.0, 20.0),
             yearsOfService = profile.yearsOfService.coerceIn(0, 70),
             manualBaseEur = profile.manualBaseEur.coerceIn(0.0, 20_000.0),
+            taxLocalityPresetId = profile.taxLocalityPresetId.trim().take(80),
             lowerTaxRatePercent = profile.lowerTaxRatePercent.coerceIn(0.0, 60.0),
             higherTaxRatePercent = profile.higherTaxRatePercent.coerceIn(0.0, 60.0),
             personalAllowanceEur = profile.personalAllowanceEur.coerceIn(0.0, 50_000.0),
@@ -1687,6 +1688,7 @@ class ScheduleStore(private val context: Context) {
         coefficient = obj.optDouble("coefficient", 0.0).coerceIn(0.0, 20.0),
         yearsOfService = obj.optInt("yearsOfService", 0).coerceIn(0, 70),
         manualBaseEur = obj.optDouble("manualBaseEur", 0.0).coerceIn(0.0, 20_000.0),
+        taxLocalityPresetId = obj.optString("taxLocalityPresetId", "").trim().take(80),
         lowerTaxRatePercent = obj.optDouble("lowerTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
         higherTaxRatePercent = obj.optDouble("higherTaxRatePercent", 0.0).coerceIn(0.0, 60.0),
         personalAllowanceEur = obj.optDouble("personalAllowanceEur", 600.0).coerceIn(0.0, 50_000.0),
@@ -1709,6 +1711,7 @@ class ScheduleStore(private val context: Context) {
         put("coefficient", profile.coefficient)
         put("yearsOfService", profile.yearsOfService)
         put("manualBaseEur", profile.manualBaseEur)
+        put("taxLocalityPresetId", profile.taxLocalityPresetId)
         put("lowerTaxRatePercent", profile.lowerTaxRatePercent)
         put("higherTaxRatePercent", profile.higherTaxRatePercent)
         put("personalAllowanceEur", profile.personalAllowanceEur)
